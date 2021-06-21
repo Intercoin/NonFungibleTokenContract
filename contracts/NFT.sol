@@ -54,6 +54,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         string memory symbol,
         CommunitySettings memory communitySettings_
     ) public initializer {
+        __Ownable_init();
         __NFTAuthorship_init(name, symbol);
         communitySettings = communitySettings_;
     }
@@ -82,7 +83,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         
         _setTokenURI(tokenId, URI);
         
-        require(_commissions[tokenId].token != address(0), "NFT: Token address can not be zero");
+        require(commissionParams.token != address(0), "NFT: Token address can not be zero");
         
         _commissions[tokenId].token = commissionParams.token;
         _commissions[tokenId].amount = commissionParams.amount;
@@ -156,7 +157,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         require(funds >= _salesData[tokenId].amount, "NFT: The coins sent are not enough");
         
         // Refund
-        uint256 refund = (funds).sub(_commissions[tokenId].amount);
+        uint256 refund = (funds).sub(_salesData[tokenId].amount);
         if (refund > 0) {
             (success, ) = (_msgSender()).call{value: refund}("");    
             require(success, "NFT: Failed when send back coins to caller");
@@ -164,6 +165,9 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         
         address owner = ownerOf(tokenId);
         super._transfer(owner, _msgSender(), tokenId);
+        
+        (success, ) = (owner).call{value: _salesData[tokenId].amount}("");    
+        require(success, "NFT: Failed when send coins to owner");
         
         removeFromSale(tokenId);
         
@@ -188,40 +192,6 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
 
     }
     
-    /*
-    function payCommissionToken(
-        uint256 tokenId
-    ) 
-        public 
-        nonReentrant
-    {
-        require(_exists(tokenId), "NFT: Nonexistent token");
-        
-        bool success;
-        address author = authorOf(tokenId);
-        
-        address commissionToken;
-        uint256 commissionAmount;
-        (commissionToken, commissionAmount) = _getCommission(tokenId);
-        
-        // check allowance
-        uint256 funds = IERC20Upgradeable(commissionToken).allowance(_msgSender(), address(this));
-        require(funds >= commissionAmount, "NFT: The funds sent are not enough");
-        
-        // 'transferFrom'  from sender
-        success = IERC20Upgradeable(commissionToken).transferFrom(_msgSender(), address(this), commissionAmount);
-        require(success, "NFT: Failed when 'transferFrom' funds");
-        
-        // 'transfer' to author
-        success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-        require(success, "NFT: Failed when send commission to author");
-        
-     
-    }
-    
-    */
-    
-    
     function _getCommission(
         uint256 tokenId
     ) 
@@ -230,17 +200,6 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         view
         returns(address t, uint256 r)
     {
-        /*
-        r = initialCommission
-        if (multiply === 10000) {
-           return r;
-        }
-        seconds  = now - createdTims
-        times = seconds / intervalSeconds
-        for i = 1 to times
-           r = initial .mul(multiply).div (10000)
-        return r;
-        */
         
         //initialCommission
         r = _commissions[tokenId].amount;
@@ -287,15 +246,15 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         uint256 commissionAmountLeft = commissionAmount;
         if (_salesData[tokenId].offerAddresses.contains(owner)) {
             commissionAmountLeft = _transferPay(tokenId, owner, commissionToken, commissionAmountLeft);
-            
-            uint256 len = _salesData[tokenId].offerAddresses.length();
-            for (uint256 i = 1; i <= len; i++) {
-                if (commissionAmountLeft > 0) {
-                    commissionAmountLeft  = _transferPay(tokenId, _salesData[tokenId].offerAddresses.at(i), commissionToken, commissionAmountLeft);
-                }
-                if (commissionAmountLeft == 0) {
-                    break;
-                }
+        }
+        
+        uint256 len = _salesData[tokenId].offerAddresses.length();
+        for (uint256 i = 1; i <= len; i++) {
+            if (commissionAmountLeft > 0) {
+                commissionAmountLeft  = _transferPay(tokenId, _salesData[tokenId].offerAddresses.at(i), commissionToken, commissionAmountLeft);
+            }
+            if (commissionAmountLeft == 0) {
+                break;
             }
         }
         
