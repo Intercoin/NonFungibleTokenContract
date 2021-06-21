@@ -1,0 +1,6 @@
+/build
+/node_modules
+artifacts
+.env
+.deps
+secret.*.json
