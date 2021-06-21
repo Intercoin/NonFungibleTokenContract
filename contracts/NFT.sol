@@ -224,10 +224,6 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
     }
     
     
-    
-   
-    
-    
     function _transfer(
         address from, 
         address to, 
@@ -249,9 +245,11 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         }
         
         uint256 len = _salesData[tokenId].offerAddresses.length();
-        for (uint256 i = 1; i <= len; i++) {
-            if (commissionAmountLeft > 0) {
-                commissionAmountLeft  = _transferPay(tokenId, _salesData[tokenId].offerAddresses.at(i), commissionToken, commissionAmountLeft);
+        uint256 tmpI;
+        for (uint256 i = 0; i < len; i++) {
+            tmpI = commissionAmountLeft;
+            if (tmpI > 0) {
+                commissionAmountLeft  = _transferPay(tokenId, _salesData[tokenId].offerAddresses.at(i), commissionToken, tmpI);
             }
             if (commissionAmountLeft == 0) {
                 break;
@@ -268,8 +266,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         super._transfer(from, to, tokenId);
         
     }
-    
-    
+
     function _transferPay(
         uint256 tokenId,
         address addr,
@@ -294,7 +291,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         }
         
     }
-    
+
     function _canRecord(
         string memory roleName
     ) 
