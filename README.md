@@ -19,45 +19,45 @@ Once installed will be use methods:
 		<td>owner</td>
 		<td>initializing after deploy</td>
 	</tr>
-  <tr>
+    <tr>
 		<td><a href="#create">create</a></td>
 		<td>anyone<span>&#42;</span></td>
-		<td></td>
+		<td>creating NFT token</td>
 	</tr>
-  <tr>
+    <tr>
 		<td><a href="#getcommission">getCommission</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>getting the amount of the commission that will be paid to the author when transferring</td>
 	</tr>
-  <tr>
+    <tr>
 		<td><a href="#claimlosttoken">claimLostToken</a></td>
 		<td>owner</td>
-		<td></td>
+		<td>claiming lost token which can be mistakenly sent to contract</td>
 	</tr>
-  <tr>
+    <tr>
 		<td><a href="#listforsale">listForSale</a></td>
 		<td>NFTOwner</td>
-		<td></td>
+		<td>adding token to sale</td>
 	</tr>
-  <tr>
+    <tr>
 		<td><a href="#removefromsale">removeFromSale</a></td>
 		<td>NFTOwner</td>
-		<td></td>
+		<td>removing token from sale</td>
 	</tr>
-  <tr>
+    <tr>
 		<td><a href="#buy">buy</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>buying token by sending coins bnb or eth to contract</td>
 	</tr>
-  <tr>
+    <tr>
 		<td><a href="#offertopaycommission">offerToPayCommission</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>offering to pay commission for token</td>
 	</tr>
-  <tr>
-		<td><a href="#initialize">initialize</a></td>
-		<td>owner</td>
-		<td></td>
+    <tr>
+		<td><a href="#tokensbyauthor">tokensByAuthor</a></td>
+		<td>anyone</td>
+		<td>viewing tokens list by author</td>
 	</tr>
 </tbody>
 </table>
