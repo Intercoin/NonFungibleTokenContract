@@ -164,7 +164,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         }
         
         address owner = ownerOf(tokenId);
-        super._transfer(owner, _msgSender(), tokenId);
+        _transfer(owner, _msgSender(), tokenId);
         
         (success, ) = (owner).call{value: _salesData[tokenId].amount}("");    
         require(success, "NFT: Failed when send coins to owner");
@@ -204,21 +204,21 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         //initialCommission
         r = _commissions[tokenId].amount;
         t = _commissions[tokenId].token;
-        
-        if (_commissions[tokenId].multiply == 10000) {
-            // left initial commission
+        if (r == 0) {
+            
         } else {
-            uint256 secondsPass = block.timestamp.sub(_commissions[tokenId].createdTs);
-    
-            uint256 periodTimes = secondsPass.div(_commissions[tokenId].intervalSeconds);
-                
-            for(uint256 i = 0; i < periodTimes; i++) {
-                r = r.mul(periodTimes)
-                 .mul(_commissions[tokenId].multiply)
-                 .div(10000)
-                ;
-            }
+            if (_commissions[tokenId].multiply == 10000) {
+                // left initial commission
+            } else {
+                uint256 secondsPass = block.timestamp.sub(_commissions[tokenId].createdTs);
         
+                uint256 periodTimes = secondsPass.div(_commissions[tokenId].intervalSeconds);
+                    
+                for(uint256 i = 0; i < periodTimes; i++) {
+                    r = r.mul(_commissions[tokenId].multiply).div(10000);
+                }
+            
+            }
         }
         
     }
@@ -239,29 +239,34 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         uint256 commissionAmount;
         (commissionToken, commissionAmount) = _getCommission(tokenId);
         
-        uint256 commissionAmountLeft = commissionAmount;
-        if (_salesData[tokenId].offerAddresses.contains(owner)) {
-            commissionAmountLeft = _transferPay(tokenId, owner, commissionToken, commissionAmountLeft);
-        }
-        
-        uint256 len = _salesData[tokenId].offerAddresses.length();
-        uint256 tmpI;
-        for (uint256 i = 0; i < len; i++) {
-            tmpI = commissionAmountLeft;
-            if (tmpI > 0) {
-                commissionAmountLeft  = _transferPay(tokenId, _salesData[tokenId].offerAddresses.at(i), commissionToken, tmpI);
+        if (author == address(0) || commissionAmount == 0) {
+            
+        } else {
+            
+            uint256 commissionAmountLeft = commissionAmount;
+            if (_salesData[tokenId].offerAddresses.contains(owner)) {
+                commissionAmountLeft = _transferPay(tokenId, owner, commissionToken, commissionAmountLeft);
             }
-            if (commissionAmountLeft == 0) {
-                break;
+            
+            uint256 len = _salesData[tokenId].offerAddresses.length();
+            uint256 tmpI;
+            for (uint256 i = 0; i < len; i++) {
+                tmpI = commissionAmountLeft;
+                if (tmpI > 0) {
+                    commissionAmountLeft  = _transferPay(tokenId, _salesData[tokenId].offerAddresses.at(i), commissionToken, tmpI);
+                }
+                if (commissionAmountLeft == 0) {
+                    break;
+                }
             }
+            
+            require(commissionAmountLeft == 0, "NFT: author's commission should be payed");
+            
+            // 'transfer' commission to the author
+            bool success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
+            require(success, "NFT: Failed when 'transfer' funds to owner");
+        
         }
-        
-        require(commissionAmountLeft == 0, "NFT: author's commission should be payed");
-        
-        // 'transfer' commission to the author
-        bool success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-        require(success, "NFT: Failed when 'transfer' funds to owner");
-        
         // then usual transfer as expected
         super._transfer(from, to, tokenId);
         
