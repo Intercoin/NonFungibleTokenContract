@@ -133,3 +133,10 @@ name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
 amount|uint256|amount in coins(bnb, eth etc.)
+
+#### tokensByAuthor
+viewing tokens list by author<br>
+Params:<br>
+name  | type | description
+--|--|--
+author|address| author's address

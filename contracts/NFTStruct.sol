@@ -22,11 +22,12 @@ abstract contract NFTStruct {
         uint256 multiply;
         uint256 intervalSeconds;
         uint256 createdTs;
+        mapping (address => uint256) offerPayAmount;
+        EnumerableSetUpgradeable.AddressSet offerAddresses;
     }
 
     struct SalesData {
-        mapping (address => uint256) offerPayAmount;
-        EnumerableSetUpgradeable.AddressSet offerAddresses;
+        address erc20Address;
         uint256 amount;
         bool isSale;
     }

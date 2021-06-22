@@ -48,6 +48,14 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         require(_salesData[tokenId].isSale == true, "NFT: Token does not in sale");
         _;
     }
+    modifier onlySaleForCoins(uint256 tokenId) {
+        require(_salesData[tokenId].erc20Address == address(0), "NFT: Token can not be sale for coins");
+        _;
+    }
+    modifier onlySaleForTokens(uint256 tokenId) {
+        require(_salesData[tokenId].erc20Address != address(0), "NFT: Token can not be sale for tokens");
+        _;
+    }
     
     function initialize(
         string memory name,
@@ -120,13 +128,15 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
     
     function listForSale(
         uint256 tokenId,
-        uint256 amount
+        uint256 amount,
+        address consumeToken
     )
         public 
         onlyNFTOwner(tokenId)
     {
         _salesData[tokenId].amount = amount;
         _salesData[tokenId].isSale = true;
+        _salesData[tokenId].erc20Address = consumeToken;
         emit TokenAddedToSale(tokenId, amount);
     }
     
@@ -141,6 +151,8 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         emit TokenRemovedFromSale(tokenId);
     }
     
+    
+     
     function buy(
         uint256 tokenId
     )
@@ -148,6 +160,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         payable
         nonReentrant
         onlySale(tokenId)
+        onlySaleForCoins(tokenId)
     {
         require(_exists(tokenId), "NFT: Nonexistent token");
         //require(_commissionsPayed[tokenId] == false, "NFT: Commission already payed");
@@ -173,6 +186,38 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         
     }
     
+    function buyWithToken(
+        uint256 tokenId
+    )
+        public 
+        nonReentrant
+        onlySale(tokenId)
+        onlySaleForTokens(tokenId)
+    {
+        require(_exists(tokenId), "NFT: Nonexistent token");
+        
+        uint256 needToObtain = _salesData[tokenId].amount;
+        
+        IERC20Upgradeable saleToken = IERC20Upgradeable(_salesData[tokenId].erc20Address);
+        uint256 minAmount = saleToken.allowance(_msgSender(), address(this)).min(saleToken.balanceOf(_msgSender()));
+        
+        require (minAmount >= needToObtain, "NFT: The tokens sent are not enough");
+        
+        bool success;
+        
+        success = saleToken.transferFrom(_msgSender(), address(this), needToObtain);
+        require(success, "NFT: Failed when 'transferFrom' funds");
+
+        address owner = ownerOf(tokenId);
+        _transfer(owner, _msgSender(), tokenId);
+        
+        success = saleToken.transfer(owner, needToObtain);
+        require(success, "NFT: Failed when 'transfer' funds to owner");
+            
+        removeFromSale(tokenId);
+        
+    }
+        
     function offerToPayCommission(
         uint256 tokenId, 
         uint256 amount
@@ -181,13 +226,13 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
     {
         require(_exists(tokenId), "NFT: Nonexistent token");
         if (amount == 0) {
-            if (_salesData[tokenId].offerAddresses.contains(_msgSender())) {
-                _salesData[tokenId].offerAddresses.remove(_msgSender());
-                delete _salesData[tokenId].offerPayAmount[_msgSender()];
+            if (_commissions[tokenId].offerAddresses.contains(_msgSender())) {
+                _commissions[tokenId].offerAddresses.remove(_msgSender());
+                delete _commissions[tokenId].offerPayAmount[_msgSender()];
             }
         } else {
-            _salesData[tokenId].offerPayAmount[_msgSender()] = amount;
-            _salesData[tokenId].offerAddresses.add(_msgSender());
+            _commissions[tokenId].offerPayAmount[_msgSender()] = amount;
+            _commissions[tokenId].offerAddresses.add(_msgSender());
         }
 
     }
@@ -244,16 +289,16 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         } else {
             
             uint256 commissionAmountLeft = commissionAmount;
-            if (_salesData[tokenId].offerAddresses.contains(owner)) {
+            if (_commissions[tokenId].offerAddresses.contains(owner)) {
                 commissionAmountLeft = _transferPay(tokenId, owner, commissionToken, commissionAmountLeft);
             }
             
-            uint256 len = _salesData[tokenId].offerAddresses.length();
+            uint256 len = _commissions[tokenId].offerAddresses.length();
             uint256 tmpI;
             for (uint256 i = 0; i < len; i++) {
                 tmpI = commissionAmountLeft;
                 if (tmpI > 0) {
-                    commissionAmountLeft  = _transferPay(tokenId, _salesData[tokenId].offerAddresses.at(i), commissionToken, tmpI);
+                    commissionAmountLeft  = _transferPay(tokenId, _commissions[tokenId].offerAddresses.at(i), commissionToken, tmpI);
                 }
                 if (commissionAmountLeft == 0) {
                     break;
@@ -281,9 +326,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         private
         returns(uint256 commissionAmountLeft)
     {
-        uint256 minAmount;
-        
-        minAmount = (_salesData[tokenId].offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
+        uint256 minAmount = (_commissions[tokenId].offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
         if (minAmount > 0) {
             if (minAmount > commissionAmountNeedToPay) {
                 minAmount = commissionAmountNeedToPay;
@@ -293,6 +336,9 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
             }
             bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
             require(success, "NFT: Failed when 'transferFrom' funds");
+            
+            delete _commissions[tokenId].offerPayAmount[addr];
+            _commissions[tokenId].offerAddresses.remove(addr);
         }
         
     }
