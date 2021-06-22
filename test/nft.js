@@ -18,7 +18,8 @@ contract('NFT', (accounts) => {
     const zeroAddress = "0x0000000000000000000000000000000000000000";
     
     const noneExistTokenID = '99999999';
-    var NFTMockInstance, CommunityMockInstance;
+    const oneToken = "1000000000000000000";
+    var NFTMockInstance, CommunityMockInstance, ERC20MintableInstance;
     
     let tmpTr;
     
@@ -27,16 +28,17 @@ contract('NFT', (accounts) => {
         NFTMockInstance = await NFTMock.new({ from: accountFive });
         await NFTMockInstance.initialize('NFT-title', 'NFT-symbol', [CommunityMockInstance.address, "members"], { from: accountFive });
         
+        ERC20MintableInstance = await ERC20Mintable.new({ from: accountFive });
     });
     // beforeEach(async () => {
     // });
     it('should mint ', async () => {
-        await NFTMockInstance.mint("MyFirstNFT", "http://google.com", ["0x0000000000000000000000000000000000000000", "1000000000000000000"], {from: accountFive});
+        await NFTMockInstance.create("MyFirstNFT", "http://google.com", [zeroAddress, oneToken], {from: accountFive});
         
     });
     
     it('should transfer Ownership and Authorship', async () => {
-        tmpTr = await NFTMockInstance.mint("MyFirstNFT2", "http://google.com", ["0x0000000000000000000000000000000000000000", "1000000000000000000"], {from: accountFive});
+        tmpTr = await NFTMockInstance.create("MyFirstNFT2", "http://google.com", ["0x0000000000000000000000000000000000000000", "1000000000000000000"], {from: accountFive});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -107,13 +109,32 @@ contract('NFT', (accounts) => {
         
     });
     
-    it('should reward by eth to author', async () => {
-        tmpTr = await NFTMockInstance.mint("MyFirstNFT2", "http://google.com", ["0x0000000000000000000000000000000000000000", "1000000000000000000"], {from: accountOne});
+    
+    it('should reward to author', async () => {
+        tmpTr = await NFTMockInstance.create("MyFirstNFT2", "http://google.com", [ERC20MintableInstance.address, oneToken], {from: accountOne});
         
         var tokenID = tmpTr.logs[0].args[1].toString();
-    });
-    it('should reward by tokens to author', async () => {
         
+        await NFTMockInstance.approve(accountTwo, tokenID, {from: accountOne});
+        let balanceOwnerBefore = await ERC20MintableInstance.balanceOf(accountOne);
+        
+        await truffleAssert.reverts(
+            NFTMockInstance.transferFrom(accountOne, accountTwo, tokenID, {from: accountTwo}),
+            "NFT: author's commission should be payed"
+        );
+        
+        await ERC20MintableInstance.approve(NFTMockInstance.address, oneToken, {from: accountTwo});
+        
+        await NFTMockInstance.transferFrom(accountOne, accountTwo, tokenID, {from: accountTwo});
+        
+        let balanceOwnerAfter = await ERC20MintableInstance.balanceOf(accountOne);
+        
+        
+        assert.equal(
+            (BigNumber(balanceOwnerAfter).sub(BigNumber(balanceOwnerBefore))).toString(), 
+            BigNumber(oneToken).toString(), 
+            'wrong rewards'
+        );
     });
     
     
