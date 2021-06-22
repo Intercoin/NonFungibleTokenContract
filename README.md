@@ -49,6 +49,11 @@ Once installed will be use methods:
 		<td>anyone</td>
 		<td>buying token by sending coins bnb or eth to contract</td>
 	</tr>
+	<tr>
+		<td><a href="#buywithtoken">buyWithToken</a></td>
+		<td>anyone</td>
+		<td>buying token by sending tokens to contract</td>
+	</tr>
     <tr>
 		<td><a href="#offertopaycommission">offerToPayCommission</a></td>
 		<td>anyone</td>
@@ -110,6 +115,7 @@ name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
 amount|uint256|amount in coins(bnb, eth etc.)
+consumeToken|address|token address. if address(0) then owner expect coins for sale
 
 #### removeFromSale
 removing token from sale list<br>
@@ -121,6 +127,13 @@ tokenId|uint256|`tokenId`
 
 #### buy
 can buy token by sending coins bnb or eth to contract<br>
+Params:<br>
+name  | type | description
+--|--|--
+tokenId|uint256|`tokenId`
+
+#### buyWithToken
+can buy token by sending erc20 tokens to contract (need approving before)<br>
 Params:<br>
 name  | type | description
 --|--|--
@@ -140,3 +153,9 @@ Params:<br>
 name  | type | description
 --|--|--
 author|address| author's address
+
+Return Values:<br>
+name  | type | description
+--|--|--   
+ret|uint256[]|list of tokenIds that belongs to author
+
