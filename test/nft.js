@@ -39,18 +39,23 @@ contract('NFT', (accounts) => {
   
     it('should create ', async () => {
                                       //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
-        await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: accountFive});
+        await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
         
         await truffleAssert.reverts(
-            NFTMockInstance.create("http://google.com", [zeroAddress, oneToken,0,7*3600], {from: accountFive}),
+            NFTMockInstance.create("http://google.com", [zeroAddress, oneToken,0,0,7*3600,10000], {from: accountFive}),
             "NFT: Token address can not be zero"
+        );
+        
+        await truffleAssert.reverts(
+            NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,999999999], {from: accountFive}),
+            "NFT: reduceCommission can be in interval [0;10000]"
         );
 
     });
     
     it('should become author and owner after create ', async () => {
                                       //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: accountFive});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -63,7 +68,7 @@ contract('NFT', (accounts) => {
     });
 
     it('should transfer Authorship', async () => {
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: accountFive});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -100,7 +105,7 @@ contract('NFT', (accounts) => {
     });
   
     it('should transfer Ownership', async () => {
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: accountFive});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -152,7 +157,7 @@ contract('NFT', (accounts) => {
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: author});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: author});
         
         var tokenID = tmpTr.logs[0].args[1].toString();
         
@@ -194,7 +199,7 @@ contract('NFT', (accounts) => {
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: author});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: author});
         
         var tokenID = tmpTr.logs[0].args[1].toString();
         
@@ -236,7 +241,7 @@ contract('NFT', (accounts) => {
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: author});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: author});
         
         var tokenID = tmpTr.logs[0].args[1].toString();
         
@@ -310,7 +315,7 @@ contract('NFT', (accounts) => {
     it('checking modifiers only for NFT Owners', async () => {
         let owner = accountFive;
         let anotherAccount = accountOne;
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: owner});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: owner});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -328,7 +333,7 @@ contract('NFT', (accounts) => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: ownerOld});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: ownerOld});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -395,7 +400,7 @@ contract('NFT', (accounts) => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: ownerOld});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: ownerOld});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -461,7 +466,7 @@ contract('NFT', (accounts) => {
   
     it('getCommission: should validate params ', async () => {
         await truffleAssert.reverts(
-            NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0], {from: accountFive}),
+            NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,0,10000], {from: accountFive}),
             'NFT: IntervalSeconds can not be zero'
         );
     });
@@ -469,7 +474,7 @@ contract('NFT', (accounts) => {
     it('getCommission:  multiply predefined values (0 and 10000) ', async () => {
         
         let retTokenAddr,retCommission, tokenID;
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,7*3600], {from: accountFive});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
         tokenID = tmpTr.logs[0].args[1].toString(); 
         
         tmpTr = await NFTMockInstance.getCommission(tokenID);
@@ -486,7 +491,7 @@ contract('NFT', (accounts) => {
             "wrong commission: multiply=0"
         );
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,10000,7*3600], {from: accountFive});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,10000,0,7*3600,10000], {from: accountFive});
         tokenID = tmpTr.logs[0].args[1].toString(); 
         
         tmpTr = await NFTMockInstance.getCommission(tokenID);
@@ -502,9 +507,9 @@ contract('NFT', (accounts) => {
     
     it('check getCommission: check with duration ', async () => {
         
-        let ret, retCommission, tokenID;
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,15000,7*3600], {from: accountFive});
-        tokenID = tmpTr.logs[0].args[1].toString(); 
+        let ret, retCommission, tokenID, tokenID2;
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,15000,0,7*3600,0], {from: accountFive});
+        tokenID = tmpTr.logs[0].args[1].toString();
         
         tmpTr = await NFTMockInstance.getCommission(tokenID);
         //retTokenAddr = tmpTr[0]; 
@@ -529,9 +534,33 @@ contract('NFT', (accounts) => {
         assert.equal(
             retCommission.toString(), 
             ret.toString(), 
-            "wrong commission: multiply = 15000"
+            "wrong commission: multiply = 15000, reduceCommission = 0%"
+        );
+        
+        await truffleAssert.reverts(
+            NFTMockInstance.reduceCommission(noneExistTokenID, 10000, {from: accountFive}),
+            'NFT: Nonexistent token'
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.reduceCommission(tokenID, 10000, {from: accountOne}),
+            'NFT: sender is not author of token'
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.reduceCommission(tokenID, 9999999999, {from: accountFive}),
+            'NFT: reduceCommission can be in interval [0;10000]'
+        );
+        await NFTMockInstance.reduceCommission(tokenID, 10000, {from: accountFive});
+        
+        tmpTr = await NFTMockInstance.getCommission(tokenID);
+        retCommission = tmpTr[1]; 
+        
+        assert.equal(
+            retCommission.toString(), 
+            '0', 
+            "wrong commission: multiply = 15000, reduceCommission = 100%"
         );
         
     });
+   
    
 });

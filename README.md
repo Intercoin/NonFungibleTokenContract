@@ -29,6 +29,11 @@ Once installed will be use methods:
 		<td>anyone</td>
 		<td>getting the amount of the commission that will be paid to the author when transferring</td>
 	</tr>
+	<tr>
+		<td><a href="#reducecommission">reduceCommission</a></td>
+		<td>NFTAuthor</td>
+		<td>reducing Commission for NFT token</td>
+	</tr>
     <tr>
 		<td><a href="#claimlosttoken">claimLostToken</a></td>
 		<td>owner</td>
@@ -93,6 +98,14 @@ Params:<br>
 name  | type | description
 --|--|--
 tokenId|uint256| `tokenId`
+
+#### reduceCommission
+reducing Commission for NFT token<br>
+Params:<br>
+name  | type | description
+--|--|--
+tokenId|uint256| `tokenId`
+reduceCommissionPercent|uint256| percent in interval [0;10000]  0%-100%
 
 Return Values:<br>
 name  | type | description

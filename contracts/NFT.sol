@@ -45,6 +45,10 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         _;
     }
     
+    modifier onlyNFTAuthor(uint256 tokenId) {
+        require(_msgSender() == authorOf(tokenId), "NFT: sender is not author of token");
+        _;
+    }
     modifier onlyNFTOwner(uint256 tokenId) {
         require(_msgSender() == ownerOf(tokenId), "NFT: sender is not owner of token");
         _;
@@ -104,12 +108,16 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         
         require(commissionParams.token != address(0), "NFT: Token address can not be zero");
         require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
+        _validateReduceCommission(commissionParams.reduceCommission);
         
         _commissions[tokenId].token = commissionParams.token;
         _commissions[tokenId].amount = commissionParams.amount;
         _commissions[tokenId].multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
+        _commissions[tokenId].accrue = commissionParams.accrue;
         _commissions[tokenId].intervalSeconds = commissionParams.intervalSeconds;
+        _commissions[tokenId].reduceCommission = commissionParams.reduceCommission;
         _commissions[tokenId].createdTs = block.timestamp;
+        _commissions[tokenId].lastTransferTs = block.timestamp;
         
 
         _tokenIds.increment();
@@ -281,6 +289,24 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
     }
     
     /**
+     * reduce commission. author can to allow a token transfer for free to setup reduce commission to 10000(100%)
+     * @param tokenId NFT tokenId
+     * @param reduceCommissionPercent commission in percent. can be in interval [0;10000]
+     */
+    function reduceCommission(
+        uint256 tokenId,
+        uint256 reduceCommissionPercent
+    ) 
+        public
+        onlyIfTokenExists(tokenId)
+        onlyNFTAuthor(tokenId)
+    {
+        _validateReduceCommission(reduceCommissionPercent);
+        
+        _commissions[tokenId].reduceCommission = reduceCommissionPercent;
+    }
+
+    /**
      * commission amount that need to be paid while NFT token transferring
      * @param tokenId NFT tokenId
      */
@@ -302,13 +328,28 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
             if (_commissions[tokenId].multiply == 10000) {
                 // left initial commission
             } else {
-                uint256 secondsPass = block.timestamp.sub(_commissions[tokenId].createdTs);
-        
-                uint256 periodTimes = secondsPass.div(_commissions[tokenId].intervalSeconds);
-                    
-                for(uint256 i = 0; i < periodTimes; i++) {
+                
+                uint256 intervalsSinceCreate = (block.timestamp.sub(_commissions[tokenId].createdTs)).div(_commissions[tokenId].intervalSeconds);
+                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(_commissions[tokenId].lastTransferTs)).div(_commissions[tokenId].intervalSeconds);
+                
+                // (   
+                //     initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
+                // ) * (10000 - reduceCommission) / 10000
+                
+                for(uint256 i = 0; i < intervalsSinceCreate; i++) {
                     r = r.mul(_commissions[tokenId].multiply).div(10000);
+                    
                 }
+                
+                r = r.add(
+                        intervalsSinceLastTransfer.mul(_commissions[tokenId].accrue)
+                    );
+                
+                r = r.mul(
+                        uint256(10000).sub(_commissions[tokenId].reduceCommission)
+                    ).div(uint256(10000));
+                    
+                
             
             }
         }
@@ -430,5 +471,15 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         }
 
     }
+    
+    function _validateReduceCommission(
+        uint256 _reduceCommission
+    ) 
+        private 
+        pure
+    {
+        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
+    }
+        
    
 }

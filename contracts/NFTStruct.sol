@@ -14,14 +14,19 @@ abstract contract NFTStruct {
         address token; 
         uint256 amount;
         uint256 multiply;
+        uint256 accrue;
         uint256 intervalSeconds;
+        uint256 reduceCommission;
     }
     struct CommissionSettings {
         address token; 
         uint256 amount;
         uint256 multiply;
+        uint256 accrue;
         uint256 intervalSeconds;
+        uint256 reduceCommission;
         uint256 createdTs;
+        uint256 lastTransferTs;
         mapping (address => uint256) offerPayAmount;
         EnumerableSetUpgradeable.AddressSet offerAddresses;
     }
