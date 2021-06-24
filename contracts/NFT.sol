@@ -40,6 +40,11 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         _;
     }
     
+    modifier onlyIfTokenExists(uint256 tokenId) {
+        require(_exists(tokenId), "NFT: Nonexistent token");
+        _;
+    }
+    
     modifier onlyNFTOwner(uint256 tokenId) {
         require(_msgSender() == ownerOf(tokenId), "NFT: sender is not owner of token");
         _;
@@ -57,6 +62,11 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         _;
     }
     
+    /**
+     * @param name name of token ERC721 
+     * @param symbol symbol of token ERC721 
+     * @param communitySettings_ community setting. See {NFTStruct-CommunitySettings}.
+     */
     function initialize(
         string memory name,
         string memory symbol,
@@ -69,8 +79,9 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
     
    
     /**
-     * @param URI Toke URI
-     * @param commissionParams commission will be send to author when token's owner sell to someone it
+     * creation NFT token
+     * @param URI Token URI
+     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {NFTStruct-CommissionParams}.
      */
     function create(
         string memory URI,
@@ -92,6 +103,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         _setTokenURI(tokenId, URI);
         
         require(commissionParams.token != address(0), "NFT: Token address can not be zero");
+        require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
         
         _commissions[tokenId].token = commissionParams.token;
         _commissions[tokenId].amount = commissionParams.amount;
@@ -103,16 +115,25 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         _tokenIds.increment();
     }
     
+    /** 
+     * returned commission that will be paid to token's author while transferring NFT
+     * @param tokenId NFT tokenId
+     */
     function getCommission(
         uint256 tokenId
     ) 
         public
         view
+        onlyIfTokenExists(tokenId)
         returns(address t, uint256 r)
     {
         (t, r) = _getCommission(tokenId);
     }
     
+    /**
+     * contract's owner can claim tokens mistekenly sent to this contract
+     * @param erc20address ERC20 address contract
+     */
     function claimLostToken(
         address erc20address
     ) 
@@ -126,12 +147,19 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         require(success, "NFT: Failed when 'transferFrom' funds");
     }
     
+    /**
+     * put NFT to list for sale. then anyone can buy it
+     * @param tokenId NFT tokenId
+     * @param amount amount that need to be paid to owner when some1 buy token
+     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
+     */
     function listForSale(
         uint256 tokenId,
         uint256 amount,
         address consumeToken
     )
-        public 
+        public
+        onlyIfTokenExists(tokenId)
         onlyNFTOwner(tokenId)
     {
         _salesData[tokenId].amount = amount;
@@ -140,10 +168,15 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         emit TokenAddedToSale(tokenId, amount);
     }
     
+    /**
+     * remove NFT from list for sale.
+     * @param tokenId NFT tokenId
+     */
     function removeFromSale(
         uint256 tokenId
     )
         public 
+        onlyIfTokenExists(tokenId)
         onlyNFTOwner(tokenId)
     {
         _salesData[tokenId].isSale = false;    
@@ -151,20 +184,21 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         emit TokenRemovedFromSale(tokenId);
     }
     
-    
-     
+    /**
+     * buying token. new owner need to pay for nft by coins. Also payment to author is expected
+     * @param tokenId NFT tokenId
+     */
     function buy(
         uint256 tokenId
     )
         public 
         payable
         nonReentrant
+        onlyIfTokenExists(tokenId)
         onlySale(tokenId)
         onlySaleForCoins(tokenId)
     {
-        require(_exists(tokenId), "NFT: Nonexistent token");
-        //require(_commissionsPayed[tokenId] == false, "NFT: Commission already payed");
-        
+
         bool success;
         uint256 funds = msg.value;
         require(funds >= _salesData[tokenId].amount, "NFT: The coins sent are not enough");
@@ -186,22 +220,26 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         
     }
     
+    /**
+     * buying token. new owner need to pay for nft by tokens(See {NFTStruct-SalesData-erc20Address}). Also payment to author is expected
+     * @param tokenId NFT tokenId
+     */
     function buyWithToken(
         uint256 tokenId
     )
         public 
         nonReentrant
+        onlyIfTokenExists(tokenId)
         onlySale(tokenId)
         onlySaleForTokens(tokenId)
     {
-        require(_exists(tokenId), "NFT: Nonexistent token");
         
         uint256 needToObtain = _salesData[tokenId].amount;
         
         IERC20Upgradeable saleToken = IERC20Upgradeable(_salesData[tokenId].erc20Address);
         uint256 minAmount = saleToken.allowance(_msgSender(), address(this)).min(saleToken.balanceOf(_msgSender()));
         
-        require (minAmount >= needToObtain, "NFT: The tokens sent are not enough");
+        require (minAmount >= needToObtain, "NFT: The allowance tokens are not enough");
         
         bool success;
         
@@ -217,14 +255,19 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         removeFromSale(tokenId);
         
     }
-        
+    
+    /**
+     * anyone can offer to pay commission to any tokens transfer
+     * @param tokenId NFT tokenId
+     * @param amount amount of token(See {NFTStruct-ComissionSettings-token}) 
+     */
     function offerToPayCommission(
         uint256 tokenId, 
-        uint256 amount
+        uint256 amount 
     )
         public 
+        onlyIfTokenExists(tokenId)
     {
-        require(_exists(tokenId), "NFT: Nonexistent token");
         if (amount == 0) {
             if (_commissions[tokenId].offerAddresses.contains(_msgSender())) {
                 _commissions[tokenId].offerAddresses.remove(_msgSender());
@@ -237,6 +280,10 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
 
     }
     
+    /**
+     * commission amount that need to be paid while NFT token transferring
+     * @param tokenId NFT tokenId
+     */
     function _getCommission(
         uint256 tokenId
     ) 
@@ -268,7 +315,6 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         
     }
     
-    
     function _transfer(
         address from, 
         address to, 
@@ -276,6 +322,24 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
     ) 
         internal 
         override 
+    {
+        _transferHook(from, to, tokenId);
+        
+        // then usual transfer as expected
+        super._transfer(from, to, tokenId);
+        
+    }
+    
+    /**
+     * method realized collect commission logic
+     */
+    function _transferHook(
+        address from, 
+        address to, 
+        uint256 tokenId
+    ) 
+        internal 
+        virtual
     {
         address author = authorOf(tokenId);
         address owner = ownerOf(tokenId);
@@ -305,16 +369,13 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
                 }
             }
             
-            require(commissionAmountLeft == 0, "NFT: author's commission should be payed");
+            require(commissionAmountLeft == 0, "NFT: author's commission should be paid");
             
             // 'transfer' commission to the author
             bool success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
             require(success, "NFT: Failed when 'transfer' funds to owner");
         
         }
-        // then usual transfer as expected
-        super._transfer(from, to, tokenId);
-        
     }
 
     function _transferPay(
@@ -337,8 +398,12 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
             bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
             require(success, "NFT: Failed when 'transferFrom' funds");
             
-            delete _commissions[tokenId].offerPayAmount[addr];
-            _commissions[tokenId].offerAddresses.remove(addr);
+            _commissions[tokenId].offerPayAmount[addr] = _commissions[tokenId].offerPayAmount[addr].sub(minAmount);
+            if (_commissions[tokenId].offerPayAmount[addr] == 0) {
+                delete _commissions[tokenId].offerPayAmount[addr];
+                _commissions[tokenId].offerAddresses.remove(addr);
+            }
+            
         }
         
     }
