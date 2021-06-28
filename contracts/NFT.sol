@@ -2,25 +2,21 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "./interfaces/ICommunity.sol";
 
-import "./NFTStruct.sol";
 import "./NFTAuthorship.sol";
 
-contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpgradeable {
-    using CountersUpgradeable for CountersUpgradeable.Counter;
+contract NFT is NFTAuthorship {
+    
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
-    CountersUpgradeable.Counter private _tokenIds;
+    
     
     CommunitySettings communitySettings;
 
@@ -29,7 +25,6 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
     
     mapping (uint256 => SalesData) private _salesData;
     
-    event NewTokenAppear(address author, uint256 tokenId);
     event TokenAddedToSale(uint256 tokenId, uint256 amount);
     event TokenRemovedFromSale(uint256 tokenId);
     
@@ -40,19 +35,6 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         _;
     }
     
-    modifier onlyIfTokenExists(uint256 tokenId) {
-        require(_exists(tokenId), "NFT: Nonexistent token");
-        _;
-    }
-    
-    modifier onlyNFTAuthor(uint256 tokenId) {
-        require(_msgSender() == authorOf(tokenId), "NFT: sender is not author of token");
-        _;
-    }
-    modifier onlyNFTOwner(uint256 tokenId) {
-        require(_msgSender() == ownerOf(tokenId), "NFT: sender is not owner of token");
-        _;
-    }
     modifier onlySale(uint256 tokenId) {
         require(_salesData[tokenId].isSale == true, "NFT: Token does not in sale");
         _;
@@ -76,11 +58,9 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         string memory symbol,
         CommunitySettings memory communitySettings_
     ) public initializer {
-        __Ownable_init();
         __NFTAuthorship_init(name, symbol);
         communitySettings = communitySettings_;
     }
-    
    
     /**
      * creation NFT token
@@ -95,16 +75,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         canRecord(communitySettings.roleMint) 
         virtual  
     {
-
-        uint256 tokenId = _tokenIds.current();
-        
-        emit NewTokenAppear(_msgSender(), tokenId);
-        
-        // We cannot just use balanceOf or totalSupply to create the new tokenId because tokens
-        // can be burned (destroyed), so we need a separate counter.
-        _safeMint(msg.sender, tokenId);
-        
-        _setTokenURI(tokenId, URI);
+        uint256 tokenId = _create(URI);
         
         require(commissionParams.token != address(0), "NFT: Token address can not be zero");
         require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
@@ -118,9 +89,8 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         _commissions[tokenId].reduceCommission = commissionParams.reduceCommission;
         _commissions[tokenId].createdTs = block.timestamp;
         _commissions[tokenId].lastTransferTs = block.timestamp;
-        
-
-        _tokenIds.increment();
+      
+        _createAfter();
     }
     
     /** 
@@ -348,39 +318,21 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
                 r = r.mul(
                         uint256(10000).sub(_commissions[tokenId].reduceCommission)
                     ).div(uint256(10000));
-                    
                 
-            
             }
         }
         
     }
-    
-    function _transfer(
-        address from, 
-        address to, 
-        uint256 tokenId
-    ) 
-        internal 
-        override 
-    {
-        _transferHook(from, to, tokenId);
-        
-        // then usual transfer as expected
-        super._transfer(from, to, tokenId);
-        
-    }
-    
     /**
      * method realized collect commission logic
+     * @param tokenId token ID
      */
     function _transferHook(
-        address from, 
-        address to, 
         uint256 tokenId
     ) 
         internal 
         virtual
+        override
     {
         address author = authorOf(tokenId);
         address owner = ownerOf(tokenId);
@@ -414,11 +366,18 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
             
             // 'transfer' commission to the author
             bool success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-            require(success, "NFT: Failed when 'transfer' funds to owner");
+            require(success, "NFT: Failed when 'transfer' funds to author");
         
         }
     }
-
+    
+    /**
+     * doing one interation to transfer commission from {addr} to this contract and returned {commissionAmountNeedToPay} that need to pay
+     * @param tokenId token ID
+     * @param addr payer's address 
+     * @param commissionToken token's address
+     * @param commissionAmountNeedToPay left commission that need to pay after transfer
+     */
     function _transferPay(
         uint256 tokenId,
         address addr,
@@ -448,7 +407,11 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         }
         
     }
-
+    
+    /**
+     * return true if {roleName} exist in Community contract for msg.sender
+     * @param roleName role name
+     */
     function _canRecord(
         string memory roleName
     ) 
@@ -471,6 +434,7 @@ contract NFT is NFTStruct, NFTAuthorship, ReentrancyGuardUpgradeable, OwnableUpg
         }
 
     }
+    
     
     function _validateReduceCommission(
         uint256 _reduceCommission

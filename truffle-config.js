@@ -129,7 +129,7 @@ module.exports = {
       }
     }
   },
-  plugins: ['truffle-plugin-verify'],
+  plugins: ['truffle-plugin-verify', 'truffle-plugin-solhint'],
   
   api_keys: {
     etherscan: process.env.etherscan_api_key,

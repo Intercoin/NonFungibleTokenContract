@@ -72,19 +72,18 @@ contract('NFT', (accounts) => {
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
-        
         let authorOld = await NFTMockInstance.authorOf(tokenID);
         
         await truffleAssert.reverts(
             NFTMockInstance.authorOf(noneExistTokenID),
-            'NFTAuthorship: author query for nonexistent token'
+            'NFTBase: Nonexistent token'
         );
         
         //try to change author
         let authorNew = accountTwo;
         await truffleAssert.reverts(
             NFTMockInstance.transferAuthorship(authorNew, tokenID, {from: accountFourth}),
-            'NFTAuthorship: caller is not author'
+            'NFTAuthorship: sender is not author of token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.transferAuthorship(authorOld, tokenID, {from: authorOld}),
@@ -321,11 +320,11 @@ contract('NFT', (accounts) => {
         
         await truffleAssert.reverts(
             NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: anotherAccount}),
-            'NFT: sender is not owner of token'
+            'NFTBase: Sender is not owner of token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.removeFromSale(tokenID, {from: anotherAccount}),
-            'NFT: sender is not owner of token'
+            'NFTBase: Sender is not owner of token'
         );
     });
     
@@ -342,7 +341,7 @@ contract('NFT', (accounts) => {
         
         await truffleAssert.reverts(
             NFTMockInstance.buyWithToken(noneExistTokenID, {from: ownerNew}),
-            'NFT: Nonexistent token'
+            'NFTBase: Nonexistent token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.buyWithToken(tokenID, {from: ownerNew}),
@@ -406,7 +405,7 @@ contract('NFT', (accounts) => {
         
         await truffleAssert.reverts(
             NFTMockInstance.buyWithToken(noneExistTokenID, {from: ownerNew}),
-            'NFT: Nonexistent token'
+            'NFTBase: Nonexistent token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.buyWithToken(tokenID, {from: ownerNew}),
@@ -539,11 +538,11 @@ contract('NFT', (accounts) => {
         
         await truffleAssert.reverts(
             NFTMockInstance.reduceCommission(noneExistTokenID, 10000, {from: accountFive}),
-            'NFT: Nonexistent token'
+            'NFTBase: Nonexistent token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.reduceCommission(tokenID, 10000, {from: accountOne}),
-            'NFT: sender is not author of token'
+            'NFTAuthorship: sender is not author of token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.reduceCommission(tokenID, 9999999999, {from: accountFive}),

@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
-//import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "./NFTBase.sol";
 
-abstract contract NFTAuthorship is /*ContextUpgradeable, */ERC721URIStorageUpgradeable, ERC721EnumerableUpgradeable {
+abstract contract NFTAuthorship is NFTBase {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     function __NFTAuthorship_init(
         string memory name,
@@ -15,28 +12,21 @@ abstract contract NFTAuthorship is /*ContextUpgradeable, */ERC721URIStorageUpgra
         internal 
         initializer 
     {
-        __ERC721URIStorage_init();
-        __ERC721_init(name, symbol);
+        __NFTBase_init(name, symbol);
     }
-
 
     // Mapping from token ID to author address
     mapping (uint256 => address) private _authors;
     mapping (address => EnumerableSetUpgradeable.UintSet) private _authoredTokens;
     
-    event TransferAuthorship(address indexed from, address indexed to, uint256 indexed tokenId);
     
-    /*
-    I thought of an additional method to make tomorrow:
-
-tokensByAuthor(address) returns array of tokens
-
-this will require additional mapping of _tokensByAuthor[author] = [tokenId, tokenId, ...]
-
-and also _tokensByAuthorTransferred[author][tokenId], when author does transferAuthorship, you set it to true, and also push to _tokensByAuthor[newAuthor]
-
-this way people can see all the tokens that an author has.
-*/
+    modifier onlyNFTAuthor(uint256 tokenId) {
+        require(_msgSender() == _getAuthor(tokenId), "NFTAuthorship: sender is not author of token");
+        _;
+    }
+    
+    event TransferAuthorship(address indexed from, address indexed to, uint256 indexed tokenId);
+   
     /**
      * can see all the tokens that an author has.
      * @param author author's address
@@ -56,64 +46,103 @@ this way people can see all the tokens that an author has.
         return ret;
     }
 
-
-    function tokenURI(uint256 tokenId) public view virtual override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
-        return super.tokenURI(tokenId);
-    }
-    
+    /**
+     * @param to address
+     * @param tokenId token ID
+     */
     function transferAuthorship(
         address to, 
         uint256 tokenId
     ) 
         public 
+        onlyIfTokenExists(tokenId)
+        onlyNFTAuthor(tokenId)
     {
-        address author = authorOf(tokenId);
-        require (msg.sender == author, "NFTAuthorship: caller is not author");
+        address author = _getAuthor(tokenId);
         require(to != author, "NFTAuthorship: transferAuthorship to current author");
-        
         
         _setAuthor(tokenId, author, to);
         
         emit TransferAuthorship(author, to, tokenId);
     }
     
-    function authorOf(uint256 tokenId) public view returns (address) {
+    /**
+     * @param tokenId token ID
+     */
+    function authorOf(
+        uint256 tokenId
+    )
+        public
+        onlyIfTokenExists(tokenId)
+        view
+        returns (address) 
+    {
         address author = _getAuthor(tokenId);
-        require(author != address(0), "NFTAuthorship: author query for nonexistent token");
         return author;
     }
     
-    function _mint(address to, uint256 tokenId) internal virtual override {
+    /**
+     * @param to address
+     * @param tokenId token ID
+     */
+    function _mint(
+        address to, 
+        uint256 tokenId
+    ) 
+        internal 
+        virtual 
+        override 
+    {
         super._mint(to, tokenId);
         
-        _setAuthor(tokenId, address(0), msg.sender);
-        emit TransferAuthorship(address(0), msg.sender, tokenId);
+        _setAuthor(tokenId, address(0), _msgSender());
+        emit TransferAuthorship(address(0), _msgSender(), tokenId);
         
     }
     
-    function _burn(uint256 tokenId) internal virtual override(ERC721URIStorageUpgradeable, ERC721Upgradeable) {
+    /**
+     * @param tokenId token ID
+     */
+    function _burn(
+        uint256 tokenId
+    ) 
+        internal 
+        virtual 
+        override 
+    {
         super._burn(tokenId);
         delete _authors[tokenId];
 
     }
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
+   
     /**
-     * @dev See {IERC165-supportsInterface}.
+     * @param tokenId token ID
+     * @param from old author's address(if address == address(0) - it's newly created NFT)
+     * @param to new old author's address(if address == address(0) - old owner renounced ownership)
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721EnumerableUpgradeable, ERC721Upgradeable) returns (bool) {
-        return interfaceId == type(IERC721EnumerableUpgradeable).interfaceId
-            || super.supportsInterface(interfaceId);
-    }
-
-    function _setAuthor(uint256 tokenId, address from, address to) private {
+    function _setAuthor(
+        uint256 tokenId, 
+        address from, 
+        address to
+    ) 
+        private 
+    {
         _authors[tokenId] = to;
         _authoredTokens[from].remove(tokenId); // old author
         _authoredTokens[to].add(tokenId); // new author
         
     }
-    function _getAuthor(uint256 tokenId) private view returns (address)  {
+    
+    /**
+     * @param tokenId token ID
+     */
+    function _getAuthor(
+        uint256 tokenId
+    ) 
+        private 
+        view 
+        returns (address)  
+    {
         return _authors[tokenId];
     }
     
