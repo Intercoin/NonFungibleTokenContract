@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./interfaces/INFT.sol";
 
 contract NFTFactory is OwnableUpgradeable {
     
@@ -13,13 +14,22 @@ contract NFTFactory is OwnableUpgradeable {
         contractInstance = _contractInstance;
     }
     
-    function produce() public returns(address) {
+    function produce(
+        string memory name,
+        string memory symbol,
+        INFT.CommunitySettings memory communitySettings
+    ) public returns(address) {
         
         address proxy = createClone(address(contractInstance));
 
+        INFT(proxy).initialize(name, symbol, communitySettings);
+        OwnableUpgradeable(proxy).transferOwnership(msg.sender);
+        
         emit Produced(msg.sender, proxy);
+        
         return proxy;
     }
+    
     
     function createClone(address target) internal returns (address result) {
         bytes20 targetBytes = bytes20(target);

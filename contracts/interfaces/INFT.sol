@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
-abstract contract NFTStruct {
-
+interface INFT {
     struct CommunitySettings {
         address addr;
         string roleMint;
@@ -36,5 +35,6 @@ abstract contract NFTStruct {
         bool isSale;
     }
     
-   
+    
+    function initialize(string memory, string memory, CommunitySettings memory) external;
 }

@@ -8,10 +8,12 @@ import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 
 import "./interfaces/ICommunity.sol";
+import "./interfaces/INFT.sol";
 
 import "./NFTAuthorship.sol";
 
-contract NFT is NFTAuthorship {
+
+contract NFT is INFT, NFTAuthorship {
     
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
@@ -51,13 +53,13 @@ contract NFT is NFTAuthorship {
     /**
      * @param name name of token ERC721 
      * @param symbol symbol of token ERC721 
-     * @param communitySettings_ community setting. See {NFTStruct-CommunitySettings}.
+     * @param communitySettings_ community setting. See {INFT-CommunitySettings}.
      */
     function initialize(
         string memory name,
         string memory symbol,
         CommunitySettings memory communitySettings_
-    ) public initializer {
+    ) public override initializer {
         __NFTAuthorship_init(name, symbol);
         communitySettings = communitySettings_;
     }
@@ -65,7 +67,7 @@ contract NFT is NFTAuthorship {
     /**
      * creation NFT token
      * @param URI Token URI
-     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {NFTStruct-CommissionParams}.
+     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
      */
     function create(
         string memory URI,
@@ -199,7 +201,7 @@ contract NFT is NFTAuthorship {
     }
     
     /**
-     * buying token. new owner need to pay for nft by tokens(See {NFTStruct-SalesData-erc20Address}). Also payment to author is expected
+     * buying token. new owner need to pay for nft by tokens(See {INFT-SalesData-erc20Address}). Also payment to author is expected
      * @param tokenId NFT tokenId
      */
     function buyWithToken(
@@ -237,7 +239,7 @@ contract NFT is NFTAuthorship {
     /**
      * anyone can offer to pay commission to any tokens transfer
      * @param tokenId NFT tokenId
-     * @param amount amount of token(See {NFTStruct-ComissionSettings-token}) 
+     * @param amount amount of token(See {INFT-ComissionSettings-token}) 
      */
     function offerToPayCommission(
         uint256 tokenId, 
