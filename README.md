@@ -71,10 +71,9 @@ Once installed will be use methods:
 	</tr>
 </tbody>
 </table>
+<sup>*</sup> anyone if while initialize <a href="#communitysettings">communitySettings_.[addr]</a> was set in zero. otherwise method can be called only who belong to community role 'roleMint' in community contract `addr`
 
 ## Methods
-<details>
-<summary>methods list</summary>
 
 #### initialize
 initialize contract after deploy or clone. need to be called before using<br>
@@ -87,7 +86,7 @@ symbol|string|symbol of NFT token
     
 #### create
 creating NFT <br>
-Emitted event `TokenCreated(address author, uint256 tokenId);`<br>
+Emitted event <a href="#tokencreated">TokenCreated</a><br>
 Params:<br>
 name  | type | description
 --|--|--
@@ -124,7 +123,7 @@ erc20address|address| ERC20 contract's address
 
 #### listForSale
 adding token to sale<br>
-Emitted event `TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken)`<br>
+Emitted event <a href="#tokenaddedtosale">TokenAddedToSale</a><br>
 Params:<br>
 name  | type | description
 --|--|--
@@ -134,7 +133,7 @@ consumeToken|address|token address. if address(0) then owner expect coins for sa
 
 #### removeFromSale
 removing token from sale list<br>
-Emitted event `TokenRemovedFromSale(uint256 tokenId)`<br>
+Emitted event <a href="#tokenremovedfromsale">TokenRemovedFromSale</a><br>
 Params:<br>
 name  | type | description
 --|--|--
@@ -173,12 +172,9 @@ Return Values:<br>
 name  | type | description
 --|--|--   
 ret|uint256[]|list of tokenIds that belongs to author
-</details> 
 
 
 ## Tuples
-<details>
-<summary>tuples list</summary>
 
 #### CommunitySettings
 name  | type | description
@@ -199,17 +195,13 @@ name  | type | description
 --|--|--
 token|address| address of erc20/er777 token. which would be sent to the author as a commission pay
 amount|uint256| amount of commission token.
-multiply|uint256| value that would be pow in interval passed since creation and multiplied to inital amount of commission
+multiply|uint256| value(mul by 1e4) that would be pow in interval passed since creation and multiplied to inital amount of commission
 accrue|uint256| additional value that would be pow in interval passed since last transfer
 intervalSeconds|uint256| interval period in seconds
 reduceCommission|uint256| reduced commission in percents from final calculated value
 
-</details> 
-
 ## Events
-<details>
-<summary>events list</summary>
-	
+
 #### TokenCreated
 name  | type | description
 --|--|--
@@ -234,8 +226,74 @@ consumeToken|address|erc20 token. if set address(0) then expected coins to pay f
 name  | type | description
 --|--|--
 tokenId|uint256|tokenID
-	
-event (uint256 tokenId, uint256 amount);
-event (uint256 tokenId);
-</details> 
+
+
+## Example to use
+NonFungibleTokenContract is a contract represented ERC721 standard with possibility to earn fee to author's NFT token and paying to owner while transfer. <br>
+NonFungibleTokenContract can be deploy with 2 ways:<br>
+1. directly into network and calling method <a href="">initialize</a> after that<br>
+2. calling method produce at NFTFactory with same parameters as in initialize.<br>
+in both cases sender will become an owner of NonFungibleTokenContract and can call <a href="#claimlosttoken">claimLostToken</a> in future to claim lost tokens mistekenly send to contract<br>
+After deploy and initialize everyone can create NFT token calling method <a href="#create">create</a><br>(if community contract was set in zero while initialize).<br>
+After that sender will become an owner and author for newly create NFT token. and as owner will be get fee(commission) for each transfer this NFT token<br>
+
+So scenario #1 <b>"How to transfer token from user1 to user2"</b><br>
+<b>a.</b> lets user1 create NFT token. with params `"http://google.com", [0xc778417E063141139Fce010982780140Aa0cD5Ab, 1000000000000000000,10000,0,25200,0]`<br>
+Here:<br>
+<table>
+<thead>
+	<tr>
+		<th>value</th>
+		<th>description</th>
+	</tr>
+</thead>
+<tbody>
+	<tr>
+		<td>http://google.com</td>
+		<td>URI</td>
+	</tr>
+	<tr>
+		<td>0xc778417E063141139Fce010982780140Aa0cD5Ab</td>
+		<td>address of WETH token</td>
+	</tr>
+	<tr>
+		<td>1000000000000000000</td>
+		<td>amount in 1WETH</td>
+	</tr>
+	<tr>
+		<td>10000</td>
+		<td>multiply value. here it equal to 'one' </td>
+	</tr>
+	<tr>
+		<td>0</td>
+		<td>accrue value</td>
+	</tr>
+	<tr>
+		<td>25200</td>
+		<td>7 hours in seconds that represent one interval</td>
+	</tr>
+	<tr>
+		<td>0</td>
+		<td>means that general commission value will not to be reduce</td>
+	</tr>
+</tbody>
+</table>
+
+<b>b.</b> now NFT owner(user1) should call <a href="#listforsale">listForSale<a/> and put own NFT token to sale.<br> 
+Otherwise any transfer will reverts with message `NFT: Token does not in sale`. <br>
+In params NFT owner(user1) can specify `tokenID`, `amount` and `consumeToken`'s address. <br>
+If `consumeToken` are zero than owner expects coins(ETH or BNB) for sale.<br>
+for example `213,1000000000000000000,"0x0000000000000000000000000000000000000000"` means that owner expects 1 ETH(or BNB) for TokenID number "213".<br>
+
+<b>c.</b> now need offer to pay commission for this tokenID "213". there are several ways:
+- anyone can offer to pay commission by: 
+    - calling method <a href="offertopaycommission">offerToPayCommission</a> specify tokenID and amount of tokens (describe in point a). in our cases it's WETH.
+    - and approve amount to NFTContract address
+- NFT owner(user1) may offer to pay a commission. in this case, the commission will be debited primarily from the owner, and if it is not enough - from those who previously offered in order list. <br>Ofcource amount need to be approved before.
+- finally NFT Author can reduce commission make transfer for free. he should calls method <a href="#reducecommission">reduceCommission</a> with params `<tokenID>, 0` .
+
+<b>d.</b> finally user2 can buy token by calling method `buy` or `buyWithTokens`. In our cases he should to make payable transaction `buy` with value 1ETH (see point b).
+If commissions for author and price for old owner are enough, user2 will become a new owner of this token. Token are automatically removed from sale.
+
+
 
