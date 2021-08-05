@@ -7,6 +7,7 @@ import "./interfaces/INFT.sol";
 contract NFTFactory is OwnableUpgradeable {
     
     address contractInstance;
+    mapping(address => address[]) list;
     event Produced(address caller, address addr);
   
     function init(address _contractInstance) public initializer  {
@@ -26,10 +27,20 @@ contract NFTFactory is OwnableUpgradeable {
         OwnableUpgradeable(proxy).transferOwnership(msg.sender);
         
         emit Produced(msg.sender, proxy);
+        list[msg.sender].push(proxy);
         
         return proxy;
     }
     
+    function producedList(
+        address sender
+    )
+        public 
+        view
+        returns(address[] memory)
+    {
+        return list[sender];
+    }
     
     function createClone(address target) internal returns (address result) {
         bytes20 targetBytes = bytes20(target);
@@ -41,5 +52,6 @@ contract NFTFactory is OwnableUpgradeable {
             result := create(0, clone, 0x37)
         }
     }
+    
     
 }
