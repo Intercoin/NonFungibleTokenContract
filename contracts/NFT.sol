@@ -27,7 +27,7 @@ contract NFT is INFT, NFTAuthorship {
     
     mapping (uint256 => SalesData) private _salesData;
     
-    event TokenAddedToSale(uint256 tokenId, uint256 amount);
+    event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
     event TokenRemovedFromSale(uint256 tokenId);
     
     modifier canRecord(string memory communityRole) {
@@ -145,7 +145,7 @@ contract NFT is INFT, NFTAuthorship {
         _salesData[tokenId].amount = amount;
         _salesData[tokenId].isSale = true;
         _salesData[tokenId].erc20Address = consumeToken;
-        emit TokenAddedToSale(tokenId, amount);
+        emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
     
     /**

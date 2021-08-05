@@ -15,7 +15,7 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
     
     CountersUpgradeable.Counter private _tokenIds;
     
-    event NewTokenAppear(address author, uint256 tokenId);
+    event TokenCreated(address author, uint256 tokenId);
     
     modifier onlyIfTokenExists(uint256 tokenId) {
         require(_exists(tokenId), "NFTBase: Nonexistent token");
@@ -60,7 +60,7 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
 
         tokenId = _tokenIds.current();
         
-        emit NewTokenAppear(_msgSender(), tokenId);
+        emit TokenCreated(_msgSender(), tokenId);
         
         // We cannot just use balanceOf or totalSupply to create the new tokenId because tokens
         // can be burned (destroyed), so we need a separate counter.
@@ -96,7 +96,6 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
         
     }
     
-    /* solhint-disable */
     function _transferHook(
         uint256 tokenId
     ) 
@@ -105,8 +104,6 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
     {
         revert("NFTBase: need to be override in child");
     }
-    
-    /* solhint-enable */
 
     function tokenURI(uint256 tokenId) public view virtual override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
         return super.tokenURI(tokenId);

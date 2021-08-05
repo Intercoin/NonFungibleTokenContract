@@ -73,6 +73,8 @@ Once installed will be use methods:
 </table>
 
 ## Methods
+<details>
+<summary>methods list</summary>
 
 #### initialize
 initialize contract after deploy or clone. need to be called before using<br>
@@ -81,7 +83,7 @@ name  | type | description
 --|--|--
 name|string| name of NFT token
 symbol|string|symbol of NFT token
-communitySettings_|tuple|
+<a href="#communitysettings">communitySettings_</a>|tuple|
     
 #### create
 creating NFT <br>
@@ -171,4 +173,69 @@ Return Values:<br>
 name  | type | description
 --|--|--   
 ret|uint256[]|list of tokenIds that belongs to author
+</details> 
+
+
+## Tuples
+<details>
+<summary>tuples list</summary>
+
+#### CommunitySettings
+name  | type | description
+--|--|--
+addr|address|address of Community Contract. can be zero. in this case create NFT Token can be available to everyone
+roleMint|string|role name from Community
+
+#### CommissionParams
+
+formula calculation a commission that can be payed to author
+```
+(   
+	initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
+) * (10000 - reduceCommission) / 10000
+```	
+	
+name  | type | description
+--|--|--
+token|address| address of erc20/er777 token. which would be sent to the author as a commission pay
+amount|uint256| amount of commission token.
+multiply|uint256| value that would be pow in interval passed since creation and multiplied to inital amount of commission
+accrue|uint256| additional value that would be pow in interval passed since last transfer
+intervalSeconds|uint256| interval period in seconds
+reduceCommission|uint256| reduced commission in percents from final calculated value
+
+</details> 
+
+## Events
+<details>
+<summary>events list</summary>
+	
+#### NewTokenCreated
+name  | type | description
+--|--|--
+author|address|author's address of newly created token
+tokenId|uint256|tokenID of newly created token
+
+#### TransferAuthorship
+name  | type | description
+--|--|--
+from|address|old author's address
+to|address|new author's address
+tokenId|uint256|tokenID of transferred token
+
+#### TokenAddedToSale
+name  | type | description
+--|--|--
+tokenId|uint256|tokenID
+amount|uint256|amount that need to be paid to owner when some1 buy token
+consumeToken|address|erc20 token. if set address(0) then expected coins to pay for NFT
+	
+#### TokenRemovedFromSale
+name  | type | description
+--|--|--
+tokenId|uint256|tokenID
+	
+event (uint256 tokenId, uint256 amount);
+event (uint256 tokenId);
+</details> 
 
