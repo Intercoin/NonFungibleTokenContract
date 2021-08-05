@@ -87,7 +87,7 @@ symbol|string|symbol of NFT token
     
 #### create
 creating NFT <br>
-Emitted event `NewTokenAppear(address author, uint256 tokenId);`<br>
+Emitted event `TokenCreated(address author, uint256 tokenId);`<br>
 Params:<br>
 name  | type | description
 --|--|--
@@ -124,7 +124,7 @@ erc20address|address| ERC20 contract's address
 
 #### listForSale
 adding token to sale<br>
-Emitted event `TokenAddedToSale(uint256 tokenId, uint256 amount)`<br>
+Emitted event `TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken)`<br>
 Params:<br>
 name  | type | description
 --|--|--
@@ -210,7 +210,7 @@ reduceCommission|uint256| reduced commission in percents from final calculated v
 <details>
 <summary>events list</summary>
 	
-#### NewTokenCreated
+#### TokenCreated
 name  | type | description
 --|--|--
 author|address|author's address of newly created token
