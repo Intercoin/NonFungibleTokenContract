@@ -49,6 +49,11 @@ Once installed will be use methods:
 		<td>NFTOwner</td>
 		<td>removing token from sale</td>
 	</tr>
+	<tr>
+		<td><a href="#saleinfo">saleInfo</a></td>
+		<td>anyone</td>
+		<td>viewing sale info (consume tokens address and amount)</td>
+	</tr>
     <tr>
 		<td><a href="#buy">buy</a></td>
 		<td>anyone</td>
@@ -134,6 +139,13 @@ consumeToken|address|token address. if address(0) then owner expect coins for sa
 #### removeFromSale
 removing token from sale list<br>
 Emitted event <a href="#tokenremovedfromsale">TokenRemovedFromSale</a><br>
+Params:<br>
+name  | type | description
+--|--|--
+tokenId|uint256|`tokenId`
+
+#### saleInfo
+viewing sale info<br>
 Params:<br>
 name  | type | description
 --|--|--
