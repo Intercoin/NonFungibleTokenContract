@@ -165,6 +165,24 @@ contract NFT is INFT, NFTAuthorship {
     }
     
     /**
+     * sale info
+     * @param tokenId NFT tokenId
+     * @return address consumeToken
+     * @return uint256 amount
+     */
+    function saleInfo(
+        uint256 tokenId
+    )   
+        public
+        view
+        onlyIfTokenExists(tokenId)
+        onlySale(tokenId)
+        returns(address, uint256)
+    {
+        return (_salesData[tokenId].erc20Address, _salesData[tokenId].amount);
+    }
+    
+    /**
      * buying token. new owner need to pay for nft by coins. Also payment to author is expected
      * @param tokenId NFT tokenId
      */
