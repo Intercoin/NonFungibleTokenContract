@@ -2,8 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "./NFTBase.sol";
+import "./interfaces/INFTAuthorship.sol";
 
-abstract contract NFTAuthorship is NFTBase {
+
+abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     function __NFTAuthorship_init(
         string memory name,
@@ -25,8 +27,6 @@ abstract contract NFTAuthorship is NFTBase {
         _;
     }
     
-    event TransferAuthorship(address indexed from, address indexed to, uint256 indexed tokenId);
-   
     /**
      * can see all the tokens that an author has.
      * @param author author's address
@@ -34,7 +34,8 @@ abstract contract NFTAuthorship is NFTBase {
     function tokensByAuthor(
         address author
     ) 
-        public 
+        public
+        override
         view 
         returns(uint256[] memory) 
     {
@@ -55,6 +56,7 @@ abstract contract NFTAuthorship is NFTBase {
         uint256 tokenId
     ) 
         public 
+        override
         onlyIfTokenExists(tokenId)
         onlyNFTAuthor(tokenId)
     {
@@ -73,6 +75,7 @@ abstract contract NFTAuthorship is NFTBase {
         uint256 tokenId
     )
         public
+        override
         onlyIfTokenExists(tokenId)
         view
         returns (address) 

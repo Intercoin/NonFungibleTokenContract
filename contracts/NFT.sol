@@ -23,7 +23,7 @@ contract NFT is INFT, NFTAuthorship {
     CommunitySettings communitySettings;
 
     // Mapping from token ID to commission
-    mapping (uint256 => CommissionSettings) private _commissions;
+    mapping (uint256 => CommissionSettings) internal _commissions;
     
     mapping (uint256 => SalesData) private _salesData;
     
@@ -94,6 +94,8 @@ contract NFT is INFT, NFTAuthorship {
       
         _createAfter();
     }
+    
+   
     
     /** 
      * returned commission that will be paid to token's author while transferring NFT
@@ -459,7 +461,7 @@ contract NFT is INFT, NFTAuthorship {
     function _validateReduceCommission(
         uint256 _reduceCommission
     ) 
-        private 
+        internal 
         pure
     {
         require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");

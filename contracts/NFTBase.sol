@@ -58,7 +58,7 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
         returns(uint256 tokenId)
     {
 
-        tokenId = _tokenIds.current();
+        tokenId = currentTokenIds();
         
         emit TokenCreated(_msgSender(), tokenId);
         
@@ -114,6 +114,10 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
     }
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         super._beforeTokenTransfer(from, to, tokenId);
+    }
+    
+    function currentTokenIds() public view returns(uint256) {
+        return _tokenIds.current();
     }
     
 }
