@@ -75,6 +75,10 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         virtual  
     {
 
+        require(commissionParams.token != address(0), "NFT: Token address can not be zero");
+        require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
+        _validateReduceCommission(commissionParams.reduceCommission);
+        
         _mint(msg.sender, URI, tokenAmount, commissionParams);  
         
     }
@@ -298,6 +302,71 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         seriesParts[newSeriesPartsId].commission.reduceCommission = reduceCommissionPercent;
     }
     
+     function _transfer(
+        address from, 
+        address to, 
+        uint256 tokenId
+    ) 
+        internal 
+        override 
+    {
+        (, uint256 newSeriesPartsId) = splitSeries(tokenId);
+        _transferHook(tokenId, newSeriesPartsId);
+        
+        // then usual transfer as expected
+        super._transfer(from, to, tokenId);
+        
+    }
+    
+    /**
+     * method realized collect commission logic
+     * @param tokenId token ID
+     */
+    function _transferHook(
+        uint256 tokenId,
+        uint256 seriesPartId
+    ) 
+        private
+    {
+        
+        address author = seriesParts[seriesPartId].author;
+        address owner = seriesParts[seriesPartId].owner;
+        
+        address commissionToken;
+        uint256 commissionAmount;
+        (commissionToken, commissionAmount) = _getCommission(tokenId);
+        
+        if (author == address(0) || commissionAmount == 0) {
+            
+        } else {
+            
+            uint256 commissionAmountLeft = commissionAmount;
+            if (seriesParts[seriesPartId].commission.offerAddresses.contains(owner)) {
+                commissionAmountLeft = _transferPay(tokenId, seriesPartId, owner, commissionToken, commissionAmountLeft);
+            }
+            
+            uint256 len = seriesParts[seriesPartId].commission.offerAddresses.length();
+            uint256 tmpI;
+            for (uint256 i = 0; i < len; i++) {
+                tmpI = commissionAmountLeft;
+                if (tmpI > 0) {
+                    commissionAmountLeft  = _transferPay(tokenId, seriesPartId, seriesParts[seriesPartId].commission.offerAddresses.at(i), commissionToken, tmpI);
+                }
+                if (commissionAmountLeft == 0) {
+                    break;
+                }
+            }
+            
+            require(commissionAmountLeft == 0, "NFT: author's commission should be paid");
+            
+            // 'transfer' commission to the author
+            bool success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
+            require(success, "NFT: Failed when 'transfer' funds to author");
+        
+        }
+    }
+    
+    
     function _validateReduceCommission(
         uint256 _reduceCommission
     ) 
@@ -305,6 +374,44 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         pure
     {
         require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
+    }
+    
+     /**
+     * doing one interation to transfer commission from {addr} to this contract and returned {commissionAmountNeedToPay} that need to pay
+     * @param tokenId token ID
+     * @param addr payer's address 
+     * @param commissionToken token's address
+     * @param commissionAmountNeedToPay left commission that need to pay after transfer
+     */
+    function _transferPay(
+        uint256 tokenId,
+        uint256 seriesPartId,
+        address addr,
+        address commissionToken,
+        uint256 commissionAmountNeedToPay
+    ) 
+        private
+        returns(uint256 commissionAmountLeft)
+    {
+        uint256 minAmount = (seriesParts[seriesPartId].commission.offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
+        if (minAmount > 0) {
+            if (minAmount > commissionAmountNeedToPay) {
+                minAmount = commissionAmountNeedToPay;
+                commissionAmountLeft = 0;
+            } else {
+                commissionAmountLeft = commissionAmountNeedToPay.sub(minAmount);
+            }
+            bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
+            require(success, "NFT: Failed when 'transferFrom' funds");
+            
+            seriesParts[seriesPartId].commission.offerPayAmount[addr] = seriesParts[seriesPartId].commission.offerPayAmount[addr].sub(minAmount);
+            if (seriesParts[seriesPartId].commission.offerPayAmount[addr] == 0) {
+                delete seriesParts[seriesPartId].commission.offerPayAmount[addr];
+                seriesParts[seriesPartId].commission.offerAddresses.remove(addr);
+            }
+            
+        }
+        
     }
     
     /**

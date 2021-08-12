@@ -51,6 +51,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     // Mapping from owner to operator approvals
     mapping (address => mapping (address => bool)) private _operatorApprovals;
     
+    event TokenCreated(address author, uint256 tokenId);
     
     CountersUpgradeable.Counter private _tokenIds;
     CountersUpgradeable.Counter private _seriesIds;
@@ -78,7 +79,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     
     
     modifier onlyIfTokenExists(uint256 tokenId) {
-        require(_exists(tokenId), "ERC721SeriesUpgradeable: Nonexistent token");
+        require(_exists(tokenId), "NFTSeriesBase: Nonexistent token");
         _;
     }
      modifier onlyNFTAuthor(uint256 tokenId) {
@@ -86,7 +87,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         _;
     }
      modifier onlyNFTOwner(uint256 tokenId) {
-        require(_msgSender() == ownerOf(tokenId), "NFTBase: Sender is not owner of token");
+        require(_msgSender() == ownerOf(tokenId), "NFTSeriesBase: Sender is not owner of token");
         _;
     }
     
@@ -541,7 +542,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             require(!_exists(i), "ERC721: token already minted");
 
             _beforeTokenTransfer(address(0), to, i);
-            
+            emit TokenCreated(_msgSender(), tokenId);
             emit Transfer(address(0), to, i);
             //_owners[i] = seriesId;
             
