@@ -1,5 +1,6 @@
 const BigNumber = require('bignumber.js');
 const truffleAssert = require('truffle-assertions');
+const helperCostEth = require("../helpers/transactionsCost");
 
 const NFTSeriesMock = artifacts.require("NFTSeriesMock");
 const CommunityMock = artifacts.require("CommunityMock");
@@ -24,8 +25,9 @@ contract('NFTSeries', (accounts) => {
     const oneToken05 = "500000000000000000";    
     const oneToken03 = "300000000000000000";    
 	
-	const amountTokensToCreate = 10;
+	const amountTokensToCreate = 50;
     var NFTSeriesMockInstance, CommunityMockInstance, ERC20MintableInstance;
+    helperCostEth.transactionsClear();
     
     let tmpTr;
     function getArgs(tr, eventname) {
@@ -61,12 +63,12 @@ contract('NFTSeries', (accounts) => {
         );
 
     });
-    
+ 
     it('should become author and owner after create ', async () => {
                                       //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
         tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: accountFive});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
 
         let author = await NFTSeriesMockInstance.authorOf(tokenID);
         let owner = await NFTSeriesMockInstance.ownerOf(tokenID);
@@ -79,7 +81,7 @@ contract('NFTSeries', (accounts) => {
     it('should transfer Authorship', async () => {
         tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: accountFive});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
 
         let authorOld = await NFTSeriesMockInstance.authorOf(tokenID);
 
@@ -114,9 +116,9 @@ contract('NFTSeries', (accounts) => {
     });
  
     it('should transfer Ownership', async () => {
-        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: accountFive});
+        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,8000], amountTokensToCreate, {from: accountFive});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         let ownerOld = await NFTSeriesMockInstance.ownerOf(tokenID);
         
@@ -166,9 +168,9 @@ contract('NFTSeries', (accounts) => {
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: author});
+        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], amountTokensToCreate, {from: author});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         // transfer to new owner#2(accountTwo)
 
@@ -208,9 +210,9 @@ contract('NFTSeries', (accounts) => {
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: author});
+        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], amountTokensToCreate, {from: author});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         // transfer to new owner#2(accountTwo)
 
@@ -243,16 +245,16 @@ contract('NFTSeries', (accounts) => {
         );
         
     });
-    
+
     it('reward to author:: (through 2 transfer, several accounts have paid commission(current owner prefer in consume) ) ', async () => {
         let author = accountFive;
         let owner1 = accountFive;
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: author});
+        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], amountTokensToCreate, {from: author});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         // transfer to new owner#2(accountTwo)
 
@@ -320,13 +322,13 @@ contract('NFTSeries', (accounts) => {
         );
         
     });
-    
+
     it('checking modifiers only for NFT Owners', async () => {
         let owner = accountFive;
         let anotherAccount = accountOne;
         tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: owner});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: anotherAccount}),
@@ -342,9 +344,9 @@ contract('NFTSeries', (accounts) => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: ownerOld});
+        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], amountTokensToCreate, {from: ownerOld});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString();  
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString();  
         
         
         
@@ -409,9 +411,9 @@ contract('NFTSeries', (accounts) => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: ownerOld});
+        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], amountTokensToCreate, {from: ownerOld});
         
-        var tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(noneExistTokenID, {from: ownerNew}),
@@ -483,8 +485,8 @@ contract('NFTSeries', (accounts) => {
     it('getCommission:  multiply predefined values (0 and 10000) ', async () => {
         
         let retTokenAddr,retCommission, tokenID;
-        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: accountFive});
-        tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], amountTokensToCreate, {from: accountFive});
+        tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         tmpTr = await NFTSeriesMockInstance.getCommission(tokenID);
         retTokenAddr = tmpTr[0]; retCommission = tmpTr[1]; 
@@ -501,14 +503,14 @@ contract('NFTSeries', (accounts) => {
         );
         
         tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,10000,0,7*3600,10000], amountTokensToCreate, {from: accountFive});
-        tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         tmpTr = await NFTSeriesMockInstance.getCommission(tokenID);
         retTokenAddr = tmpTr[0]; retCommission = tmpTr[1]; 
        
         assert.equal(
             retCommission.toString(), 
-            oneToken.toString(), 
+            (0).toString(), 
             "wrong commission: multiply=10000"
         );
         
@@ -518,7 +520,7 @@ contract('NFTSeries', (accounts) => {
         
         let ret, retCommission, tokenID, tokenID2;
         tmpTr = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,15000,0,7*3600,0], amountTokensToCreate, {from: accountFive});
-        tokenID = tokenID = getArgs(tmpTr, "TokenCreated")[1].toString(); 
+        tokenID = tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
         tmpTr = await NFTSeriesMockInstance.getCommission(tokenID);
         //retTokenAddr = tmpTr[0]; 

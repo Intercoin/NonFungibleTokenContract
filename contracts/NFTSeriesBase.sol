@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 //import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
-import "solidity-linked-list/contracts/StructuredLinkedList.sol";
+//import "solidity-linked-list/contracts/StructuredLinkedList.sol";
+import "./lib/BokkyPooBahsRedBlackTreeLibrary.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
@@ -28,7 +29,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using MathUpgradeable for uint256;
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
-    using StructuredLinkedList for StructuredLinkedList.List;
+    using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     
@@ -51,30 +52,33 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     // Mapping from owner to operator approvals
     mapping (address => mapping (address => bool)) private _operatorApprovals;
     
-    event TokenCreated(address author, uint256 tokenId);
+    //event TokenCreated(address author, uint256 tokenId);
+    event TokenSeriesCreated(address author, uint256 fromTokenId, uint256 toTokenId);
     
     CountersUpgradeable.Counter private _tokenIds;
     CountersUpgradeable.Counter private _seriesIds;
-    CountersUpgradeable.Counter private _seriesPartsIds;
     
-    //StructuredLinkedList.List internal seriesList;
     
-    mapping(uint256 => Series) internal series;
-    mapping(uint256 => SeriesPart) internal seriesParts;
-    struct Series {
+    mapping(uint256 => Serie) internal series;
+    mapping(uint256 => Range) ranges;
+    //mapping(uint256 => SeriesPart) internal seriesParts;
+    struct Serie {
         uint256 from;
         uint256 to;
         string uri;
-        StructuredLinkedList.List nested;
+        
+        BokkyPooBahsRedBlackTreeLibrary.Tree rangesTree;
+        
+        
     }
-    struct SeriesPart {
+    struct Range {
         uint256 from;
         uint256 to;
         address owner;
         address author;
         CommissionSettings commission;
         SalesData saleData;
-        // prev?
+        
     }
     
     
@@ -104,10 +108,54 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
 //     return (_getSeriesIds(p));
     
 // }
-// function test_existsS4(uint256 p) public view returns(SeriesPart memory) {return seriesParts[p];}
 
-
+ 
+            // j = series[i].rangesTree.first();
+            // (j,,,right,) = series[i].rangesTree.getNode(j);
+            // if (right == 0) {
+            //     if (ranges[j].author == author) {
+            //       len = 1+ranges[j].to - ranges[j].from;
+            //     }
+            // } else {
+            //     while (right != 0) {
+            //         if (ranges[j].author == author) {
+            //           len = 1+ranges[j].to - ranges[j].from;
+            //         }
+            //         j = series[i].rangesTree.next(j);
+            //         (j,,,right,) = series[i].rangesTree.getNode(j);        
+            //     }    
+            // }
+            
+function test_existsS4(uint256 p) public view returns(uint256, uint256) {return (ranges[p].from, ranges[p].to);}
+function test_first1S() public view returns(uint256) {return (series[1].rangesTree.first());}
+function test_next1S(uint256 p) public view returns(uint256) {return series[1].rangesTree.next(p);}
+function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent, uint _left, uint _right, bool _red){
+    (_returnKey, _parent, _left, _right, _red) = series[1].rangesTree.getNode(p);
+}
 /////////////////////////////////////////////////////////////////////////////////
+ function ttt( address author) public view returns(uint256) {
+      uint256 i;
+        uint256 j;
+        
+        uint256 len = 0;
+        uint256 next;
+        
+        for(i=1; i<_seriesIds.current(); i++) {
+            
+            next = series[i].rangesTree.first();
+            
+            while (next != 0) {
+                
+                if (ranges[next].author == author) {
+                  len +=  1+ranges[next].to - ranges[next].from;
+                }
+                next = series[i].rangesTree.next(next);
+                
+            }    
+            
+        }
+        return len;
+ }
     /**
      * can see all the tokens that an author has.
      * do not use onchain
@@ -124,56 +172,48 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     {
         uint256 i;
         uint256 j;
+        
         uint256 len = 0;
         uint256 next;
-          
-        for(i=0; i<_seriesIds.current(); i++) {
+        
+        for(i=1; i<_seriesIds.current(); i++) {
             
-                (,, next) = series[i].nested.getNode(0);
+            next = series[i].rangesTree.first();
+            
+            while (next != 0) {
                 
-                while (next != 0) {
-                    if (seriesParts[next].author == author) {
-                       len = 1+seriesParts[next].to - seriesParts[next].from;
-                    }
-                    (, next) = series[i].nested.getNextNode(next);       
+                if (ranges[next].author == author) {
+                  len += 1+ranges[next].to - ranges[next].from;
                 }
-
+                next = series[i].rangesTree.next(next);
+                
+            }    
             
         }
-        
+
         uint256[] memory ret = new uint256[](len);
         uint256 counter = 0;
-        for(i=0; i<_seriesIds.current(); i++) {
+        for(i=1; i<_seriesIds.current(); i++) {
             
-                (,, next) = series[i].nested.getNode(0);
-                
+            next = series[i].rangesTree.first();
+
                 while (next != 0) {
-                    if (seriesParts[next].author == author) {
-                        
-                        for(j=seriesParts[next].from; j<=seriesParts[next].to; j++) {
+                    
+                    if (ranges[next].author == author) {
+                        for(j = ranges[next].from; j <= ranges[next].to; j++) {
                             ret[counter] = j;
                             counter = counter+1;
-                            
                         }
                     }
-                    (, next) = series[i].nested.getNextNode(next);       
-                }
-
+                    next = series[i].rangesTree.next(next);
+                }    
+            
+            
             
         }
-        
         
         return ret;
         
-        // TODO 0: need to length of memory array
-        // here 2 ways: or specify in params how much to return or make for two attempt: first calculate all tokens, and second create a fixed size memory array and push tokenIds to it
-        
-        // uint256 len = _authoredTokens[author].length();
-        // uint256[] memory ret = new uint256[](len);
-        // for (uint256 i = 0; i < len; i++) {
-        //     ret[i] = _authoredTokens[author].at(i);
-        // }
-        // return ret;
     }
 
     /**
@@ -215,10 +255,8 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     }
     
     function _getAuthor(uint256 tokenId) private view returns(address) {
-        uint256 seriesPartId;
-        (, seriesPartId) = _getSeriesIds(tokenId);
-        address author = seriesParts[seriesPartId].author;
-        return author;
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        return ranges[rangeId].author;
     }
     
   
@@ -235,42 +273,40 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         view
         returns(address t, uint256 r)
     {
-        
-        
-        uint256 seriesPartId;
-        (, seriesPartId) = _getSeriesIds(tokenId);
-        
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+
         //initialCommission
-        r = seriesParts[seriesPartId].commission.amount;
-        t = seriesParts[seriesPartId].commission.token;
+        r = ranges[rangeId].commission.amount;
+        t = ranges[rangeId].commission.token;
         if (r == 0) {
             
         } else {
-            if (seriesParts[seriesPartId].commission.multiply == 10000) {
+            if (ranges[rangeId].commission.multiply == 10000) {
                 // left initial commission
             } else {
                 
-                uint256 intervalsSinceCreate = (block.timestamp.sub(seriesParts[seriesPartId].commission.createdTs)).div(seriesParts[seriesPartId].commission.intervalSeconds);
-                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(seriesParts[seriesPartId].commission.lastTransferTs)).div(seriesParts[seriesPartId].commission.intervalSeconds);
+                uint256 intervalsSinceCreate = (block.timestamp.sub(ranges[rangeId].commission.createdTs)).div(ranges[rangeId].commission.intervalSeconds);
+                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(ranges[rangeId].commission.lastTransferTs)).div(ranges[rangeId].commission.intervalSeconds);
                 
                 // (   
                 //     initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
                 // ) * (10000 - reduceCommission) / 10000
                 
                 for(uint256 i = 0; i < intervalsSinceCreate; i++) {
-                    r = r.mul(seriesParts[seriesPartId].commission.multiply).div(10000);
+                    r = r.mul(ranges[rangeId].commission.multiply).div(10000);
                     
                 }
                 
                 r = r.add(
-                        intervalsSinceLastTransfer.mul(seriesParts[seriesPartId].commission.accrue)
+                        intervalsSinceLastTransfer.mul(ranges[rangeId].commission.accrue)
                     );
                 
-                r = r.mul(
-                        uint256(10000).sub(seriesParts[seriesPartId].commission.reduceCommission)
+            }
+            
+            r = r.mul(
+                        uint256(10000).sub(ranges[rangeId].commission.reduceCommission)
                     ).div(uint256(10000));
                 
-            }
         }
         
     }
@@ -291,9 +327,9 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         _name = name_;
         _symbol = symbol_;
         
-        // _tokenIds.increment();
+        _tokenIds.increment();
         _seriesIds.increment();
-        _seriesPartsIds.increment();
+       // _seriesPartsIds.increment();
     }
 
     /**
@@ -328,9 +364,9 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     }
     
     function _ownerOf(uint256 tokenId) internal view returns (address owner) {
-        uint256 seriesPartId;
-        (, seriesPartId) = _getSeriesIds(tokenId);
-        owner = seriesParts[seriesPartId].owner;
+        
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        owner = ranges[rangeId].owner;
         
     }
 
@@ -526,7 +562,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
      *
      * Emits a {Transfer} event.
      */
-    function _mint(address to, string memory URI, uint256 tokenAmount, CommissionParams memory commissionParams) internal virtual returns(uint256 seriesId, uint256 seriesPartId) {
+    function _mint(address to, string memory URI, uint256 tokenAmount, CommissionParams memory commissionParams) internal virtual returns(uint256 serieId, uint256 rangeId) {
        
         require(to != address(0), "ERC721: mint to the zero address");
         uint256 tokenId = _tokenIds.current();
@@ -534,21 +570,26 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         // 0 +10    0.1.2.3.4.5.6.7.8.9
         
         
-        seriesId = _seriesIds.current();
+        serieId = _seriesIds.current();
         
         
-        for (uint256 i = tokenId; i <= lastTokenId; i++) {
+        // for (uint256 i = tokenId; i <= lastTokenId; i++) {
              
-            require(!_exists(i), "ERC721: token already minted");
+        //     // //require(!_exists(i), "ERC721: token already minted");
 
-            _beforeTokenTransfer(address(0), to, i);
-            emit TokenCreated(_msgSender(), tokenId);
-            emit Transfer(address(0), to, i);
-            //_owners[i] = seriesId;
+        //     // _beforeTokenTransfer(address(0), to, i);
+        //     // //emit TokenCreated(_msgSender(), tokenId);
+        //     // //emit Transfer(address(0), to, i);
+        //     // //_owners[i] = seriesId;
             
             
-            _tokenIds.increment();
-        }
+        //     // // _tokenIds.increment();
+        // }
+        // _beforeTokenTransfer(address(0), to, i);
+        // //emit Transfer(address(0), to, i);
+        emit TokenSeriesCreated(_msgSender(), tokenId, lastTokenId); 
+        
+        _tokenIds._value += tokenAmount ;
         
         _balances[to] += tokenAmount;
         
@@ -556,83 +597,79 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         //     from: tokenId,
         //     to: lastTokenId
         // });
-        series[seriesId].from = tokenId;
-        series[seriesId].to = lastTokenId;
-        series[seriesId].uri = URI;
+        series[serieId].from = tokenId;
+        series[serieId].to = lastTokenId;
+        series[serieId].uri = URI;
         
-        seriesPartId = _seriesPartsIds.current();
+        rangeId = tokenId;
         
-        seriesParts[seriesPartId].from = tokenId;
-        seriesParts[seriesPartId].to = lastTokenId;
-        seriesParts[seriesPartId].owner = to;
-        seriesParts[seriesPartId].author = to;
+        ranges[rangeId].from = tokenId;
+        ranges[rangeId].to = lastTokenId;
+        ranges[rangeId].owner = to;
+        ranges[rangeId].author = to;
         
-        //seriesParts[seriesPartId].commission = commissionParams;
-        seriesParts[seriesPartId].commission.token = commissionParams.token;
-        seriesParts[seriesPartId].commission.amount = commissionParams.amount;
-        seriesParts[seriesPartId].commission.multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
-        seriesParts[seriesPartId].commission.accrue = commissionParams.accrue;
-        seriesParts[seriesPartId].commission.intervalSeconds = commissionParams.intervalSeconds;
-        seriesParts[seriesPartId].commission.reduceCommission = commissionParams.reduceCommission;
-        seriesParts[seriesPartId].commission.createdTs = block.timestamp;
-        seriesParts[seriesPartId].commission.lastTransferTs = block.timestamp;
+        
+        ranges[rangeId].commission.token = commissionParams.token;
+        ranges[rangeId].commission.amount = commissionParams.amount;
+        ranges[rangeId].commission.multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
+        ranges[rangeId].commission.accrue = commissionParams.accrue;
+        ranges[rangeId].commission.intervalSeconds = commissionParams.intervalSeconds;
+        ranges[rangeId].commission.reduceCommission = commissionParams.reduceCommission;
+        ranges[rangeId].commission.createdTs = block.timestamp;
+        ranges[rangeId].commission.lastTransferTs = block.timestamp;
         //-----------------
         
-        series[seriesId].nested.pushBack(seriesPartId);
+        
+        series[serieId].rangesTree.insert(rangeId);
         
         _seriesIds.increment();
-        _seriesPartsIds.increment();
         
-        return(seriesId, seriesPartId);
+        
+        return(serieId, rangeId);
     }
     
-    function _getSeriesIds(uint256 tokenId) public view returns(uint256 infoId, uint256 seriesPartId) {
-        //_seriesInfoIds
-        for(uint256 i=0; i<_seriesIds.current(); i++) {
+    function _getSeriesIds(uint256 tokenId) public view returns(uint256 serieId, uint256 rangeId) {
+        
+        for(uint256 i=1; i<_seriesIds.current(); i++) {
             
             if (tokenId >= series[i].from && tokenId <= series[i].to) {
-                uint256 next;
-
-                (,, next) = series[i].nested.getNode(0);
                 
-                while (next != 0) {
-                    // TODO 0: can be modify code and skip unnecessary iteration
-                    // means we useing linked list so we can skip and breal cycle if tokenId out of range[from;to] from left. means tokenId<from && tokenId<to
-                    
-                    // TODO 0: addiiotnally we can improve logic.
-                    // we can decide from which side start to find. i.e. tokenId = 480 and range [1;500] then we start to find from the end of linkedList
-                    if (tokenId >= seriesParts[next].from && tokenId <= seriesParts[next].to) {
-                        return (i,next);
+                uint256 j = series[i].rangesTree.root;
+                while (j != 0) {
+                    if (tokenId >= ranges[j].from && tokenId <= ranges[j].to) {
+                        return (i,j);
                     }
-                    (, next) = series[i].nested.getNextNode(next);       
+                    if (tokenId < ranges[j].from && tokenId < ranges[j].to) {
+                        j = series[i].rangesTree.prev(j);
+                    } else if (tokenId > ranges[j].from && tokenId > ranges[j].to) {
+                        j = series[i].rangesTree.next(j);
+                    }
                 }
-
+                
             }
+            
+           
         }
         return (0,0);
     }
     
     
     function _changeOwner(address newOwner, uint256 tokenId) internal {
-        uint256 seriesId;
-        uint256 newSeriesPartsId;
-        (seriesId, newSeriesPartsId) = splitSeries(tokenId);
+        (uint256 serieId, uint256 newRangeId) = splitSeries(tokenId);
 
         if (newOwner == address(0)) {
-            delete seriesParts[newSeriesPartsId];
-            series[seriesId].nested.remove(newSeriesPartsId);
+            delete ranges[newRangeId];
+            series[serieId].rangesTree.remove(newRangeId);
         } else {
-            seriesParts[newSeriesPartsId].owner = newOwner;
+            ranges[newRangeId].owner = newOwner;
         }
             
     }
     
     function _changeAuthor(address newAuthor, uint256 tokenId) internal {
-        uint256 seriesId;
-        uint256 newSeriesPartsId;
-        (seriesId, newSeriesPartsId) = splitSeries(tokenId);
+        (, uint256 rangeId) = splitSeries(tokenId);
 
-        seriesParts[newSeriesPartsId].author = newAuthor;
+        ranges[rangeId].author = newAuthor;
         
     }
     
@@ -640,96 +677,89 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
      * method will find serie by tokenId, split it and make another series with single range [tokenId; tokenId] with newOwner
      * 
      */
-    function splitSeries(uint256 tokenId) internal returns(uint256 infoId, uint256 newSeriesPartsId) {
-        infoId = 0;
-        newSeriesPartsId = 0;
+    function splitSeries(uint256 tokenId) public returns(uint256 infoId, uint256 newRangeId) {
         
-        uint256 seriesPartId;
-        (infoId, seriesPartId) = _getSeriesIds(tokenId);
-        if (infoId != 0 && seriesPartId != 0) {
+        newRangeId = 0;
+        
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        if (serieId != 0 && rangeId != 0) {
             
-            if (seriesParts[seriesPartId].from == tokenId && seriesParts[seriesPartId].to == tokenId) {
+            if (ranges[rangeId].from == tokenId && ranges[rangeId].to == tokenId) {
                 // no need split it's last part
-                newSeriesPartsId = seriesPartId;
+                newRangeId = rangeId;
                 
             } else {
-                // create part of series
-            
-                newSeriesPartsId = _seriesPartsIds.current();
-                
-                //-------------------------------
-                // seriesParts[newSeriesPartsId] = seriesParts[seriesPartId];
-                // seriesParts[newSeriesPartsId].from = tokenId;
-                // seriesParts[newSeriesPartsId].to = tokenId;
-                //-------------------------------
-                
-                seriesParts[newSeriesPartsId].from = tokenId;
-                seriesParts[newSeriesPartsId].to = tokenId;
-                seriesParts[newSeriesPartsId].owner = seriesParts[seriesPartId].owner;
-                seriesParts[newSeriesPartsId].author =seriesParts[seriesPartId]. author;
-                //---
-                seriesParts[newSeriesPartsId].commission.token = seriesParts[seriesPartId].commission.token;
-                seriesParts[newSeriesPartsId].commission.amount = seriesParts[seriesPartId].commission.amount;
-                seriesParts[newSeriesPartsId].commission.multiply = seriesParts[seriesPartId].commission.multiply;
-                seriesParts[newSeriesPartsId].commission.accrue = seriesParts[seriesPartId].commission.accrue;
-                seriesParts[newSeriesPartsId].commission.intervalSeconds = seriesParts[seriesPartId].commission.intervalSeconds;
-                seriesParts[newSeriesPartsId].commission.reduceCommission = seriesParts[seriesPartId].commission.reduceCommission;
-                seriesParts[newSeriesPartsId].commission.createdTs = seriesParts[seriesPartId].commission.createdTs;
-                seriesParts[newSeriesPartsId].commission.lastTransferTs = seriesParts[seriesPartId].commission.lastTransferTs;
-                //-------------------------------
-    
-                //series[infoId].nested.insertAfter(seriesPartId, newSeriesPartsId);
-                _seriesPartsIds.increment();
-            
-            
-                if (seriesParts[seriesPartId].from == tokenId) {
-                    //first in range. remove from left 
-                    seriesParts[seriesPartId].from += 1;
-                    
-                    series[infoId].nested.insertBefore(seriesPartId, newSeriesPartsId);
-                    
-                } else if (seriesParts[seriesPartId].to == tokenId) {
-                    //last in range. remove from right 
-                    seriesParts[seriesPartId].to -= 1;
-                    series[infoId].nested.insertAfter(seriesPartId, newSeriesPartsId);
-                } else {
-                    
-                    // split on two pieces
-                    // initial serie left the same id but reduce from right side
-                    // creating new part right side that left and link in list
-                    
-                    seriesParts[seriesPartId].to = tokenId-1;
-                    // -----
-                    
-                    uint256 tmpSeriesPartsId = _seriesPartsIds.current();
-                    
-                    //-------------------------------
-                    //seriesParts[tmpSeriesPartsId] = seriesParts[seriesPartId];
-                    //-------------------------------
-                    seriesParts[tmpSeriesPartsId].from = tokenId;
-                    seriesParts[tmpSeriesPartsId].to = tokenId;
-                    seriesParts[tmpSeriesPartsId].owner = seriesParts[seriesPartId].owner;
-                    seriesParts[tmpSeriesPartsId].author =seriesParts[seriesPartId]. author;
+                uint256 tmpRangeId; 
+                uint256 tmpRangeId2;
+                // create ranges
+                if (ranges[rangeId].from == tokenId) {
+                    newRangeId = rangeId;
+                    // when split (id=4)[4:8] by 4.  i.e. it would be (id=4)[4:4] (id=5)[5:8]
+                    ranges[newRangeId].from = tokenId;
+                    ranges[newRangeId].to = tokenId;
+                    //----
+                    tmpRangeId = rangeId+1;
+                    ranges[tmpRangeId].from = tokenId+1;
+                    ranges[tmpRangeId].to = ranges[rangeId].to;
+                    ranges[tmpRangeId].owner = ranges[rangeId].owner;
+                    ranges[tmpRangeId].author = ranges[rangeId].author;
                     //---
-                    seriesParts[tmpSeriesPartsId].commission.token = seriesParts[seriesPartId].commission.token;
-                    seriesParts[tmpSeriesPartsId].commission.amount = seriesParts[seriesPartId].commission.amount;
-                    seriesParts[tmpSeriesPartsId].commission.multiply = seriesParts[seriesPartId].commission.multiply;
-                    seriesParts[tmpSeriesPartsId].commission.accrue = seriesParts[seriesPartId].commission.accrue;
-                    seriesParts[tmpSeriesPartsId].commission.intervalSeconds = seriesParts[seriesPartId].commission.intervalSeconds;
-                    seriesParts[tmpSeriesPartsId].commission.reduceCommission = seriesParts[seriesPartId].commission.reduceCommission;
-                    seriesParts[tmpSeriesPartsId].commission.createdTs = seriesParts[seriesPartId].commission.createdTs;
-                seriesParts[newSeriesPartsId].commission.lastTransferTs = seriesParts[seriesPartId].commission.lastTransferTs;
-                //-------------------------------
+                    ranges[tmpRangeId].commission.token             = ranges[rangeId].commission.token;
+                    ranges[tmpRangeId].commission.amount            = ranges[rangeId].commission.amount;
+                    ranges[tmpRangeId].commission.multiply          = ranges[rangeId].commission.multiply;
+                    ranges[tmpRangeId].commission.accrue            = ranges[rangeId].commission.accrue;
+                    ranges[tmpRangeId].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
+                    ranges[tmpRangeId].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
+                    ranges[tmpRangeId].commission.createdTs         = ranges[rangeId].commission.createdTs;
+                    ranges[tmpRangeId].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
                     
-                    seriesParts[seriesPartId].to = tokenId-1;
-                    seriesParts[tmpSeriesPartsId].from = tokenId+1;
+                    series[serieId].rangesTree.insert(tmpRangeId);
+                } else {
+                    //  when split (id==N)[4:8].  where 4<N<=8
                     
-                    series[infoId].nested.insertAfter(seriesPartId, tmpSeriesPartsId);
+                    newRangeId = tokenId;
                     
-                    _seriesPartsIds.increment();
-                
-                    series[infoId].nested.insertAfter(seriesPartId, newSeriesPartsId);
+                    ranges[newRangeId].from = tokenId;
+                    ranges[newRangeId].to = tokenId;
+                    ranges[newRangeId].owner = ranges[rangeId].owner;
+                    ranges[newRangeId].author = ranges[rangeId].author;
+                    //---
+                    ranges[newRangeId].commission.token             = ranges[rangeId].commission.token;
+                    ranges[newRangeId].commission.amount            = ranges[rangeId].commission.amount;
+                    ranges[newRangeId].commission.multiply          = ranges[rangeId].commission.multiply;
+                    ranges[newRangeId].commission.accrue            = ranges[rangeId].commission.accrue;
+                    ranges[newRangeId].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
+                    ranges[newRangeId].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
+                    ranges[newRangeId].commission.createdTs         = ranges[rangeId].commission.createdTs;
+                    ranges[newRangeId].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                    
+                    series[serieId].rangesTree.insert(newRangeId);
+                    
+                    // if N!=8 then create right part
+                    if (tokenId != ranges[rangeId].to) {
+                        tmpRangeId2 = tokenId+1;
+                        ranges[tmpRangeId2].from = tokenId+1;
+                        ranges[tmpRangeId2].to = ranges[rangeId].to;
+                        ranges[tmpRangeId2].owner = ranges[rangeId].owner;
+                        ranges[tmpRangeId2].author = ranges[rangeId].author;
+                        //---
+                        ranges[tmpRangeId2].commission.token             = ranges[rangeId].commission.token;
+                        ranges[tmpRangeId2].commission.amount            = ranges[rangeId].commission.amount;
+                        ranges[tmpRangeId2].commission.multiply          = ranges[rangeId].commission.multiply;
+                        ranges[tmpRangeId2].commission.accrue            = ranges[rangeId].commission.accrue;
+                        ranges[tmpRangeId2].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
+                        ranges[tmpRangeId2].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
+                        ranges[tmpRangeId2].commission.createdTs         = ranges[rangeId].commission.createdTs;
+                        ranges[tmpRangeId2].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                        
+                        series[serieId].rangesTree.insert(tmpRangeId2);
+                    }
+                    
+                    // finally reduce initial range and make it like "left part"
+                    ranges[rangeId].to = tokenId-1;
                 }
+                
+                
             
             }
             
@@ -737,7 +767,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
            
         }
         
-        return (infoId, newSeriesPartsId);
+        return (serieId, newRangeId);
     }
     
     
