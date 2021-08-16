@@ -47,7 +47,7 @@ contract('NFTSeries Bench', (accounts) => {
     });
     // beforeEach(async () => {
     // });
-    
+  /*  
     it('test gas cost while create ', async () => {
         
         let accounts = [accountFourth, accountFive];
@@ -59,11 +59,11 @@ contract('NFTSeries Bench', (accounts) => {
                 trTmp = await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], counts[i], {from: accounts[j]});
                 helperCostEth.transactionPush(trTmp, 'account #'+j+': create '+counts[i]+' tokens; ');
                 avgGasUsed += trTmp.receipt.gasUsed;
-                
             }
         }
-        avgGasUsed = avgGasUsed/(counts.length+accounts.length);
         
+
+        avgGasUsed = avgGasUsed/(counts.length*accounts.length);
         
         assert.equal(
             avgGasUsedExpectHigh>avgGasUsed, 
@@ -77,7 +77,7 @@ contract('NFTSeries Bench', (accounts) => {
         // helperCostEth.transactionPush(trTmp, 'accountFive: create '+100+' tokens; ');
         
     });
-    
+*/
     it('test gas cost while transfer ', async () => {
         
         await NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,1,1,7*3600,10000], 100, {from: accountFourth});
@@ -106,7 +106,7 @@ contract('NFTSeries Bench', (accounts) => {
         
         
     });
-    
+
     it('summary transactions cost', async () => {
         
         console.table(await helperCostEth.getTransactionsCostEth(90, false));

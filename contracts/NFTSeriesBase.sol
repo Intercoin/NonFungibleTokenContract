@@ -695,8 +695,7 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
                 if (ranges[rangeId].from == tokenId) {
                     newRangeId = rangeId;
                     // when split (id=4)[4:8] by 4.  i.e. it would be (id=4)[4:4] (id=5)[5:8]
-                    ranges[newRangeId].from = tokenId;
-                    ranges[newRangeId].to = tokenId;
+                    
                     //----
                     tmpRangeId = rangeId+1;
                     ranges[tmpRangeId].from = tokenId+1;
@@ -712,6 +711,9 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
                     ranges[tmpRangeId].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
                     ranges[tmpRangeId].commission.createdTs         = ranges[rangeId].commission.createdTs;
                     ranges[tmpRangeId].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                    //----
+                    ranges[newRangeId].from = tokenId;
+                    ranges[newRangeId].to = tokenId;
                     
                     series[serieId].rangesTree.insert(tmpRangeId);
                 } else {
