@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-//import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-
-//import "solidity-linked-list/contracts/StructuredLinkedList.sol";
 import "./lib/BokkyPooBahsRedBlackTreeLibrary.sol";
 import "./lib/StringUtils.sol";
 
@@ -13,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
-//import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
+
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
@@ -34,6 +31,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     using StringUtils for *;
+    
     // Token name
     string private _name;
 
@@ -42,7 +40,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
 
     // Mapping from token ID to series ID
     //mapping (uint256 => uint256) private _owners;
-
 
     // Mapping owner address to token count
     mapping (address => uint256) private _balances;
@@ -59,19 +56,16 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     CountersUpgradeable.Counter private _tokenIds;
     CountersUpgradeable.Counter private _seriesIds;
     
-    
     mapping(uint256 => Serie) internal series;
     mapping(uint256 => Range) ranges;
-    //mapping(uint256 => SeriesPart) internal seriesParts;
+    
     struct Serie {
         uint256 from;
         uint256 to;
         string uri;
-        
         BokkyPooBahsRedBlackTreeLibrary.Tree rangesTree;
-        
-        
     }
+    
     struct Range {
         uint256 from;
         uint256 to;
@@ -81,7 +75,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         SalesData saleData;
         
     }
-    
     
     modifier onlyIfTokenExists(uint256 tokenId) {
         require(_exists(tokenId), "NFTSeriesBase: Nonexistent token");
@@ -95,68 +88,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         require(_msgSender() == ownerOf(tokenId), "NFTSeriesBase: Sender is not owner of token");
         _;
     }
-    
-// function test_tokensids() public view returns(uint256) {return _tokenIds.current();}
-// function test_seriesids() public view returns(uint256) {return _seriesIds.current();}
-// function test_seriesPartids() public view returns(uint256) {return _seriesPartsIds.current();}
-// // function test_owners(uint256 p) public view returns(uint256) {return _owners[p];}
-// function test_exists(uint256 p) public view returns(bool) {return _exists(p);}
-// // function test_existsS(uint256 p) public view returns(address) {return series[_owners[p]].owner;}
-// // function test_existsS2(uint256 p) public view returns(Series memory) {return series[_owners[p]];}
 
-// function test_existsS3(uint256 p) public view returns(uint256, uint256) {
-    
-//     return (_getSeriesIds(p));
-    
-// }
-
- 
-            // j = series[i].rangesTree.first();
-            // (j,,,right,) = series[i].rangesTree.getNode(j);
-            // if (right == 0) {
-            //     if (ranges[j].author == author) {
-            //       len = 1+ranges[j].to - ranges[j].from;
-            //     }
-            // } else {
-            //     while (right != 0) {
-            //         if (ranges[j].author == author) {
-            //           len = 1+ranges[j].to - ranges[j].from;
-            //         }
-            //         j = series[i].rangesTree.next(j);
-            //         (j,,,right,) = series[i].rangesTree.getNode(j);        
-            //     }    
-            // }
-            
-function test_existsS4(uint256 p) public view returns(uint256, uint256) {return (ranges[p].from, ranges[p].to);}
-function test_first1S() public view returns(uint256) {return (series[1].rangesTree.first());}
-function test_next1S(uint256 p) public view returns(uint256) {return series[1].rangesTree.next(p);}
-function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent, uint _left, uint _right, bool _red){
-    (_returnKey, _parent, _left, _right, _red) = series[1].rangesTree.getNode(p);
-}
-/////////////////////////////////////////////////////////////////////////////////
- function ttt( address author) public view returns(uint256) {
-      uint256 i;
-        uint256 j;
-        
-        uint256 len = 0;
-        uint256 next;
-        
-        for(i=1; i<_seriesIds.current(); i++) {
-            
-            next = series[i].rangesTree.first();
-            
-            while (next != 0) {
-                
-                if (ranges[next].author == author) {
-                  len +=  1+ranges[next].to - ranges[next].from;
-                }
-                next = series[i].rangesTree.next(next);
-                
-            }    
-            
-        }
-        return len;
- }
     /**
      * can see all the tokens that an author has.
      * do not use onchain
@@ -235,7 +167,6 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
         require(to != author, "NFTAuthorship: transferAuthorship to current author");
         
         _changeAuthor(to, tokenId);
-        // _setAuthor(tokenId, author, to);
         
         emit TransferAuthorship(author, to, tokenId);
     }
@@ -260,79 +191,6 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
         return ranges[rangeId].author;
     }
     
-  
-////////////////////////////////////////////////////////////
-/**
-     * commission amount that need to be paid while NFT token transferring
-     * @param tokenId NFT tokenId
-     */
-    function _getCommission(
-        uint256 tokenId
-    ) 
-        internal 
-        virtual
-        view
-        returns(address t, uint256 r)
-    {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
-
-        //initialCommission
-        r = ranges[rangeId].commission.amount;
-        t = ranges[rangeId].commission.token;
-        if (r == 0) {
-            
-        } else {
-            if (ranges[rangeId].commission.multiply == 10000) {
-                // left initial commission
-            } else {
-                
-                uint256 intervalsSinceCreate = (block.timestamp.sub(ranges[rangeId].commission.createdTs)).div(ranges[rangeId].commission.intervalSeconds);
-                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(ranges[rangeId].commission.lastTransferTs)).div(ranges[rangeId].commission.intervalSeconds);
-                
-                // (   
-                //     initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
-                // ) * (10000 - reduceCommission) / 10000
-                
-                for(uint256 i = 0; i < intervalsSinceCreate; i++) {
-                    r = r.mul(ranges[rangeId].commission.multiply).div(10000);
-                    
-                }
-                
-                r = r.add(
-                        intervalsSinceLastTransfer.mul(ranges[rangeId].commission.accrue)
-                    );
-                
-            }
-            
-            r = r.mul(
-                        uint256(10000).sub(ranges[rangeId].commission.reduceCommission)
-                    ).div(uint256(10000));
-                
-        }
-        
-    }
-//////////////////////////////////////////////////
-
-
-
-    /**
-     * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
-     */
-    function __ERC721Series_init(string memory name_, string memory symbol_) internal initializer {
-        __Context_init_unchained();
-        __ERC165_init_unchained();
-        __ERC721Series_init_unchained(name_, symbol_);
-    }
-
-    function __ERC721Series_init_unchained(string memory name_, string memory symbol_) internal initializer {
-        _name = name_;
-        _symbol = symbol_;
-        
-        _tokenIds.increment();
-        _seriesIds.increment();
-       // _seriesPartsIds.increment();
-    }
-
     /**
      * @dev See {IERC165-supportsInterface}.
      */
@@ -359,18 +217,9 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
         address owner = _ownerOf(tokenId);
         require(owner != address(0), "ERC721: owner query for nonexistent token");
         
-        
-        
         return owner;
     }
     
-    function _ownerOf(uint256 tokenId) internal view returns (address owner) {
-        
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
-        owner = ranges[rangeId].owner;
-        
-    }
-
     /**
      * @dev See {IERC721Metadata-name}.
      */
@@ -416,16 +265,7 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
 
         return "";
     }
-
-
-    /**
-     * @dev Base URI for computing {tokenURI}. Empty by default, can be overriden
-     * in child contracts.
-     */
-    function _baseURI() internal view virtual returns (string memory) {
-        return "";
-    }
-
+    
     /**
      * @dev See {IERC721-approve}.
      */
@@ -491,6 +331,91 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
         _safeTransfer(from, to, tokenId, _data);
     }
 
+
+    /**
+     * commission amount that need to be paid while NFT token transferring
+     * @param tokenId NFT tokenId
+     */
+    function _getCommission(
+        uint256 tokenId
+    ) 
+        internal 
+        virtual
+        view
+        returns(address t, uint256 r)
+    {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+
+        //initialCommission
+        r = ranges[rangeId].commission.amount;
+        t = ranges[rangeId].commission.token;
+        if (r == 0) {
+            
+        } else {
+            if (ranges[rangeId].commission.multiply == 10000) {
+                // left initial commission
+            } else {
+                
+                uint256 intervalsSinceCreate = (block.timestamp.sub(ranges[rangeId].commission.createdTs)).div(ranges[rangeId].commission.intervalSeconds);
+                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(ranges[rangeId].commission.lastTransferTs)).div(ranges[rangeId].commission.intervalSeconds);
+                
+                // (   
+                //     initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
+                // ) * (10000 - reduceCommission) / 10000
+                
+                for(uint256 i = 0; i < intervalsSinceCreate; i++) {
+                    r = r.mul(ranges[rangeId].commission.multiply).div(10000);
+                    
+                }
+                
+                r = r.add(
+                        intervalsSinceLastTransfer.mul(ranges[rangeId].commission.accrue)
+                    );
+                
+            }
+            
+            r = r.mul(
+                        uint256(10000).sub(ranges[rangeId].commission.reduceCommission)
+                    ).div(uint256(10000));
+                
+        }
+        
+    }
+
+    /**
+     * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
+     */
+    function __ERC721Series_init(string memory name_, string memory symbol_) internal initializer {
+        __Context_init_unchained();
+        __ERC165_init_unchained();
+        __ERC721Series_init_unchained(name_, symbol_);
+    }
+
+    function __ERC721Series_init_unchained(string memory name_, string memory symbol_) internal initializer {
+        _name = name_;
+        _symbol = symbol_;
+        
+        _tokenIds.increment();
+        _seriesIds.increment();
+       // _seriesPartsIds.increment();
+    }
+
+    function _ownerOf(uint256 tokenId) internal view returns (address owner) {
+        
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        owner = ranges[rangeId].owner;
+        
+    }
+
+    /**
+     * @dev Base URI for computing {tokenURI}. Empty by default, can be overriden
+     * in child contracts.
+     */
+    function _baseURI() internal view virtual returns (string memory) {
+        return "";
+    }
+
+    
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
      * are aware of the ERC721 protocol to prevent tokens from being forever locked.
@@ -561,7 +486,7 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
     //     _mint(to, URI, tokenAmount);
     //     require(_checkOnERC721Received(address(0), to, tokenId, _data), "ERC721: transfer to non ERC721Receiver implementer");
     // }
-// TODO 0: here
+
     /**
      * @dev Mints `tokenId` and transfers it to `to`.
      *
@@ -579,36 +504,15 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
         require(to != address(0), "ERC721: mint to the zero address");
         uint256 tokenId = _tokenIds.current();
         uint256 lastTokenId = tokenId+tokenAmount-1;
-        // 0 +10    0.1.2.3.4.5.6.7.8.9
-        
         
         serieId = _seriesIds.current();
         
-        
-        // for (uint256 i = tokenId; i <= lastTokenId; i++) {
-             
-        //     // //require(!_exists(i), "ERC721: token already minted");
-
-        //     // _beforeTokenTransfer(address(0), to, i);
-        //     // //emit TokenCreated(_msgSender(), tokenId);
-        //     // //emit Transfer(address(0), to, i);
-        //     // //_owners[i] = seriesId;
-            
-            
-        //     // // _tokenIds.increment();
-        // }
-        // _beforeTokenTransfer(address(0), to, i);
-        // //emit Transfer(address(0), to, i);
         emit TokenSeriesCreated(_msgSender(), tokenId, lastTokenId); 
         
         _tokenIds._value += tokenAmount ;
         
         _balances[to] += tokenAmount;
         
-        // series[seriesId] = SeriesInfo({
-        //     from: tokenId,
-        //     to: lastTokenId
-        // });
         series[serieId].from = tokenId;
         series[serieId].to = lastTokenId;
         series[serieId].uri = URI;
@@ -620,7 +524,6 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
         ranges[rangeId].owner = to;
         ranges[rangeId].author = to;
         
-        
         ranges[rangeId].commission.token = commissionParams.token;
         ranges[rangeId].commission.amount = commissionParams.amount;
         ranges[rangeId].commission.multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
@@ -631,16 +534,13 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
         ranges[rangeId].commission.lastTransferTs = block.timestamp;
         //-----------------
         
-        
         series[serieId].rangesTree.insert(rangeId);
-        
         _seriesIds.increment();
-        
         
         return(serieId, rangeId);
     }
     
-    function _getSeriesIds(uint256 tokenId) public view returns(uint256 serieId, uint256 rangeId) {
+    function _getSeriesIds(uint256 tokenId) internal view returns(uint256 serieId, uint256 rangeId) {
         
         for(uint256 i=1; i<_seriesIds.current(); i++) {
             
@@ -689,7 +589,7 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
      * method will find serie by tokenId, split it and make another series with single range [tokenId; tokenId] with newOwner
      * 
      */
-    function splitSeries(uint256 tokenId) public returns(uint256 infoId, uint256 newRangeId) {
+    function splitSeries(uint256 tokenId) internal returns(uint256 infoId, uint256 newRangeId) {
         
         newRangeId = 0;
         

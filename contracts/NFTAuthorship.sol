@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "./NFTBase.sol";
 import "./interfaces/INFTAuthorship.sol";
 
-
 abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     function __NFTAuthorship_init(

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-
-
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 //import "./interfaces/INFT.sol";
@@ -53,9 +51,11 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         string memory name,
         string memory symbol,
         CommunitySettings memory communitySettings_
-    ) public override initializer {
-    //    __NFTAuthorship_init(name, symbol);
-        
+    ) 
+        public 
+        override 
+        initializer 
+    {
         communitySettings = communitySettings_;
         __Ownable_init();
         __ReentrancyGuard_init();
