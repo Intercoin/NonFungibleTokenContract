@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "./lib/BokkyPooBahsRedBlackTreeLibrary.sol";
-import "./lib/StringUtils.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
@@ -30,7 +29,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
-    using StringUtils for *;
     
     // Token name
     string private _name;
@@ -58,6 +56,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     
     mapping(uint256 => Serie) internal series;
     mapping(uint256 => Range) ranges;
+    
     
     struct Serie {
         uint256 from;
@@ -267,10 +266,10 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             // ?&t=726&s=4&i=4&c=10
             return string(abi.encodePacked(
             _tokenURI,
-            's=', serieId.uintToString(), '&',  //serieId
-            'i=', index.uintToString(), '&',  //indexId
-            't=', tokenId.uintToString(), '&',  //tokenId
-            'c=', count.uintToString()          //count
+            's=', serieId.toString(), '&',  //serieId
+            'i=', index.toString(), '&',    //indexId
+            't=', tokenId.toString(), '&',  //tokenId
+            'c=', count.toString()          //count
             ));
         }
 
