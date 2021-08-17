@@ -34,6 +34,11 @@ Once installed will be use methods:
 		<td>NFTAuthor</td>
 		<td>reducing Commission for NFT token</td>
 	</tr>
+	<tr>
+		<td><a href="#transferauthorship">transferAuthorship</a></td>
+		<td>NFTAuthor</td>
+		<td>transfer authorship for NFT token</td>
+	</tr>
     <tr>
 		<td><a href="#claimlosttoken">claimLostToken</a></td>
 		<td>owner</td>
