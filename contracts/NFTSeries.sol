@@ -124,7 +124,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         address consumeToken
     )
         public
-        onlyIfTokenExists(tokenId)
         onlyNFTOwner(tokenId)
     {
 
@@ -288,7 +287,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 reduceCommissionPercent
     ) 
         public
-        onlyIfTokenExists(tokenId)
         onlyNFTAuthor(tokenId)
     {
         (, uint256 newRangeId) = splitSeries(tokenId);

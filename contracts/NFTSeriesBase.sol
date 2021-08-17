@@ -80,15 +80,23 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         require(_exists(tokenId), "NFTSeriesBase: Nonexistent token");
         _;
     }
-     modifier onlyNFTAuthor(uint256 tokenId) {
-        require(_msgSender() == _getAuthor(tokenId), "NFTAuthorship: sender is not author of token");
-        _;
-    }
-     modifier onlyNFTOwner(uint256 tokenId) {
-        require(_msgSender() == ownerOf(tokenId), "NFTSeriesBase: Sender is not owner of token");
+
+    modifier onlyNFTAuthor(uint256 tokenId) {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        //onlyIfTokenExists(tokenId)
+        require(ranges[rangeId].owner != address(0), "NFTSeriesBase: Nonexistent token");
+        //onlyNFTAuthor(tokenId)
+        require(ranges[rangeId].author == _msgSender(), "NFTAuthorship: sender is not author of token");
         _;
     }
 
+    modifier onlyNFTOwner(uint256 tokenId) {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        require(ranges[rangeId].owner != address(0), "NFTSeriesBase: Nonexistent token");
+        require(ranges[rangeId].owner == _msgSender(), "NFTSeriesBase: Sender is not owner of token");
+        _;
+    }
+    
     /**
      * can see all the tokens that an author has.
      * do not use onchain
@@ -159,7 +167,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     ) 
         public 
         override
-        onlyIfTokenExists(tokenId)
         onlyNFTAuthor(tokenId)
     {
         
@@ -254,12 +261,16 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         
         
         if (bytes(_tokenURI).length > 0) {
-            uint256 total = (series[serieId].to).sub((series[serieId].from)).add(1);
+            uint256 count = (series[serieId].to).sub((series[serieId].from)).add(1);
+            uint256 index = (tokenId).sub(series[serieId].from).add(1);
+            
+            // ?&t=726&s=4&i=4&c=10
             return string(abi.encodePacked(
             _tokenURI,
-            '&', 'serieId=', serieId.uintToString(), 
-            '&', 'tokenId=', tokenId.uintToString(), 
-            '&', 'total=', total.uintToString() 
+            's=', serieId.uintToString(), '&',  //serieId
+            'i=', index.uintToString(), '&',  //indexId
+            't=', tokenId.uintToString(), '&',  //tokenId
+            'c=', count.uintToString()          //count
             ));
         }
 
