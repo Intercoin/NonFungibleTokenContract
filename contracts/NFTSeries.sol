@@ -61,9 +61,8 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         __ReentrancyGuard_init();
         __ERC721Series_init(name, symbol);
     }
-   
     
-     function create(
+    function create(
         string memory URI,
         CommissionParams memory commissionParams,
         uint256 tokenAmount

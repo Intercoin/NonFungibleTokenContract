@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 
 //import "solidity-linked-list/contracts/StructuredLinkedList.sol";
 import "./lib/BokkyPooBahsRedBlackTreeLibrary.sol";
+import "./lib/StringUtils.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
@@ -32,7 +33,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
-    
+    using StringUtils for *;
     // Token name
     string private _name;
 
@@ -387,19 +388,30 @@ function test_Node(uint256 p) public view returns (uint _returnKey, uint _parent
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
 
-        uint256 seriesId;
-        (seriesId,) = _getSeriesIds(tokenId);
         
-        string memory base = _baseURI();
-        string memory _tokenURI = series[seriesId].uri;
+        (uint256 serieId,/* uint256 rangeId*/) = _getSeriesIds(tokenId);
+        
+        // string memory base = _baseURI();
+        string memory _tokenURI = series[serieId].uri;
         
         // If there is no base URI, return the token URI.
-        if (bytes(base).length == 0) {
-            return _tokenURI;
-        }
+        // if (bytes(base).length == 0) {
+        //     return _tokenURI;
+        // }
         // If both are set, concatenate the baseURI and tokenURI (via abi.encodePacked).
+        // if (bytes(_tokenURI).length > 0) {
+        //     return string(abi.encodePacked(base, _tokenURI));
+        // }
+        
+        
         if (bytes(_tokenURI).length > 0) {
-            return string(abi.encodePacked(base, _tokenURI));
+            uint256 total = (series[serieId].to).sub((series[serieId].from)).add(1);
+            return string(abi.encodePacked(
+            _tokenURI,
+            '&', 'serieId=', serieId.uintToString(), 
+            '&', 'tokenId=', tokenId.uintToString(), 
+            '&', 'total=', total.uintToString() 
+            ));
         }
 
         return "";
