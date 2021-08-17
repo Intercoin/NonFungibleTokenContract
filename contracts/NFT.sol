@@ -23,7 +23,7 @@ contract NFT is INFT, NFTAuthorship {
     CommunitySettings communitySettings;
 
     // Mapping from token ID to commission
-    mapping (uint256 => CommissionSettings) internal _commissions;
+    mapping (uint256 => CommissionSettings) private _commissions;
     
     mapping (uint256 => SalesData) private _salesData;
     
@@ -337,11 +337,13 @@ contract NFT is INFT, NFTAuthorship {
                         intervalsSinceLastTransfer.mul(_commissions[tokenId].accrue)
                     );
                 
-                r = r.mul(
-                        uint256(10000).sub(_commissions[tokenId].reduceCommission)
-                    ).div(uint256(10000));
                 
             }
+            
+            r = r.mul(
+                    uint256(10000).sub(_commissions[tokenId].reduceCommission)
+                ).div(uint256(10000));
+                
         }
         
     }
@@ -430,6 +432,16 @@ contract NFT is INFT, NFTAuthorship {
         
     }
     
+    function _validateReduceCommission(
+        uint256 _reduceCommission
+    ) 
+        internal 
+        pure
+    {
+        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
+    }
+       
+       
     /**
      * return true if {roleName} exist in Community contract for msg.sender
      * @param roleName role name
@@ -457,15 +469,6 @@ contract NFT is INFT, NFTAuthorship {
 
     }
     
-    
-    function _validateReduceCommission(
-        uint256 _reduceCommission
-    ) 
-        internal 
-        pure
-    {
-        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
-    }
-        
+     
    
 }
