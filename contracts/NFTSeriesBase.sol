@@ -172,7 +172,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     {
         (, uint256 rangeId) = _getSeriesIds(tokenId);
         
-        require((addresses.length > 0 && (proportions.length == addresses.length)), "addresses and proportions lenth shold be equal length anbd more than 0");
+        require((proportions.length == addresses.length), "NFTSeriesBase: addresses and proportions length should be equal length");
         
         uint256 i;
         
@@ -186,9 +186,9 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         
         uint256 tmpProportions = 0;
         for (i = 0; i < addresses.length; i++) {
-            require (addresses[i] != ranges[rangeId].author, "author can not be in addresses array");
-            require (ranges[rangeId].coauthors.addresses.contains(addresses[i]) == false, "addresses array have a duplicate values");
-            require (proportions[i] != 0, "proportions array can not contain a zero value");
+            require (addresses[i] != ranges[rangeId].author, "NFTSeriesBase: author can not be in addresses array");
+            require (ranges[rangeId].coauthors.addresses.contains(addresses[i]) == false, "NFTSeriesBase: addresses array have a duplicate values");
+            require (proportions[i] != 0, "NFTSeriesBase: proportions array can not contain a zero value");
             
             ranges[rangeId].coauthors.addresses.add(addresses[i]);
             ranges[rangeId].coauthors.proportions[addresses[i]] = proportions[i];
@@ -196,7 +196,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             tmpProportions = tmpProportions.add(proportions[i]);
         }
         
-        require (tmpProportions <= 10000, "total proportions can not be more than 100%");
+        require (tmpProportions <= 100, "NFTSeriesBase: total proportions can not be more than 100%");
     }
 
     /**
