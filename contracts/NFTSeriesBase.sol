@@ -28,7 +28,8 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using StringsUpgradeable for uint256;
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
+    // using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
     // Token name
     string private _name;
@@ -64,12 +65,17 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         string uri;
         BokkyPooBahsRedBlackTreeLibrary.Tree rangesTree;
     }
-    
+    struct CoAuthorsSettings {
+        mapping(address => uint256) proportions;
+        EnumerableSetUpgradeable.AddressSet addresses;
+    }
     struct Range {
         uint256 from;
         uint256 to;
         address owner;
         address author;
+
+        CoAuthorsSettings coauthors;
         CommissionSettings commission;
         SalesData saleData;
         
@@ -154,6 +160,43 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         
         return ret;
         
+    }
+
+    function addAuthors(
+        uint256 tokenId,
+        address[] memory addresses,
+        uint256[] memory proportions
+    ) 
+        public
+        onlyNFTAuthor(tokenId)
+    {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        
+        require((addresses.length > 0 && (proportions.length == addresses.length)), "addresses and proportions lenth shold be equal length anbd more than 0");
+        
+        uint256 i;
+        
+        // make a trick. 
+        // remove all items and push new. checking on duplicate values in progress
+        for (i =0; i<ranges[rangeId].coauthors.addresses._inner._values.length; i++) {
+            delete ranges[rangeId].coauthors.addresses._inner._indexes[ranges[rangeId].coauthors.addresses._inner._values[i]];
+        }
+        delete ranges[rangeId].coauthors.addresses._inner._values;
+        
+        
+        uint256 tmpProportions = 0;
+        for (i = 0; i < addresses.length; i++) {
+            require (addresses[i] != ranges[rangeId].author, "author can not be in addresses array");
+            require (ranges[rangeId].coauthors.addresses.contains(addresses[i]) == false, "addresses array have a duplicate values");
+            require (proportions[i] != 0, "proportions array can not contain a zero value");
+            
+            ranges[rangeId].coauthors.addresses.add(addresses[i]);
+            ranges[rangeId].coauthors.proportions[addresses[i]] = proportions[i];
+            
+            tmpProportions = tmpProportions.add(proportions[i]);
+        }
+        
+        require (tmpProportions <= 10000, "total proportions can not be more than 100%");
     }
 
     /**
@@ -593,6 +636,9 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
 
         ranges[rangeId].author = newAuthor;
         
+        if (ranges[rangeId].coauthors.addresses.contains(newAuthor) == true) {
+            ranges[rangeId].coauthors.addresses.remove(newAuthor);
+        }
     }
     
     /**

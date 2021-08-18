@@ -12,6 +12,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
 contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     using SafeMathUpgradeable for uint256;
@@ -334,17 +335,20 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         } else {
     //emit TM(commissionAmount);        
             
+            
             uint256 commissionAmountLeft = commissionAmount;
             if (ranges[rangeId].commission.offerAddresses.contains(owner)) {
                 commissionAmountLeft = _transferPay(tokenId, rangeId, owner, commissionToken, commissionAmountLeft);
             }
             
+            
             uint256 len = ranges[rangeId].commission.offerAddresses.length();
-            uint256 tmpI;
-            for (uint256 i = 0; i < len; i++) {
-                tmpI = commissionAmountLeft;
-                if (tmpI > 0) {
-                    commissionAmountLeft = _transferPay(tokenId, rangeId, ranges[rangeId].commission.offerAddresses.at(i), commissionToken, tmpI);
+            uint256 tmpCommission;
+            uint256 i;
+            for (i = 0; i < len; i++) {
+                tmpCommission = commissionAmountLeft;
+                if (tmpCommission > 0) {
+                    commissionAmountLeft = _transferPay(tokenId, rangeId, ranges[rangeId].commission.offerAddresses.at(i), commissionToken, tmpCommission);
                 }
                 if (commissionAmountLeft == 0) {
                     break;
@@ -354,8 +358,30 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
             require(commissionAmountLeft == 0, "NFT: author's commission should be paid");
             
             // 'transfer' commission to the author
-            bool success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-            require(success, "NFT: Failed when 'transfer' funds to author");
+            // if Author have co-authors then pays goes proportionally to co-authors and left send to main author
+            // ------------------------
+            bool success;
+            len = ranges[rangeId].coauthors.addresses.length();
+            if (len == 0) {
+                success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
+                require(success, "NFT: Failed when 'transfer' funds to author");
+            } else {
+                commissionAmountLeft = commissionAmount;
+                address tmpAddr;
+                for (i = 0; i < len; i++) {
+                    tmpAddr = ranges[rangeId].coauthors.addresses.at(i);
+                    tmpCommission = commissionAmount.mul(ranges[rangeId].coauthors.proportions[tmpAddr]).div(100);
+                    
+                    success = IERC20Upgradeable(commissionToken).transfer(tmpAddr, tmpCommission);
+                    require(success, "NFT: Failed when 'transfer' funds to co-author");
+                    commissionAmountLeft = commissionAmountLeft.sub(tmpCommission);
+                }
+                
+                if (commissionAmountLeft > 0) {
+                    success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmountLeft);
+                    require(success, "NFT: Failed when 'transfer' funds to author");
+                }
+            }
        /* */
         }
     }

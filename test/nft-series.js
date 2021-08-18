@@ -40,7 +40,7 @@ contract('NFTSeries', (accounts) => {
     }
     before(async () => {
         CommunityMockInstance = await CommunityMock.new({ from: accountFive });
-        NFTSeriesMockInstance = await NFTSeriesMock.new({ from: accountFive });
+        NFTSeriesMockInstance = await NFTSeriesMock.new({ from: accountFive , gas: 9500000});
         await NFTSeriesMockInstance.initialize('NFT-title', 'NFT-symbol', [CommunityMockInstance.address, "members"], { from: accountFive });
         
         ERC20MintableInstance = await ERC20Mintable.new("erc20test","erc20test",{ from: accountFive });

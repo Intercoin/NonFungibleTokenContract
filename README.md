@@ -34,6 +34,16 @@ Once installed will be use methods:
 		<td>NFTAuthor</td>
 		<td>reducing Commission for NFT token</td>
 	</tr>
+	<tr>
+		<td><a href="#transferauthorship">transferAuthorship</a></td>
+		<td>NFTAuthor</td>
+		<td>transfer authorship for NFT token</td>
+	</tr>
+	<tr>
+		<td><a href="#addauthors">addAuthors</a></td>
+		<td>NFTAuthor</td>
+		<td>adding co-authors for NFT token</td>
+	</tr>
     <tr>
 		<td><a href="#claimlosttoken">claimLostToken</a></td>
 		<td>owner</td>
@@ -118,7 +128,25 @@ name  | type | description
 --|--|--   
 token|address|address of ERC20 token
 amount|uint256|amount commission
-    
+
+#### transferAuthorship
+Transfer authorship for NFT token<br>
+Params:<br>
+name  | type | description
+--|--|--
+from|address|old author's address
+to|address|new author's address
+tokenId|uint256|tokenID of transferred token
+
+#### addAuthors
+Adding co-authors for NFT token<br>
+Params:<br>
+name  | type | description
+--|--|--
+tokenId|uint256|tokenID of transferred token
+addresses|address[]|co-authors's addresses
+proportions|uint256[]|proportions (mul by 100)
+
 #### claimLostToken
 claiming lost token which can be mistakenly sent to contract<br>
 Params:<br>
