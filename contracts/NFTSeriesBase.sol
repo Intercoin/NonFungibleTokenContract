@@ -28,7 +28,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using StringsUpgradeable for uint256;
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
-    // using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
     // Token name
@@ -56,7 +55,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     CountersUpgradeable.Counter private _seriesIds;
     
     mapping(uint256 => Serie) internal series;
-    mapping(uint256 => Range) ranges;
+    mapping(uint256 => Range) internal ranges;
     
     
     struct Serie {
@@ -119,7 +118,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         uint256 i;
         uint256 j;
         
-        uint256 len = 0;
+        uint256 len;
         uint256 next;
         
         for(i=1; i<_seriesIds.current(); i++) {
@@ -138,7 +137,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         }
 
         uint256[] memory ret = new uint256[](len);
-        uint256 counter = 0;
+        uint256 counter;
         for(i=1; i<_seriesIds.current(); i++) {
             
             next = series[i].rangesTree.first();
@@ -184,7 +183,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         delete ranges[rangeId].coauthors.addresses._inner._values;
         
         
-        uint256 tmpProportions = 0;
+        uint256 tmpProportions;
         for (i = 0; i < addresses.length; i++) {
             require (addresses[i] != ranges[rangeId].author, "NFTSeriesBase: author can not be in addresses array");
             require (ranges[rangeId].coauthors.addresses.contains(addresses[i]) == false, "NFTSeriesBase: addresses array have a duplicate values");
@@ -647,7 +646,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
      */
     function splitSeries(uint256 tokenId) internal returns(uint256 infoId, uint256 newRangeId) {
         
-        newRangeId = 0;
+        //newRangeId = 0;
         
         (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
         if (serieId != 0 && rangeId != 0) {

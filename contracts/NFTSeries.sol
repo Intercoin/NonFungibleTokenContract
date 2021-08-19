@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 //import "./interfaces/INFT.sol";
 import "./interfaces/ICommunity.sol";
 
@@ -14,12 +12,12 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
+
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
-    CommunitySettings communitySettings;
+    CommunitySettings internal communitySettings;
 
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
     event TokenRemovedFromSale(uint256 tokenId);
@@ -311,7 +309,16 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         super._transfer(from, to, tokenId);
         
     }
-  //  event TM(uint256 amount);
+    
+    function _validateReduceCommission(
+        uint256 _reduceCommission
+    ) 
+        internal 
+        pure
+    {
+        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
+    }
+    
     /**
      * method realized collect commission logic
      * @param tokenId token ID
@@ -387,15 +394,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
     
     
-    function _validateReduceCommission(
-        uint256 _reduceCommission
-    ) 
-        internal 
-        pure
-    {
-        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
-    }
-    
      /**
      * doing one interation to transfer commission from {addr} to this contract and returned {commissionAmountNeedToPay} that need to pay
      * @param tokenId token ID
@@ -445,7 +443,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         view 
         returns(bool s)
     {
-        s = false;
+        //s = false;
         if (communitySettings.addr == address(0)) {
             // if the community address set to zero then we must skip the check
             s = true;
