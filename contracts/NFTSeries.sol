@@ -13,6 +13,11 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 
 contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
+function getC(uint256 tokenId) public view returns(uint256) {
+    (, uint256 rangeId) = _getSeriesIds(tokenId);
+    return ranges[rangeId].commission.offerPayAmount[_msgSender()];
+}
+
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -54,8 +59,8 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         virtual  
     {
 
-        require(commissionParams.token != address(0), "NFT: Token address can not be zero");
-        require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
+        require(commissionParams.token != address(0), "Token address can not be zero");
+        require(commissionParams.intervalSeconds > 0, "IntervalSeconds can not be zero");
         _validateReduceCommission(commissionParams.reduceCommission);
         
         _mint(msg.sender, URI, tokenAmount, commissionParams);  
@@ -90,10 +95,12 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         onlyOwner 
     {
         uint256 funds = IERC20Upgradeable(erc20address).balanceOf(address(this));
-        require(funds > 0, "NFT: There are no lost tokens");
+        require(funds > 0, "There are no lost tokens");
             
         bool success = IERC20Upgradeable(erc20address).transfer(_msgSender(), funds);
-        require(success, "NFT: Failed when 'transferFrom' funds");
+        //require(success, "Failed when 'transferFrom' funds");
+        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+        require(success);
     }
     
     /**
@@ -180,20 +187,20 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
 
         bool success;
         uint256 funds = msg.value;
-        require(funds >= ranges[rangeId].saleData.amount, "NFT: The coins sent are not enough");
+        require(funds >= ranges[rangeId].saleData.amount, "The coins sent are not enough");
         
         // Refund
         uint256 refund = (funds).sub(ranges[rangeId].saleData.amount);
         if (refund > 0) {
             (success, ) = (_msgSender()).call{value: refund}("");    
-            require(success, "NFT: Failed when send back coins to caller");
+            require(success, "Failed when send back coins to caller");
         }
         
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
         (success, ) = (owner).call{value: ranges[rangeId].saleData.amount}("");    
-        require(success, "NFT: Failed when send coins to owner");
+        require(success, "Failed when send coins to owner");
         
         removeFromSale(tokenId);
         
@@ -220,18 +227,22 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         IERC20Upgradeable saleToken = IERC20Upgradeable(ranges[rangeId].saleData.erc20Address);
         uint256 minAmount = saleToken.allowance(_msgSender(), address(this)).min(saleToken.balanceOf(_msgSender()));
         
-        require (minAmount >= needToObtain, "NFT: The allowance tokens are not enough");
+        require (minAmount >= needToObtain, "The allowance tokens are not enough");
         
         bool success;
         
         success = saleToken.transferFrom(_msgSender(), address(this), needToObtain);
-        require(success, "NFT: Failed when 'transferFrom' funds");
+        // require(success, "Failed when 'transferFrom' funds");
+        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+        require(success);
 
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
         success = saleToken.transfer(owner, needToObtain);
-        require(success, "NFT: Failed when 'transfer' funds to owner");
+        // require(success, "Failed when 'transfer' funds to owner");
+        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+        require(success);
             
         removeFromSale(tokenId);
     }
@@ -300,16 +311,16 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
     
     function _validateReduceCommission(uint256 _reduceCommission) internal pure {
-        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
+        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "reduceCommission can be in interval [0;10000]");
     }
     function _validateOnlySale(uint256 rangeId) internal view {
-        require(ranges[rangeId].saleData.isSale == true, "NFT: Token does not in sale");
+        require(ranges[rangeId].saleData.isSale == true, "Token does not in sale");
     }
     function _validateOnlySaleForCoins(uint256 rangeId) internal view {
-        require(ranges[rangeId].saleData.erc20Address == address(0), "NFT: Token can not be sale for coins");
+        require(ranges[rangeId].saleData.erc20Address == address(0), "Token can not be sale for coins");
     }
     function _validateOnlySaleForTokens(uint256 rangeId) internal view {
-        require(ranges[rangeId].saleData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
+        require(ranges[rangeId].saleData.erc20Address != address(0), "Token can not be sale for tokens");
     }
     
     /**
@@ -352,7 +363,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
                 }
             }
             
-            require(commissionAmountLeft == 0, "NFT: author's commission should be paid");
+            require(commissionAmountLeft == 0, "author's commission should be paid");
             
             // 'transfer' commission to the author
             // if Author have co-authors then pays goes proportionally to co-authors and left send to main author
@@ -361,7 +372,9 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
             len = ranges[rangeId].coauthors.addresses.length();
             if (len == 0) {
                 success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-                require(success, "NFT: Failed when 'transfer' funds to author");
+                // require(success, "Failed when 'transfer' funds to author");
+                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                require(success);
             } else {
                 commissionAmountLeft = commissionAmount;
                 address tmpAddr;
@@ -370,13 +383,17 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
                     tmpCommission = commissionAmount.mul(ranges[rangeId].coauthors.proportions[tmpAddr]).div(100);
                     
                     success = IERC20Upgradeable(commissionToken).transfer(tmpAddr, tmpCommission);
-                    require(success, "NFT: Failed when 'transfer' funds to co-author");
+                    // require(success, "Failed when 'transfer' funds to co-author");
+                    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                    require(success);
                     commissionAmountLeft = commissionAmountLeft.sub(tmpCommission);
                 }
                 
                 if (commissionAmountLeft > 0) {
                     success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmountLeft);
-                    require(success, "NFT: Failed when 'transfer' funds to author");
+                    // require(success, "Failed when 'transfer' funds to author");
+                    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                    require(success);
                 }
             }
         }
@@ -409,7 +426,9 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
                 commissionAmountLeft = commissionAmountNeedToPay.sub(minAmount);
             }
             bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
-            require(success, "NFT: Failed when 'transferFrom' funds");
+            // require(success, "Failed when 'transferFrom' funds");
+            // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+            require(success);
             
             ranges[rangeId].commission.offerPayAmount[addr] = ranges[rangeId].commission.offerPayAmount[addr].sub(minAmount);
             if (ranges[rangeId].commission.offerPayAmount[addr] == 0) {

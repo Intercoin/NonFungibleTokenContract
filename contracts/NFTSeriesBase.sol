@@ -81,13 +81,13 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     }
     
     function _validateTokenExists(uint256 rangeId) internal view {
-        require(ranges[rangeId].owner != address(0), "NFTSeriesBase: Nonexistent token");
+        require(ranges[rangeId].owner != address(0), "Nonexistent token");
     }
     function _validateTokenOwner(uint256 rangeId) internal view {
-        require(ranges[rangeId].owner == _msgSender(), "NFTSeriesBase: Sender is not owner of token");
+        require(ranges[rangeId].owner == _msgSender(), "Sender is not owner of token");
     }
     function _validateTokenAuthor(uint256 rangeId) internal view {
-        require(ranges[rangeId].author == _msgSender(), "NFTAuthorship: sender is not author of token");
+        require(ranges[rangeId].author == _msgSender(), "sender is not author of token");
     }
     
     /**
@@ -153,7 +153,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         _validateTokenExists(rangeId);
         _validateTokenAuthor(rangeId);
         
-        require((proportions.length == addresses.length), "NFTSeriesBase: addresses and proportions length should be equal length");
+        require((proportions.length == addresses.length), "addresses and proportions length should be equal length");
         
         uint256 i;
         
@@ -166,9 +166,9 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         
         uint256 tmpProportions;
         for (i = 0; i < addresses.length; i++) {
-            require (addresses[i] != ranges[rangeId].author, "NFTSeriesBase: author can not be in addresses array");
-            require (ranges[rangeId].coauthors.addresses.contains(addresses[i]) == false, "NFTSeriesBase: addresses array have a duplicate values");
-            require (proportions[i] != 0, "NFTSeriesBase: proportions array can not contain a zero value");
+            require (addresses[i] != ranges[rangeId].author, "author can not be in addresses array");
+            require (ranges[rangeId].coauthors.addresses.contains(addresses[i]) == false, "addresses array have a duplicate values");
+            require (proportions[i] != 0, "proportions array can not contain a zero value");
             
             ranges[rangeId].coauthors.addresses.add(addresses[i]);
             ranges[rangeId].coauthors.proportions[addresses[i]] = proportions[i];
@@ -176,7 +176,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             tmpProportions = tmpProportions.add(proportions[i]);
         }
         
-        require (tmpProportions <= 100, "NFTSeriesBase: total proportions can not be more than 100%");
+        require (tmpProportions <= 100, "total proportions can not be more than 100%");
     }
 
     /**
@@ -195,7 +195,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         _validateTokenAuthor(rangeId);
         
         address author = __getAuthor(rangeId);
-        require(to != author, "NFTAuthorship: transferAuthorship to current author");
+        require(to != author, "transferAuthorship to current author");
         
         _changeAuthor(to, tokenId);
         
@@ -628,6 +628,11 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         return __splitSeries(serieId, rangeId, tokenId);
     }
     
+    /**
+     * @dev here we split series to 3 parts and copying all data into new single range [tokenId; tokenId].
+     * this trick are passes with nested mapping because any manipulation with mappings happens after splitted.
+     * so if want to save to mapping into whole range and than split to single range that can not be possible without loop over all mapping(by some indexes i guees)
+     */
     function __splitSeries(uint256 serieId, uint256 rangeId, uint256 tokenId) internal returns(uint256, uint256) {
         uint256 newRangeId;
         if (serieId != 0 && rangeId != 0) {

@@ -40,7 +40,7 @@ contract('NFTSeries', (accounts) => {
     }
     before(async () => {
         CommunityMockInstance = await CommunityMock.new({ from: accountFive });
-        NFTSeriesMockInstance = await NFTSeriesMock.new({ from: accountFive , gas: 9500000});
+        NFTSeriesMockInstance = await NFTSeriesMock.new({ from: accountFive});
         await NFTSeriesMockInstance.initialize('NFT-title', 'NFT-symbol', [CommunityMockInstance.address, "members"], { from: accountFive });
         
         ERC20MintableInstance = await ERC20Mintable.new("erc20test","erc20test",{ from: accountFive });
@@ -54,12 +54,12 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.create("http://google.com", [zeroAddress, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: accountFive}),
-            "NFT: Token address can not be zero"
+            "Token address can not be zero"
         );
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,999999999], amountTokensToCreate, {from: accountFive}),
-            "NFT: reduceCommission can be in interval [0;10000]"
+            "reduceCommission can be in interval [0;10000]"
         );
 
     });
@@ -87,19 +87,19 @@ contract('NFTSeries', (accounts) => {
 
         await truffleAssert.reverts(
             NFTSeriesMockInstance.authorOf(noneExistTokenID),
-            'NFTSeriesBase: Nonexistent token'
+            'Nonexistent token'
         );
 
         //try to change author
         let authorNew = accountTwo;
         await truffleAssert.reverts(
             NFTSeriesMockInstance.transferAuthorship(authorNew, tokenID, {from: accountFourth}),
-            'NFTAuthorship: sender is not author of token'
+            'sender is not author of token'
         );
 
         await truffleAssert.reverts(
             NFTSeriesMockInstance.transferAuthorship(authorOld, tokenID, {from: authorOld}),
-            'NFTAuthorship: transferAuthorship to current author'
+            'transferAuthorship to current author'
         );
 
         await NFTSeriesMockInstance.transferAuthorship(authorNew, tokenID, {from: authorOld});
@@ -139,7 +139,7 @@ contract('NFTSeries', (accounts) => {
         await NFTSeriesMockInstance.approve(ownerNew, tokenID, {from: ownerOld});
         await truffleAssert.reverts(
             NFTSeriesMockInstance.transferFrom(ownerOld, ownerNew, tokenID, {from: ownerOld}),
-            "NFT: author's commission should be paid"
+            "author's commission should be paid"
         );
         
         // mint oneToken and pay commission
@@ -278,7 +278,7 @@ contract('NFTSeries', (accounts) => {
         //------
         await truffleAssert.reverts(
             NFTSeriesMockInstance.transferFrom(owner2, owner3, tokenID, {from: owner3}),
-            "NFT: author's commission should be paid"
+            "author's commission should be paid"
         );
         //------
         await ERC20MintableInstance.mint(owner2, oneToken07);
@@ -332,11 +332,11 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: anotherAccount}),
-            'NFTSeriesBase: Sender is not owner of token'
+            'Sender is not owner of token'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.removeFromSale(tokenID, {from: anotherAccount}),
-            'NFTSeriesBase: Sender is not owner of token'
+            'Sender is not owner of token'
         );
     });
     
@@ -353,15 +353,15 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(noneExistTokenID, {from: ownerNew}),
-            'NFTSeriesBase: Nonexistent token'
+            'Nonexistent token'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
-            'NFT: Token does not in sale'
+            'Token does not in sale'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew}),
-            'NFT: Token does not in sale'
+            'Token does not in sale'
         );
         
         // let put into sale-list for coins
@@ -369,21 +369,21 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
-            'NFT: Token can not be sale for tokens'
+            'Token can not be sale for tokens'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew}),
-            'NFT: The coins sent are not enough'
+            'The coins sent are not enough'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew, value: oneToken07}),
-            'NFT: The coins sent are not enough'
+            'The coins sent are not enough'
         );
         
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew, value: oneToken}),
-            "NFT: author's commission should be paid"
+            "author's commission should be paid"
         );
         
         
@@ -417,15 +417,15 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(noneExistTokenID, {from: ownerNew}),
-            'NFTSeriesBase: Nonexistent token'
+            'Nonexistent token'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
-            'NFT: Token does not in sale'
+            'Token does not in sale'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew}),
-            'NFT: Token does not in sale'
+            'Token does not in sale'
         );
         
         // let put into sale-list for coins
@@ -433,11 +433,11 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew}),
-            'NFT: Token can not be sale for coins'
+            'Token can not be sale for coins'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
-            'NFT: The allowance tokens are not enough'
+            'The allowance tokens are not enough'
         );
        
         // mint two Tokens - one for buy and another one for commission
@@ -447,7 +447,7 @@ contract('NFTSeries', (accounts) => {
        
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
-            "NFT: author's commission should be paid"
+            "author's commission should be paid"
         );
         
         // approve all, but not put in offer
@@ -455,7 +455,7 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
-            "NFT: author's commission should be paid"
+            "author's commission should be paid"
         );
         // put in offerToPay list
         await NFTSeriesMockInstance.offerToPayCommission(tokenID, oneToken, {from: ownerNew});
@@ -478,7 +478,7 @@ contract('NFTSeries', (accounts) => {
     it('getCommission: should validate params ', async () => {
         await truffleAssert.reverts(
             NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,0,10000], amountTokensToCreate, {from: accountFive}),
-            'NFT: IntervalSeconds can not be zero'
+            'IntervalSeconds can not be zero'
         );
     });
     
@@ -550,15 +550,15 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.reduceCommission(noneExistTokenID, 10000, {from: accountFive}),
-            'NFTSeriesBase: Nonexistent token'
+            'Nonexistent token'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.reduceCommission(tokenID, 10000, {from: accountOne}),
-            'NFTAuthorship: sender is not author of token'
+            'sender is not author of token'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.reduceCommission(tokenID, 9999999999, {from: accountFive}),
-            'NFT: reduceCommission can be in interval [0;10000]'
+            'reduceCommission can be in interval [0;10000]'
         );
         await NFTSeriesMockInstance.reduceCommission(tokenID, 10000, {from: accountFive});
         
@@ -591,27 +591,27 @@ contract('NFTSeries', (accounts) => {
          
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
-            'NFTSeriesBase: addresses and proportions length should be equal length'
+            'addresses and proportions length should be equal length'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
-            'NFTSeriesBase: addresses and proportions length should be equal length'
+            'addresses and proportions length should be equal length'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, author], [coAuthor1Part, coAuthor2Part], {from: author}),
-            'NFTSeriesBase: author can not be in addresses array'
+            'author can not be in addresses array'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor1], [coAuthor1Part, coAuthor2Part], {from: author}),
-            'NFTSeriesBase: addresses array have a duplicate values'
+            'addresses array have a duplicate values'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, 0], {from: author}),
-            'NFTSeriesBase: proportions array can not contain a zero value'
+            'proportions array can not contain a zero value'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, hugePart], {from: author}),
-            'NFTSeriesBase: total proportions can not be more than 100%'
+            'total proportions can not be more than 100%'
         );
          
         
