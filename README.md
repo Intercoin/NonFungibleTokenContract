@@ -103,12 +103,12 @@ symbol|string|symbol of NFT token
 #### create
 creating NFT <br>
 Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
-or <a href="#tokenseriescreated">TokenSeriesCreated</a><br>
+or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
 Params:<br>
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
-commissionParams|tuple|
+<a href="#commissionparams">commissionParams</a>|tuple|
 tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
 
 #### getCommission
