@@ -80,25 +80,14 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         
     }
     
-    modifier onlyIfTokenExists(uint256 tokenId) {
-        require(_exists(tokenId), "NFTSeriesBase: Nonexistent token");
-        _;
-    }
-
-    modifier onlyNFTAuthor(uint256 tokenId) {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
-        //onlyIfTokenExists(tokenId)
+    function _validateTokenExists(uint256 rangeId) internal view {
         require(ranges[rangeId].owner != address(0), "NFTSeriesBase: Nonexistent token");
-        //onlyNFTAuthor(tokenId)
-        require(ranges[rangeId].author == _msgSender(), "NFTAuthorship: sender is not author of token");
-        _;
     }
-
-    modifier onlyNFTOwner(uint256 tokenId) {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
-        require(ranges[rangeId].owner != address(0), "NFTSeriesBase: Nonexistent token");
+    function _validateTokenOwner(uint256 rangeId) internal view {
         require(ranges[rangeId].owner == _msgSender(), "NFTSeriesBase: Sender is not owner of token");
-        _;
+    }
+    function _validateTokenAuthor(uint256 rangeId) internal view {
+        require(ranges[rangeId].author == _msgSender(), "NFTAuthorship: sender is not author of token");
     }
     
     /**
@@ -113,7 +102,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         override
         view 
         returns(uint256[] memory) 
-        
     {
         uint256 i;
         uint256 j;
@@ -122,28 +110,20 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         uint256 next;
         
         for(i=1; i<_seriesIds.current(); i++) {
-            
             next = series[i].rangesTree.first();
-            
             while (next != 0) {
-                
                 if (ranges[next].author == author) {
                   len += 1+ranges[next].to - ranges[next].from;
                 }
                 next = series[i].rangesTree.next(next);
-                
             }    
-            
         }
 
         uint256[] memory ret = new uint256[](len);
         uint256 counter;
         for(i=1; i<_seriesIds.current(); i++) {
-            
             next = series[i].rangesTree.first();
-
                 while (next != 0) {
-                    
                     if (ranges[next].author == author) {
                         for(j = ranges[next].from; j <= ranges[next].to; j++) {
                             ret[counter] = j;
@@ -152,24 +132,26 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
                     }
                     next = series[i].rangesTree.next(next);
                 }    
-            
-            
-            
         }
-        
         return ret;
-        
     }
 
+    /**
+     * adding co-authors ot NFT token
+     * @param tokenId  token ID
+     * @param addresses array of co-author's addresses
+     * @param proportions array of co-author's proportions (mul by 100). here 40% looks like "40". (40%|0.4|0.4*100=40)
+     */
     function addAuthors(
         uint256 tokenId,
         address[] memory addresses,
         uint256[] memory proportions
     ) 
         public
-        onlyNFTAuthor(tokenId)
     {
         (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenAuthor(rangeId);
         
         require((proportions.length == addresses.length), "NFTSeriesBase: addresses and proportions length should be equal length");
         
@@ -181,7 +163,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             delete ranges[rangeId].coauthors.addresses._inner._indexes[ranges[rangeId].coauthors.addresses._inner._values[i]];
         }
         delete ranges[rangeId].coauthors.addresses._inner._values;
-        
         
         uint256 tmpProportions;
         for (i = 0; i < addresses.length; i++) {
@@ -208,10 +189,12 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     ) 
         public 
         override
-        onlyNFTAuthor(tokenId)
     {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenAuthor(rangeId);
         
-        address author = _getAuthor(tokenId);
+        address author = __getAuthor(rangeId);
         require(to != author, "NFTAuthorship: transferAuthorship to current author");
         
         _changeAuthor(to, tokenId);
@@ -227,16 +210,12 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     )
         public
         override
-        onlyIfTokenExists(tokenId)
         view
         returns (address) 
     {
-        return _getAuthor(tokenId);
-    }
-    
-    function _getAuthor(uint256 tokenId) private view returns(address) {
         (, uint256 rangeId) = _getSeriesIds(tokenId);
-        return ranges[rangeId].author;
+        _validateTokenExists(rangeId);
+        return _getAuthor(tokenId);
     }
     
     /**
@@ -627,7 +606,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         } else {
             ranges[newRangeId].owner = newOwner;
         }
-            
     }
     
     function _changeAuthor(address newAuthor, uint256 tokenId) internal {
@@ -644,17 +622,18 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
      * method will find serie by tokenId, split it and make another series with single range [tokenId; tokenId] with newOwner
      * 
      */
+     
     function splitSeries(uint256 tokenId) internal returns(uint256 infoId, uint256 newRangeId) {
-        
-        //newRangeId = 0;
-        
         (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        return __splitSeries(serieId, rangeId, tokenId);
+    }
+    
+    function __splitSeries(uint256 serieId, uint256 rangeId, uint256 tokenId) internal returns(uint256, uint256) {
+        uint256 newRangeId;
         if (serieId != 0 && rangeId != 0) {
-            
             if (ranges[rangeId].from == tokenId && ranges[rangeId].to == tokenId) {
                 // no need split it's last part
                 newRangeId = rangeId;
-                
             } else {
                 uint256 tmpRangeId; 
                 uint256 tmpRangeId2;
@@ -727,18 +706,13 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
                     // finally reduce initial range and make it like "left part"
                     ranges[rangeId].to = tokenId-1;
                 }
-                
-                
-            
             }
-            
-            
-           
+        } else {
+            return (0, 0);    
         }
         
         return (serieId, newRangeId);
     }
-    
     
     /**
      * @dev Destroys `tokenId`.
@@ -851,5 +825,15 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual { }
+    
+        
+    function _getAuthor(uint256 tokenId) private view returns(address) {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        return __getAuthor(rangeId);
+    }
+    function __getAuthor(uint256 rangeId) private view returns(address) {
+        return ranges[rangeId].author;
+    }
+
     uint256[44] private __gap;
 }

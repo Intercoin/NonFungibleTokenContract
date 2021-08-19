@@ -29,23 +29,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         _;
     }
     
-    modifier onlySale(uint256 tokenId) {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
-        require(ranges[rangeId].saleData.isSale == true, "NFT: Token does not in sale");
-        _;
-    }
-    modifier onlySaleForCoins(uint256 tokenId) {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
-        require(ranges[rangeId].saleData.erc20Address == address(0), "NFT: Token can not be sale for coins");
-        _;
-    }
-    modifier onlySaleForTokens(uint256 tokenId) {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
-        require(ranges[rangeId].saleData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
-        _;
-    }
-    
-    
     function initialize(
         string memory name,
         string memory symbol,
@@ -88,9 +71,11 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     ) 
         public
         view
-        onlyIfTokenExists(tokenId)
         returns(address t, uint256 r)
     {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        
         (t, r) = _getCommission(tokenId);
     }
     
@@ -123,10 +108,12 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         address consumeToken
     )
         public
-        onlyNFTOwner(tokenId)
     {
-
-        (, uint256 newRangeId) = splitSeries(tokenId);
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenOwner(rangeId);
+        
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
         
         ranges[newRangeId].saleData.amount = amount;
         ranges[newRangeId].saleData.isSale = true;
@@ -143,11 +130,12 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 tokenId
     )
         public 
-        onlyIfTokenExists(tokenId)
-        onlyNFTOwner(tokenId)
     {
-
-        (, uint256 newRangeId) = splitSeries(tokenId);
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenOwner(rangeId);
+        
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
         
         ranges[newRangeId].saleData.isSale = false;    
         
@@ -165,11 +153,11 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     )   
         public
         view
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
         returns(address, uint256)
     {
         (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateOnlySale(rangeId);
         
         return (ranges[rangeId].saleData.erc20Address, ranges[rangeId].saleData.amount);
     }
@@ -184,13 +172,12 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         public 
         payable
         nonReentrant
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        onlySaleForCoins(tokenId)
     {
-        
         (, uint256 rangeId) = _getSeriesIds(tokenId);
-        
+        _validateTokenExists(rangeId);
+        _validateOnlySale(rangeId);
+        _validateOnlySaleForCoins(rangeId);
+
         bool success;
         uint256 funds = msg.value;
         require(funds >= ranges[rangeId].saleData.amount, "NFT: The coins sent are not enough");
@@ -221,13 +208,13 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     )
         public 
         nonReentrant
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        onlySaleForTokens(tokenId)
     {
-        
         (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
         
+        _validateOnlySale(rangeId);
+        _validateOnlySaleForTokens(rangeId);
+
         uint256 needToObtain = ranges[rangeId].saleData.amount;
         
         IERC20Upgradeable saleToken = IERC20Upgradeable(ranges[rangeId].saleData.erc20Address);
@@ -247,7 +234,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         require(success, "NFT: Failed when 'transfer' funds to owner");
             
         removeFromSale(tokenId);
-        
     }
     
     /**
@@ -260,9 +246,11 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 amount 
     )
         public 
-        onlyIfTokenExists(tokenId)
     {
-        (, uint256 newRangeId) = splitSeries(tokenId);
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
         
         if (amount == 0) {
             if (ranges[newRangeId].commission.offerAddresses.contains(_msgSender())) {
@@ -273,7 +261,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
             ranges[newRangeId].commission.offerPayAmount[_msgSender()] = amount;
             ranges[newRangeId].commission.offerAddresses.add(_msgSender());
         }
-
     }
     
     /**
@@ -286,10 +273,13 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 reduceCommissionPercent
     ) 
         public
-        onlyNFTAuthor(tokenId)
     {
-        (, uint256 newRangeId) = splitSeries(tokenId);
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenAuthor(rangeId);
         _validateReduceCommission(reduceCommissionPercent);
+        
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
         
         ranges[newRangeId].commission.reduceCommission = reduceCommissionPercent;
     }
@@ -307,16 +297,19 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         
         // then usual transfer as expected
         super._transfer(from, to, tokenId);
-        
     }
     
-    function _validateReduceCommission(
-        uint256 _reduceCommission
-    ) 
-        internal 
-        pure
-    {
+    function _validateReduceCommission(uint256 _reduceCommission) internal pure {
         require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
+    }
+    function _validateOnlySale(uint256 rangeId) internal view {
+        require(ranges[rangeId].saleData.isSale == true, "NFT: Token does not in sale");
+    }
+    function _validateOnlySaleForCoins(uint256 rangeId) internal view {
+        require(ranges[rangeId].saleData.erc20Address == address(0), "NFT: Token can not be sale for coins");
+    }
+    function _validateOnlySaleForTokens(uint256 rangeId) internal view {
+        require(ranges[rangeId].saleData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
     }
     
     /**
@@ -329,7 +322,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     ) 
         private
     {
-        
         address author = ranges[rangeId].author;
         address owner = ranges[rangeId].owner;
         
@@ -340,8 +332,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         if (author == address(0) || commissionAmount == 0) {
             
         } else {
-    //emit TM(commissionAmount);        
-            
             
             uint256 commissionAmountLeft = commissionAmount;
             if (ranges[rangeId].commission.offerAddresses.contains(owner)) {
@@ -389,7 +379,6 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
                     require(success, "NFT: Failed when 'transfer' funds to author");
                 }
             }
-       /* */
         }
     }
     
