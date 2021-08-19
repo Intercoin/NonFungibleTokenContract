@@ -1,5 +1,6 @@
 # NonFungibleTokenContract
 NFT contracts that support a new ERC token standard for paying commissions to authors
+NFTSeries contract do the same but have ability to create several NFT in one transaction. The rest of the interface are the same
 
 # Overview
 
@@ -101,12 +102,14 @@ symbol|string|symbol of NFT token
     
 #### create
 creating NFT <br>
-Emitted event <a href="#tokencreated">TokenCreated</a><br>
+Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
+or <a href="#tokenseriescreated">TokenSeriesCreated</a><br>
 Params:<br>
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
 commissionParams|tuple|
+tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
 
 #### getCommission
 getting Commission for NFT token<br>
@@ -243,11 +246,20 @@ reduceCommission|uint256| reduced commission in percents from final calculated v
 ## Events
 
 #### TokenCreated
+emitted only in NFT contract
 name  | type | description
 --|--|--
 author|address|author's address of newly created token
 tokenId|uint256|tokenID of newly created token
 
+#### TokenSeriesCreated
+emitted only in NFTSeries contract
+name  | type | description
+--|--|--
+author|address|author's address of newly created token
+fromTokenId|uint256|first tokenID of newly created series
+toTokenId|uint256|last tokenID of newly created series
+  
 #### TransferAuthorship
 name  | type | description
 --|--|--
