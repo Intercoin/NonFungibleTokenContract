@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
+
 import "./NFTBase.sol";
 import "./interfaces/INFTAuthorship.sol";
+import "./lib/CoAuthors.sol";
 
 abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
+    using SafeMathUpgradeable for uint256;
+    using CoAuthors for CoAuthors.List;
+    
     function __NFTAuthorship_init(
         string memory name,
         string memory symbol
@@ -20,6 +28,7 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     mapping (uint256 => address) private _authors;
     mapping (address => EnumerableSetUpgradeable.UintSet) private _authoredTokens;
     
+    mapping (uint256 => CoAuthors.List) internal _coauthors;
     
     modifier onlyNFTAuthor(uint256 tokenId) {
         require(_msgSender() == _getAuthor(tokenId), "NFTAuthorship: sender is not author of token");
@@ -83,6 +92,39 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         return author;
     }
     
+    function addAuthors(
+        uint256 tokenId,
+        address[] memory addresses,
+        uint256[] memory proportions
+    ) 
+        public
+        onlyIfTokenExists(tokenId)
+        onlyNFTAuthor(tokenId)
+    {
+        
+        require((proportions.length == addresses.length), "addresses and proportions length should be equal length");
+        
+        uint256 i;
+        uint256 tmpProportions;
+        
+        _coauthors[tokenId].empty();
+        for (i = 0; i < addresses.length; i++) {
+            require (addresses[i] != _getAuthor(tokenId), "author can not be in addresses array");
+            require (_coauthors[tokenId].contains(addresses[i]) == false, "addresses array have a duplicate values");
+            require (proportions[i] != 0, "proportions array can not contain a zero value");
+            
+            tmpProportions = tmpProportions.add(proportions[i]);
+            
+            _coauthors[tokenId].add(addresses[i], proportions[i]);
+        }
+        
+        
+        
+        require (tmpProportions <= 100, "total proportions can not be more than 100%");
+        
+        
+    }
+    
     /**
      * @param to address
      * @param tokenId token ID
@@ -133,6 +175,7 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         _authoredTokens[from].remove(tokenId); // old author
         _authoredTokens[to].add(tokenId); // new author
         
+        _coauthors[tokenId].removeIfExists(to);
     }
     
     /**

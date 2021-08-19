@@ -58,7 +58,7 @@ contract('NFT', (accounts) => {
         tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
-console.log(tmpTr.logs);
+
         let author = await NFTMockInstance.authorOf(tokenID);
         let owner = await NFTMockInstance.ownerOf(tokenID);
         
@@ -104,7 +104,7 @@ console.log(tmpTr.logs);
     });
   
     it('should transfer Ownership', async () => {
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: accountFive});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -156,7 +156,7 @@ console.log(tmpTr.logs);
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: author});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: author});
         
         var tokenID = tmpTr.logs[0].args[1].toString();
         
@@ -198,7 +198,7 @@ console.log(tmpTr.logs);
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: author});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: author});
         
         var tokenID = tmpTr.logs[0].args[1].toString();
         
@@ -240,7 +240,7 @@ console.log(tmpTr.logs);
         let owner2 = accountTwo;
         let owner3 = accountThree;
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: author});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: author});
         
         var tokenID = tmpTr.logs[0].args[1].toString();
         
@@ -332,7 +332,7 @@ console.log(tmpTr.logs);
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: ownerOld});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -399,7 +399,7 @@ console.log(tmpTr.logs);
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: ownerOld});
+        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -473,7 +473,7 @@ console.log(tmpTr.logs);
     it('getCommission:  multiply predefined values (0 and 10000) ', async () => {
         
         let retTokenAddr,retCommission, tokenID;
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: accountFive});
         tokenID = tmpTr.logs[0].args[1].toString(); 
         
         tmpTr = await NFTMockInstance.getCommission(tokenID);
@@ -490,7 +490,7 @@ console.log(tmpTr.logs);
             "wrong commission: multiply=0"
         );
         
-        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,10000,0,7*3600,10000], {from: accountFive});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,10000,0,7*3600,0], {from: accountFive});
         tokenID = tmpTr.logs[0].args[1].toString(); 
         
         tmpTr = await NFTMockInstance.getCommission(tokenID);
@@ -561,5 +561,99 @@ console.log(tmpTr.logs);
         
     });
    
+    it('reward to co-author:: (through 2 transfer, third have paid) ', async () => {
+        let author = accountFive;
+        let owner1 = accountFive;
+        let owner2 = accountTwo;
+        let owner3 = accountThree;
+        let coAuthor1 = accountOne;
+        let coAuthor2 = accountTwo;
+        let coAuthor1Part = 50;  // 50%(== 0.5) mul 100 
+        let coAuthor2Part = 50;  // 50%(== 0.5) mul 100 
+        let hugePart = 90;
+        
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: author});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString(); 
+        
+         
+        await truffleAssert.reverts(
+            NFTMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
+            'addresses and proportions length should be equal length'
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.addAuthors(tokenID, [coAuthor1], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
+            'addresses and proportions length should be equal length'
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.addAuthors(tokenID, [coAuthor1, author], [coAuthor1Part, coAuthor2Part], {from: author}),
+            'author can not be in addresses array'
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor1], [coAuthor1Part, coAuthor2Part], {from: author}),
+            'addresses array have a duplicate values'
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, 0], {from: author}),
+            'proportions array can not contain a zero value'
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, hugePart], {from: author}),
+            'total proportions can not be more than 100%'
+        );
+         
+        
+        // add co-authors
+        await NFTMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, coAuthor2Part], {from: author});
+        
+        
+        // transfer to new owner#2(accountTwo)
+
+        // pay commission
+        await ERC20MintableInstance.mint(accountFourth, oneToken);
+        await ERC20MintableInstance.approve(NFTMockInstance.address, oneToken, {from: accountFourth});
+        await NFTMockInstance.offerToPayCommission(tokenID, oneToken, {from: accountFourth});
+        
+        // now try to transfer to new owner#2(accountTwo)
+        await NFTMockInstance.approve(owner2, tokenID, {from: owner1});
+        await NFTMockInstance.transferFrom(owner1, owner2, tokenID, {from: owner2});
+        
+        let balanceAuthorBefore = await ERC20MintableInstance.balanceOf(author);
+        let balanceCoAuthor1Before = await ERC20MintableInstance.balanceOf(coAuthor1);
+        let balanceCoAuthor2Before = await ERC20MintableInstance.balanceOf(coAuthor2);
+        
+        // pay commission again
+        await ERC20MintableInstance.mint(accountFourth, oneToken);
+        await ERC20MintableInstance.approve(NFTMockInstance.address, oneToken, {from: accountFourth});
+        await NFTMockInstance.offerToPayCommission(tokenID, oneToken, {from: accountFourth});
+        
+        // now try to transfer to new owner#2(accountThree)
+        await NFTMockInstance.approve(owner3, tokenID, {from: owner2});
+        await NFTMockInstance.transferFrom(owner2, owner3, tokenID, {from: owner3});
+        
+        let balanceAuthorAfter = await ERC20MintableInstance.balanceOf(author);
+        let balanceCoAuthor1After = await ERC20MintableInstance.balanceOf(coAuthor1);
+        let balanceCoAuthor2After = await ERC20MintableInstance.balanceOf(coAuthor2);
+        
+        assert.equal(
+            (BigNumber(balanceAuthorAfter).minus(BigNumber(balanceAuthorBefore))).toString(), 
+            BigNumber(0).toString(), 
+            'wrong rewards'
+        );
+        assert.equal(
+            (BigNumber(balanceCoAuthor1After).minus(BigNumber(balanceCoAuthor1Before))).toString(), 
+            (BigNumber(oneToken).times(BigNumber(coAuthor1Part)).div(BigNumber(100))).toString(), 
+            'wrong rewards'
+        );
+        assert.equal(
+            (BigNumber(balanceCoAuthor2After).minus(BigNumber(balanceCoAuthor2Before))).toString(), 
+            (BigNumber(oneToken).times(BigNumber(coAuthor2Part)).div(BigNumber(100))).toString(), 
+            'wrong rewards'
+        );
+        // clear co-authors
+        await NFTMockInstance.addAuthors(tokenID, [], [], {from: author});
+        
+        
+    });
    
 });

@@ -14,12 +14,12 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeabl
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 import "./interfaces/INFTAuthorship.sol";
 import "./interfaces/INFTSeries.sol";
+import "./lib/CoAuthors.sol";
 
 abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgradeable, INFTSeries, IERC721MetadataUpgradeable, INFTAuthorship {
     using SafeMathUpgradeable for uint256;
@@ -28,7 +28,8 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using StringsUpgradeable for uint256;
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    using CoAuthors for CoAuthors.List;
+
     
     // Token name
     string private _name;
@@ -57,24 +58,22 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     mapping(uint256 => Serie) internal series;
     mapping(uint256 => Range) internal ranges;
     
-    
     struct Serie {
         uint256 from;
         uint256 to;
         string uri;
         BokkyPooBahsRedBlackTreeLibrary.Tree rangesTree;
     }
-    struct CoAuthorsSettings {
-        mapping(address => uint256) proportions;
-        EnumerableSetUpgradeable.AddressSet addresses;
-    }
+    
     struct Range {
         uint256 from;
         uint256 to;
         address owner;
         address author;
 
-        CoAuthorsSettings coauthors;
+        //CoAuthorsSettings coauthors;
+        CoAuthors.List coauthors;
+        
         CommissionSettings commission;
         SalesData saleData;
         
@@ -156,27 +155,24 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         require((proportions.length == addresses.length), "addresses and proportions length should be equal length");
         
         uint256 i;
-        
-        // make a trick. 
-        // remove all items and push new. checking on duplicate values in progress
-        for (i =0; i<ranges[rangeId].coauthors.addresses._inner._values.length; i++) {
-            delete ranges[rangeId].coauthors.addresses._inner._indexes[ranges[rangeId].coauthors.addresses._inner._values[i]];
-        }
-        delete ranges[rangeId].coauthors.addresses._inner._values;
-        
         uint256 tmpProportions;
+        
+        ranges[rangeId].coauthors.empty();
         for (i = 0; i < addresses.length; i++) {
             require (addresses[i] != ranges[rangeId].author, "author can not be in addresses array");
-            require (ranges[rangeId].coauthors.addresses.contains(addresses[i]) == false, "addresses array have a duplicate values");
+            require (ranges[rangeId].coauthors.contains(addresses[i]) == false, "addresses array have a duplicate values");
             require (proportions[i] != 0, "proportions array can not contain a zero value");
             
-            ranges[rangeId].coauthors.addresses.add(addresses[i]);
-            ranges[rangeId].coauthors.proportions[addresses[i]] = proportions[i];
-            
             tmpProportions = tmpProportions.add(proportions[i]);
+            
+            ranges[rangeId].coauthors.add(addresses[i], proportions[i]);
         }
         
+        
+        
         require (tmpProportions <= 100, "total proportions can not be more than 100%");
+        
+        
     }
 
     /**
@@ -613,9 +609,8 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
 
         ranges[rangeId].author = newAuthor;
         
-        if (ranges[rangeId].coauthors.addresses.contains(newAuthor) == true) {
-            ranges[rangeId].coauthors.addresses.remove(newAuthor);
-        }
+        ranges[rangeId].coauthors.removeIfExists(newAuthor);
+        
     }
     
     /**

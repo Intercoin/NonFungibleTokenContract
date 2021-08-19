@@ -13,14 +13,11 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 
 contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
-function getC(uint256 tokenId) public view returns(uint256) {
-    (, uint256 rangeId) = _getSeriesIds(tokenId);
-    return ranges[rangeId].commission.offerPayAmount[_msgSender()];
-}
 
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    using CoAuthors for CoAuthors.List;
     
     CommunitySettings internal communitySettings;
 
@@ -369,7 +366,7 @@ function getC(uint256 tokenId) public view returns(uint256) {
             // if Author have co-authors then pays goes proportionally to co-authors and left send to main author
             // ------------------------
             bool success;
-            len = ranges[rangeId].coauthors.addresses.length();
+            len = ranges[rangeId].coauthors.length();
             if (len == 0) {
                 success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
                 // require(success, "Failed when 'transfer' funds to author");
@@ -379,8 +376,8 @@ function getC(uint256 tokenId) public view returns(uint256) {
                 commissionAmountLeft = commissionAmount;
                 address tmpAddr;
                 for (i = 0; i < len; i++) {
-                    tmpAddr = ranges[rangeId].coauthors.addresses.at(i);
-                    tmpCommission = commissionAmount.mul(ranges[rangeId].coauthors.proportions[tmpAddr]).div(100);
+                    (tmpAddr, tmpCommission) = ranges[rangeId].coauthors.at(i);
+                    tmpCommission = commissionAmount.mul(tmpCommission).div(100);
                     
                     success = IERC20Upgradeable(commissionToken).transfer(tmpAddr, tmpCommission);
                     // require(success, "Failed when 'transfer' funds to co-author");
