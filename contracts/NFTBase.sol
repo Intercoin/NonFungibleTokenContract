@@ -27,6 +27,9 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
         _;
     }
     
+    function tokenURI(uint256 tokenId) public view virtual override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
+        return super.tokenURI(tokenId);
+    }
     function __NFTBase_init(
         string memory name,
         string memory symbol
@@ -58,7 +61,7 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
         returns(uint256 tokenId)
     {
 
-        tokenId = _tokenIds.current();
+        tokenId = currentTokenIds();
         
         emit TokenCreated(_msgSender(), tokenId);
         
@@ -105,15 +108,16 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
         revert("NFTBase: need to be override in child");
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
-        return super.tokenURI(tokenId);
-    }
     
     function _burn(uint256 tokenId) internal virtual override(ERC721URIStorageUpgradeable, ERC721Upgradeable) {
         super._burn(tokenId);
     }
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         super._beforeTokenTransfer(from, to, tokenId);
+    }
+    
+    function currentTokenIds() internal view returns(uint256) {
+        return _tokenIds.current();
     }
     
 }

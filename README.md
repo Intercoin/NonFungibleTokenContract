@@ -1,5 +1,6 @@
 # NonFungibleTokenContract
 NFT contracts that support a new ERC token standard for paying commissions to authors
+NFTSeries contract do the same but have ability to create several NFT in one transaction. The rest of the interface are the same
 
 # Overview
 
@@ -38,6 +39,11 @@ Once installed will be use methods:
 		<td><a href="#transferauthorship">transferAuthorship</a></td>
 		<td>NFTAuthor</td>
 		<td>transfer authorship for NFT token</td>
+	</tr>
+	<tr>
+		<td><a href="#addauthors">addAuthors</a></td>
+		<td>NFTAuthor</td>
+		<td>adding co-authors for NFT token</td>
 	</tr>
     <tr>
 		<td><a href="#claimlosttoken">claimLostToken</a></td>
@@ -96,12 +102,14 @@ symbol|string|symbol of NFT token
     
 #### create
 creating NFT <br>
-Emitted event <a href="#tokencreated">TokenCreated</a><br>
+Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
+or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
 Params:<br>
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
-commissionParams|tuple|
+<a href="#commissionparams">commissionParams</a>|tuple|
+tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
 
 #### getCommission
 getting Commission for NFT token<br>
@@ -123,7 +131,25 @@ name  | type | description
 --|--|--   
 token|address|address of ERC20 token
 amount|uint256|amount commission
-    
+
+#### transferAuthorship
+Transfer authorship for NFT token<br>
+Params:<br>
+name  | type | description
+--|--|--
+from|address|old author's address
+to|address|new author's address
+tokenId|uint256|tokenID of transferred token
+
+#### addAuthors
+Adding co-authors for NFT token<br>
+Params:<br>
+name  | type | description
+--|--|--
+tokenId|uint256|tokenID of transferred token
+addresses|address[]|co-authors's addresses
+proportions|uint256[]|proportions (mul by 100)
+
 #### claimLostToken
 claiming lost token which can be mistakenly sent to contract<br>
 Params:<br>
@@ -220,11 +246,20 @@ reduceCommission|uint256| reduced commission in percents from final calculated v
 ## Events
 
 #### TokenCreated
+emitted only in NFT contract
 name  | type | description
 --|--|--
 author|address|author's address of newly created token
 tokenId|uint256|tokenID of newly created token
 
+#### TokenSeriesCreated
+emitted only in NFTSeries contract
+name  | type | description
+--|--|--
+author|address|author's address of newly created token
+fromTokenId|uint256|first tokenID of newly created series
+toTokenId|uint256|last tokenID of newly created series
+  
 #### TransferAuthorship
 name  | type | description
 --|--|--

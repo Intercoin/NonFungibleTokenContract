@@ -1,30 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+//import "./interfaces/INFT.sol";
+import "./interfaces/ICommunity.sol";
+
+import "./NFTSeriesBase.sol";
+
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
+contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
 
-import "./interfaces/ICommunity.sol";
-import "./interfaces/INFT.sol";
-
-import "./NFTAuthorship.sol";
-
-
-contract NFT is INFT, NFTAuthorship {
-    
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using CoAuthors for CoAuthors.List;
     
-    CommunitySettings communitySettings;
+    CommunitySettings internal communitySettings;
 
-    // Mapping from token ID to commission
-    mapping (uint256 => CommissionSettings) private _commissions;
-    
-    mapping (uint256 => SalesData) private _salesData;
-    
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
     event TokenRemovedFromSale(uint256 tokenId);
     
@@ -35,65 +31,38 @@ contract NFT is INFT, NFTAuthorship {
         _;
     }
     
-    modifier onlySale(uint256 tokenId) {
-        require(_salesData[tokenId].isSale == true, "NFT: Token does not in sale");
-        _;
-    }
-    modifier onlySaleForCoins(uint256 tokenId) {
-        require(_salesData[tokenId].erc20Address == address(0), "NFT: Token can not be sale for coins");
-        _;
-    }
-    modifier onlySaleForTokens(uint256 tokenId) {
-        require(_salesData[tokenId].erc20Address != address(0), "NFT: Token can not be sale for tokens");
-        _;
-    }
-    
-    /**
-     * @param name name of token ERC721 
-     * @param symbol symbol of token ERC721 
-     * @param communitySettings_ community setting. See {INFT-CommunitySettings}.
-     */
     function initialize(
         string memory name,
         string memory symbol,
         CommunitySettings memory communitySettings_
-    ) public override initializer {
-        __NFTAuthorship_init(name, symbol);
+    ) 
+        public 
+        override 
+        initializer 
+    {
         communitySettings = communitySettings_;
+        __Ownable_init();
+        __ReentrancyGuard_init();
+        __ERC721Series_init(name, symbol);
     }
-   
-    /**
-     * creation NFT token
-     * @param URI Token URI
-     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
-     */
+    
     function create(
         string memory URI,
-        CommissionParams memory commissionParams
+        CommissionParams memory commissionParams,
+        uint256 tokenAmount
     ) 
         public 
         canRecord(communitySettings.roleMint) 
         virtual  
     {
-        uint256 tokenId = _create(URI);
-        
-        require(commissionParams.token != address(0), "NFT: Token address can not be zero");
-        require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
+
+        require(commissionParams.token != address(0), "Token address can not be zero");
+        require(commissionParams.intervalSeconds > 0, "IntervalSeconds can not be zero");
         _validateReduceCommission(commissionParams.reduceCommission);
         
-        _commissions[tokenId].token = commissionParams.token;
-        _commissions[tokenId].amount = commissionParams.amount;
-        _commissions[tokenId].multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
-        _commissions[tokenId].accrue = commissionParams.accrue;
-        _commissions[tokenId].intervalSeconds = commissionParams.intervalSeconds;
-        _commissions[tokenId].reduceCommission = commissionParams.reduceCommission;
-        _commissions[tokenId].createdTs = block.timestamp;
-        _commissions[tokenId].lastTransferTs = block.timestamp;
-      
-        _createAfter();
+        _mint(msg.sender, URI, tokenAmount, commissionParams);  
+        
     }
-    
-   
     
     /** 
      * returned commission that will be paid to token's author while transferring NFT
@@ -104,9 +73,11 @@ contract NFT is INFT, NFTAuthorship {
     ) 
         public
         view
-        onlyIfTokenExists(tokenId)
         returns(address t, uint256 r)
     {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        
         (t, r) = _getCommission(tokenId);
     }
     
@@ -121,10 +92,12 @@ contract NFT is INFT, NFTAuthorship {
         onlyOwner 
     {
         uint256 funds = IERC20Upgradeable(erc20address).balanceOf(address(this));
-        require(funds > 0, "NFT: There are no lost tokens");
+        require(funds > 0, "There are no lost tokens");
             
         bool success = IERC20Upgradeable(erc20address).transfer(_msgSender(), funds);
-        require(success, "NFT: Failed when 'transferFrom' funds");
+        //require(success, "Failed when 'transferFrom' funds");
+        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+        require(success);
     }
     
     /**
@@ -139,12 +112,17 @@ contract NFT is INFT, NFTAuthorship {
         address consumeToken
     )
         public
-        onlyIfTokenExists(tokenId)
-        onlyNFTOwner(tokenId)
     {
-        _salesData[tokenId].amount = amount;
-        _salesData[tokenId].isSale = true;
-        _salesData[tokenId].erc20Address = consumeToken;
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenOwner(rangeId);
+        
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
+        
+        ranges[newRangeId].saleData.amount = amount;
+        ranges[newRangeId].saleData.isSale = true;
+        ranges[newRangeId].saleData.erc20Address = consumeToken;
+        
         emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
     
@@ -156,10 +134,14 @@ contract NFT is INFT, NFTAuthorship {
         uint256 tokenId
     )
         public 
-        onlyIfTokenExists(tokenId)
-        onlyNFTOwner(tokenId)
     {
-        _salesData[tokenId].isSale = false;    
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenOwner(rangeId);
+        
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
+        
+        ranges[newRangeId].saleData.isSale = false;    
         
         emit TokenRemovedFromSale(tokenId);
     }
@@ -175,11 +157,13 @@ contract NFT is INFT, NFTAuthorship {
     )   
         public
         view
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
         returns(address, uint256)
     {
-        return (_salesData[tokenId].erc20Address, _salesData[tokenId].amount);
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateOnlySale(rangeId);
+        
+        return (ranges[rangeId].saleData.erc20Address, ranges[rangeId].saleData.amount);
     }
     
     /**
@@ -192,27 +176,28 @@ contract NFT is INFT, NFTAuthorship {
         public 
         payable
         nonReentrant
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        onlySaleForCoins(tokenId)
     {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateOnlySale(rangeId);
+        _validateOnlySaleForCoins(rangeId);
 
         bool success;
         uint256 funds = msg.value;
-        require(funds >= _salesData[tokenId].amount, "NFT: The coins sent are not enough");
+        require(funds >= ranges[rangeId].saleData.amount, "The coins sent are not enough");
         
         // Refund
-        uint256 refund = (funds).sub(_salesData[tokenId].amount);
+        uint256 refund = (funds).sub(ranges[rangeId].saleData.amount);
         if (refund > 0) {
             (success, ) = (_msgSender()).call{value: refund}("");    
-            require(success, "NFT: Failed when send back coins to caller");
+            require(success, "Failed when send back coins to caller");
         }
         
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
-        (success, ) = (owner).call{value: _salesData[tokenId].amount}("");    
-        require(success, "NFT: Failed when send coins to owner");
+        (success, ) = (owner).call{value: ranges[rangeId].saleData.amount}("");    
+        require(success, "Failed when send coins to owner");
         
         removeFromSale(tokenId);
         
@@ -227,31 +212,36 @@ contract NFT is INFT, NFTAuthorship {
     )
         public 
         nonReentrant
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        onlySaleForTokens(tokenId)
     {
+        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
         
-        uint256 needToObtain = _salesData[tokenId].amount;
+        _validateOnlySale(rangeId);
+        _validateOnlySaleForTokens(rangeId);
+
+        uint256 needToObtain = ranges[rangeId].saleData.amount;
         
-        IERC20Upgradeable saleToken = IERC20Upgradeable(_salesData[tokenId].erc20Address);
+        IERC20Upgradeable saleToken = IERC20Upgradeable(ranges[rangeId].saleData.erc20Address);
         uint256 minAmount = saleToken.allowance(_msgSender(), address(this)).min(saleToken.balanceOf(_msgSender()));
         
-        require (minAmount >= needToObtain, "NFT: The allowance tokens are not enough");
+        require (minAmount >= needToObtain, "The allowance tokens are not enough");
         
         bool success;
         
         success = saleToken.transferFrom(_msgSender(), address(this), needToObtain);
-        require(success, "NFT: Failed when 'transferFrom' funds");
+        // require(success, "Failed when 'transferFrom' funds");
+        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+        require(success);
 
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
         success = saleToken.transfer(owner, needToObtain);
-        require(success, "NFT: Failed when 'transfer' funds to owner");
+        // require(success, "Failed when 'transfer' funds to owner");
+        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+        require(success);
             
         removeFromSale(tokenId);
-        
     }
     
     /**
@@ -264,18 +254,21 @@ contract NFT is INFT, NFTAuthorship {
         uint256 amount 
     )
         public 
-        onlyIfTokenExists(tokenId)
     {
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
+        
         if (amount == 0) {
-            if (_commissions[tokenId].offerAddresses.contains(_msgSender())) {
-                _commissions[tokenId].offerAddresses.remove(_msgSender());
-                delete _commissions[tokenId].offerPayAmount[_msgSender()];
+            if (ranges[newRangeId].commission.offerAddresses.contains(_msgSender())) {
+                ranges[newRangeId].commission.offerAddresses.remove(_msgSender());
+                delete ranges[newRangeId].commission.offerPayAmount[_msgSender()];
             }
         } else {
-            _commissions[tokenId].offerPayAmount[_msgSender()] = amount;
-            _commissions[tokenId].offerAddresses.add(_msgSender());
+            ranges[newRangeId].commission.offerPayAmount[_msgSender()] = amount;
+            ranges[newRangeId].commission.offerAddresses.add(_msgSender());
         }
-
     }
     
     /**
@@ -288,76 +281,57 @@ contract NFT is INFT, NFTAuthorship {
         uint256 reduceCommissionPercent
     ) 
         public
-        onlyIfTokenExists(tokenId)
-        onlyNFTAuthor(tokenId)
     {
+        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenAuthor(rangeId);
         _validateReduceCommission(reduceCommissionPercent);
         
-        _commissions[tokenId].reduceCommission = reduceCommissionPercent;
+        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
+        
+        ranges[newRangeId].commission.reduceCommission = reduceCommissionPercent;
     }
-
-    /**
-     * commission amount that need to be paid while NFT token transferring
-     * @param tokenId NFT tokenId
-     */
-    function _getCommission(
+    
+     function _transfer(
+        address from, 
+        address to, 
         uint256 tokenId
     ) 
         internal 
-        virtual
-        view
-        returns(address t, uint256 r)
+        override 
     {
+        (, uint256 newSeriesPartsId) = splitSeries(tokenId);
+        _transferHook(tokenId, newSeriesPartsId);
         
-        //initialCommission
-        r = _commissions[tokenId].amount;
-        t = _commissions[tokenId].token;
-        if (r == 0) {
-            
-        } else {
-            if (_commissions[tokenId].multiply == 10000) {
-                // left initial commission
-            } else {
-                
-                uint256 intervalsSinceCreate = (block.timestamp.sub(_commissions[tokenId].createdTs)).div(_commissions[tokenId].intervalSeconds);
-                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(_commissions[tokenId].lastTransferTs)).div(_commissions[tokenId].intervalSeconds);
-                
-                // (   
-                //     initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
-                // ) * (10000 - reduceCommission) / 10000
-                
-                for(uint256 i = 0; i < intervalsSinceCreate; i++) {
-                    r = r.mul(_commissions[tokenId].multiply).div(10000);
-                    
-                }
-                
-                r = r.add(
-                        intervalsSinceLastTransfer.mul(_commissions[tokenId].accrue)
-                    );
-                
-                
-            }
-            
-            r = r.mul(
-                    uint256(10000).sub(_commissions[tokenId].reduceCommission)
-                ).div(uint256(10000));
-                
-        }
-        
+        // then usual transfer as expected
+        super._transfer(from, to, tokenId);
     }
+    
+    function _validateReduceCommission(uint256 _reduceCommission) internal pure {
+        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "reduceCommission can be in interval [0;10000]");
+    }
+    function _validateOnlySale(uint256 rangeId) internal view {
+        require(ranges[rangeId].saleData.isSale == true, "Token does not in sale");
+    }
+    function _validateOnlySaleForCoins(uint256 rangeId) internal view {
+        require(ranges[rangeId].saleData.erc20Address == address(0), "Token can not be sale for coins");
+    }
+    function _validateOnlySaleForTokens(uint256 rangeId) internal view {
+        require(ranges[rangeId].saleData.erc20Address != address(0), "Token can not be sale for tokens");
+    }
+    
     /**
      * method realized collect commission logic
      * @param tokenId token ID
      */
     function _transferHook(
-        uint256 tokenId
+        uint256 tokenId,
+        uint256 rangeId
     ) 
-        internal 
-        virtual
-        override
+        private
     {
-        address author = authorOf(tokenId);
-        address owner = ownerOf(tokenId);
+        address author = ranges[rangeId].author;
+        address owner = ranges[rangeId].owner;
         
         address commissionToken;
         uint256 commissionAmount;
@@ -368,30 +342,31 @@ contract NFT is INFT, NFTAuthorship {
         } else {
             
             uint256 commissionAmountLeft = commissionAmount;
-            if (_commissions[tokenId].offerAddresses.contains(owner)) {
-                commissionAmountLeft = _transferPay(tokenId, owner, commissionToken, commissionAmountLeft);
+            if (ranges[rangeId].commission.offerAddresses.contains(owner)) {
+                commissionAmountLeft = _transferPay(tokenId, rangeId, owner, commissionToken, commissionAmountLeft);
             }
-            uint256 i;
-            uint256 len = _commissions[tokenId].offerAddresses.length();
-            uint256 tmpCommission;
             
+            
+            uint256 len = ranges[rangeId].commission.offerAddresses.length();
+            uint256 tmpCommission;
+            uint256 i;
             for (i = 0; i < len; i++) {
                 tmpCommission = commissionAmountLeft;
                 if (tmpCommission > 0) {
-                    commissionAmountLeft  = _transferPay(tokenId, _commissions[tokenId].offerAddresses.at(i), commissionToken, tmpCommission);
+                    commissionAmountLeft = _transferPay(tokenId, rangeId, ranges[rangeId].commission.offerAddresses.at(i), commissionToken, tmpCommission);
                 }
                 if (commissionAmountLeft == 0) {
                     break;
                 }
             }
             
-            require(commissionAmountLeft == 0, "NFT: author's commission should be paid");
+            require(commissionAmountLeft == 0, "author's commission should be paid");
             
             // 'transfer' commission to the author
             // if Author have co-authors then pays goes proportionally to co-authors and left send to main author
             // ------------------------
             bool success;
-            len = _coauthors[tokenId].length();
+            len = ranges[rangeId].coauthors.length();
             if (len == 0) {
                 success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
                 // require(success, "Failed when 'transfer' funds to author");
@@ -401,7 +376,7 @@ contract NFT is INFT, NFTAuthorship {
                 commissionAmountLeft = commissionAmount;
                 address tmpAddr;
                 for (i = 0; i < len; i++) {
-                    (tmpAddr, tmpCommission) = _coauthors[tokenId].at(i);
+                    (tmpAddr, tmpCommission) = ranges[rangeId].coauthors.at(i);
                     tmpCommission = commissionAmount.mul(tmpCommission).div(100);
                     
                     success = IERC20Upgradeable(commissionToken).transfer(tmpAddr, tmpCommission);
@@ -418,12 +393,11 @@ contract NFT is INFT, NFTAuthorship {
                     require(success);
                 }
             }
-        
         }
-        
     }
     
-    /**
+    
+     /**
      * doing one interation to transfer commission from {addr} to this contract and returned {commissionAmountNeedToPay} that need to pay
      * @param tokenId token ID
      * @param addr payer's address 
@@ -432,6 +406,7 @@ contract NFT is INFT, NFTAuthorship {
      */
     function _transferPay(
         uint256 tokenId,
+        uint256 rangeId,
         address addr,
         address commissionToken,
         uint256 commissionAmountNeedToPay
@@ -439,7 +414,7 @@ contract NFT is INFT, NFTAuthorship {
         private
         returns(uint256 commissionAmountLeft)
     {
-        uint256 minAmount = (_commissions[tokenId].offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
+        uint256 minAmount = (ranges[rangeId].commission.offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
         if (minAmount > 0) {
             if (minAmount > commissionAmountNeedToPay) {
                 minAmount = commissionAmountNeedToPay;
@@ -448,28 +423,20 @@ contract NFT is INFT, NFTAuthorship {
                 commissionAmountLeft = commissionAmountNeedToPay.sub(minAmount);
             }
             bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
-            require(success, "NFT: Failed when 'transferFrom' funds");
+            // require(success, "Failed when 'transferFrom' funds");
+            // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+            require(success);
             
-            _commissions[tokenId].offerPayAmount[addr] = _commissions[tokenId].offerPayAmount[addr].sub(minAmount);
-            if (_commissions[tokenId].offerPayAmount[addr] == 0) {
-                delete _commissions[tokenId].offerPayAmount[addr];
-                _commissions[tokenId].offerAddresses.remove(addr);
+            ranges[rangeId].commission.offerPayAmount[addr] = ranges[rangeId].commission.offerPayAmount[addr].sub(minAmount);
+            if (ranges[rangeId].commission.offerPayAmount[addr] == 0) {
+                delete ranges[rangeId].commission.offerPayAmount[addr];
+                ranges[rangeId].commission.offerAddresses.remove(addr);
             }
             
         }
         
     }
     
-    function _validateReduceCommission(
-        uint256 _reduceCommission
-    ) 
-        internal 
-        pure
-    {
-        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
-    }
-       
-       
     /**
      * return true if {roleName} exist in Community contract for msg.sender
      * @param roleName role name
@@ -481,7 +448,7 @@ contract NFT is INFT, NFTAuthorship {
         view 
         returns(bool s)
     {
-        s = false;
+        //s = false;
         if (communitySettings.addr == address(0)) {
             // if the community address set to zero then we must skip the check
             s = true;
@@ -496,7 +463,4 @@ contract NFT is INFT, NFTAuthorship {
         }
 
     }
-    
-     
-   
 }
