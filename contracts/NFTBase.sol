@@ -54,7 +54,7 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
     /**
      * creation NFT token
      */
-    function _create(
+    function _createNFT(
         string memory URI
     ) 
         internal 

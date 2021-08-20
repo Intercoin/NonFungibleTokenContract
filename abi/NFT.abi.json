@@ -98,19 +98,6 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
-		],
-		"name": "TokenRemovedFromSale",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
 				"internalType": "address",
 				"name": "author",
 				"type": "address"
@@ -118,17 +105,24 @@
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "fromTokenId",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "toTokenId",
+				"name": "tokenId",
 				"type": "uint256"
 			}
 		],
-		"name": "TokenSeriesCreated",
+		"name": "TokenCreated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenRemovedFromSale",
 		"type": "event"
 	},
 	{
@@ -339,17 +333,72 @@
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct INFTSeries.CommissionParams",
+				"internalType": "struct INFT.CommissionParams",
+				"name": "commissionParams",
+				"type": "tuple"
+			}
+		],
+		"name": "create",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "URI",
+				"type": "string"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "multiply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "accrue",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "intervalSeconds",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reduceCommission",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct INFT.CommissionParams",
 				"name": "commissionParams",
 				"type": "tuple"
 			},
 			{
 				"internalType": "uint256",
-				"name": "tokenAmount",
+				"name": "consumeAmount",
 				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "consumeToken",
+				"type": "address"
 			}
 		],
-		"name": "create",
+		"name": "createAndSale",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -422,7 +471,7 @@
 						"type": "string"
 					}
 				],
-				"internalType": "struct INFTSeries.CommunitySettings",
+				"internalType": "struct INFT.CommunitySettings",
 				"name": "communitySettings_",
 				"type": "tuple"
 			}
@@ -709,6 +758,49 @@
 		"inputs": [
 			{
 				"internalType": "uint256",
+				"name": "index",
+				"type": "uint256"
+			}
+		],
+		"name": "tokenByIndex",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "index",
+				"type": "uint256"
+			}
+		],
+		"name": "tokenOfOwnerByIndex",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
 				"name": "tokenId",
 				"type": "uint256"
 			}
@@ -738,6 +830,19 @@
 				"internalType": "uint256[]",
 				"name": "",
 				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalSupply",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",

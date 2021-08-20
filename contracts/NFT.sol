@@ -75,25 +75,29 @@ contract NFT is INFT, NFTAuthorship {
         canRecord(communitySettings.roleMint) 
         virtual  
     {
-        uint256 tokenId = _create(URI);
-        
-        require(commissionParams.token != address(0), "NFT: Token address can not be zero");
-        require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
-        _validateReduceCommission(commissionParams.reduceCommission);
-        
-        _commissions[tokenId].token = commissionParams.token;
-        _commissions[tokenId].amount = commissionParams.amount;
-        _commissions[tokenId].multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
-        _commissions[tokenId].accrue = commissionParams.accrue;
-        _commissions[tokenId].intervalSeconds = commissionParams.intervalSeconds;
-        _commissions[tokenId].reduceCommission = commissionParams.reduceCommission;
-        _commissions[tokenId].createdTs = block.timestamp;
-        _commissions[tokenId].lastTransferTs = block.timestamp;
-      
-        _createAfter();
+        _create(URI, commissionParams);
     }
     
-   
+    /**
+     * creation NFT token and immediately put to list for sale
+     * @param URI Token URI
+     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
+     * @param consumeAmount amount that need to be paid to owner when some1 buy token
+     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
+     */
+    function createAndSale(
+        string memory URI,
+        CommissionParams memory commissionParams,
+        uint256 consumeAmount,
+        address consumeToken
+    ) 
+        public 
+        virtual  
+    {
+        uint256 tokenId = _create(URI, commissionParams);
+        
+        _listForSale(tokenId, consumeAmount, consumeToken);
+    }
     
     /** 
      * returned commission that will be paid to token's author while transferring NFT
@@ -142,10 +146,7 @@ contract NFT is INFT, NFTAuthorship {
         onlyIfTokenExists(tokenId)
         onlyNFTOwner(tokenId)
     {
-        _salesData[tokenId].amount = amount;
-        _salesData[tokenId].isSale = true;
-        _salesData[tokenId].erc20Address = consumeToken;
-        emit TokenAddedToSale(tokenId, amount, consumeToken);
+        _listForSale(tokenId, amount, consumeToken);
     }
     
     /**
@@ -294,6 +295,46 @@ contract NFT is INFT, NFTAuthorship {
         _validateReduceCommission(reduceCommissionPercent);
         
         _commissions[tokenId].reduceCommission = reduceCommissionPercent;
+    }
+    
+    function _create(
+        string memory URI,
+        CommissionParams memory commissionParams
+    ) 
+        internal 
+        canRecord(communitySettings.roleMint) 
+        returns(uint256 tokenId)
+    {
+        
+        require(commissionParams.token != address(0), "NFT: Token address can not be zero");
+        require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
+        _validateReduceCommission(commissionParams.reduceCommission);
+        
+        tokenId = _createNFT(URI);
+        
+        _commissions[tokenId].token = commissionParams.token;
+        _commissions[tokenId].amount = commissionParams.amount;
+        _commissions[tokenId].multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
+        _commissions[tokenId].accrue = commissionParams.accrue;
+        _commissions[tokenId].intervalSeconds = commissionParams.intervalSeconds;
+        _commissions[tokenId].reduceCommission = commissionParams.reduceCommission;
+        _commissions[tokenId].createdTs = block.timestamp;
+        _commissions[tokenId].lastTransferTs = block.timestamp;
+      
+        _createAfter();
+    }
+    
+    function _listForSale(
+        uint256 tokenId,
+        uint256 amount,
+        address consumeToken
+    )
+        internal
+    {
+        _salesData[tokenId].amount = amount;
+        _salesData[tokenId].isSale = true;
+        _salesData[tokenId].erc20Address = consumeToken;
+        emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
 
     /**

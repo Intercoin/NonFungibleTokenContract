@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-//import "./interfaces/INFT.sol";
 import "./interfaces/ICommunity.sol";
 
 import "./NFTSeriesBase.sol";
@@ -13,7 +12,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 
 contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
-
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -23,6 +21,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
 
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
     event TokenRemovedFromSale(uint256 tokenId);
+    event TokensAddedToSale(uint256 tokenIdFrom, uint256 tokenIdTo, uint256 amount, address consumeToken);
     
     modifier canRecord(string memory communityRole) {
         bool s = _canRecord(communityRole);
@@ -52,15 +51,35 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         uint256 tokenAmount
     ) 
         public 
-        canRecord(communitySettings.roleMint) 
         virtual  
     {
+        _create(URI, commissionParams, tokenAmount);
 
-        require(commissionParams.token != address(0), "Token address can not be zero");
-        require(commissionParams.intervalSeconds > 0, "IntervalSeconds can not be zero");
-        _validateReduceCommission(commissionParams.reduceCommission);
+    }
+    
+    /**
+     * creation NFT token and immediately put to list for sale
+     * @param URI Token URI
+     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
+     * @param tokenAmount amount of created tokens
+     * @param consumeAmount amount that need to be paid to owner when some1 buy token
+     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
+     */
+    function createAndSale(
+        string memory URI,
+        CommissionParams memory commissionParams,
+        uint256 tokenAmount,
+        uint256 consumeAmount,
+        address consumeToken
+    ) 
+        public 
+        virtual  
+    {
+        (, uint256 rangeId) = _create(URI, commissionParams, tokenAmount);
         
-        _mint(msg.sender, URI, tokenAmount, commissionParams);  
+        _listForSale(rangeId, consumeAmount, consumeToken);
+        
+        emit TokensAddedToSale(ranges[rangeId].from, ranges[rangeId].to, consumeAmount, consumeToken);
         
     }
     
@@ -75,7 +94,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         view
         returns(address t, uint256 r)
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, ) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         
         (t, r) = _getCommission(tokenId);
@@ -113,16 +132,14 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     )
         public
     {
-        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        (uint256 serieId, uint256 rangeId, ) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         _validateTokenOwner(rangeId);
         
         (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
         
-        ranges[newRangeId].saleData.amount = amount;
-        ranges[newRangeId].saleData.isSale = true;
-        ranges[newRangeId].saleData.erc20Address = consumeToken;
-        
+        _listForSale(newRangeId, amount, consumeToken);
+
         emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
     
@@ -135,7 +152,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     )
         public 
     {
-        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        (uint256 serieId, uint256 rangeId, ) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         _validateTokenOwner(rangeId);
         
@@ -159,7 +176,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         view
         returns(address, uint256)
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, ) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         _validateOnlySale(rangeId);
         
@@ -177,10 +194,13 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         payable
         nonReentrant
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, bool isSingle) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         _validateOnlySale(rangeId);
         _validateOnlySaleForCoins(rangeId);
+        if (!isSingle) {
+            (, rangeId) = splitSeries(tokenId);
+        }
 
         bool success;
         uint256 funds = msg.value;
@@ -213,11 +233,14 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         public 
         nonReentrant
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, bool isSingle) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         
         _validateOnlySale(rangeId);
         _validateOnlySaleForTokens(rangeId);
+        if (!isSingle) {
+            (, rangeId) = splitSeries(tokenId);
+        }
 
         uint256 needToObtain = ranges[rangeId].saleData.amount;
         
@@ -255,7 +278,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     )
         public 
     {
-        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        (uint256 serieId, uint256 rangeId,) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         
         (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
@@ -282,7 +305,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     ) 
         public
     {
-        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        (uint256 serieId, uint256 rangeId, ) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         _validateTokenAuthor(rangeId);
         _validateReduceCommission(reduceCommissionPercent);
@@ -291,6 +314,38 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         
         ranges[newRangeId].commission.reduceCommission = reduceCommissionPercent;
     }
+    
+    function _create(
+        string memory URI,
+        CommissionParams memory commissionParams,
+        uint256 tokenAmount
+    ) 
+        internal 
+        canRecord(communitySettings.roleMint) 
+        returns(uint256 serieId, uint256 rangeId)
+    {
+               
+        require(commissionParams.token != address(0), "wrong token");
+        require(commissionParams.intervalSeconds > 0, "wrong intervalSeconds");
+        _validateReduceCommission(commissionParams.reduceCommission);
+        
+        (serieId, rangeId) = _mint(msg.sender, URI, tokenAmount, commissionParams);  
+    }
+    
+    function _listForSale(
+        uint256 rangeId,
+        uint256 amount,
+        address consumeToken
+    )
+        internal
+    {
+         
+        ranges[rangeId].saleData.amount = amount;
+        ranges[rangeId].saleData.isSale = true;
+        ranges[rangeId].saleData.erc20Address = consumeToken;
+        
+    }
+    
     
      function _transfer(
         address from, 
@@ -308,16 +363,16 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
     
     function _validateReduceCommission(uint256 _reduceCommission) internal pure {
-        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "reduceCommission can be in interval [0;10000]");
+        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "wrong reduceCommission");
     }
     function _validateOnlySale(uint256 rangeId) internal view {
         require(ranges[rangeId].saleData.isSale == true, "Token does not in sale");
     }
     function _validateOnlySaleForCoins(uint256 rangeId) internal view {
-        require(ranges[rangeId].saleData.erc20Address == address(0), "Token can not be sale for coins");
+        require(ranges[rangeId].saleData.erc20Address == address(0), "sale for coins only");
     }
     function _validateOnlySaleForTokens(uint256 rangeId) internal view {
-        require(ranges[rangeId].saleData.erc20Address != address(0), "Token can not be sale for tokens");
+        require(ranges[rangeId].saleData.erc20Address != address(0), "sale for tokens only");
     }
     
     /**

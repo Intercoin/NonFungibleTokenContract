@@ -26,6 +26,11 @@ Once installed will be use methods:
 		<td>creating NFT token</td>
 	</tr>
     <tr>
+		<td><a href="#createandsale">createAndSale</a></td>
+		<td>anyone<span>&#42;</span></td>
+		<td>creating NFT token and immediately adding to sale</td>
+	</tr>
+    <tr>
 		<td><a href="#getcommission">getCommission</a></td>
 		<td>anyone</td>
 		<td>getting the amount of the commission that will be paid to the author when transferring</td>
@@ -110,6 +115,19 @@ name  | type | description
 URI|string|The Uniform Resource Identifier (URI)
 <a href="#commissionparams">commissionParams</a>|tuple|
 tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
+    
+#### createAndSale
+creating NFT and adding to sale<br>
+Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
+or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
+Params:<br>
+name  | type | description
+--|--|--
+URI|string|The Uniform Resource Identifier (URI)
+<a href="#commissionparams">commissionParams</a>|tuple|
+tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
+consumeAmount|uint256|amount in coins(bnb, eth etc.)
+consumeToken|address|token address. if address(0) then owner expect coins for sale
 
 #### getCommission
 getting Commission for NFT token<br>

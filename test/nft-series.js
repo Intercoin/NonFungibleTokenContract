@@ -54,14 +54,13 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.create("http://google.com", [zeroAddress, oneToken,0,0,7*3600,10000], amountTokensToCreate, {from: accountFive}),
-            "Token address can not be zero"
+            "wrong token"
         );
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,999999999], amountTokensToCreate, {from: accountFive}),
-            "reduceCommission can be in interval [0;10000]"
+            "wrong reduceCommission"
         );
-
     });
  
     it('should become author and owner after create ', async () => {
@@ -369,7 +368,7 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
-            'Token can not be sale for tokens'
+            'sale for tokens only'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew}),
@@ -433,7 +432,7 @@ contract('NFTSeries', (accounts) => {
         
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buy(tokenID, {from: ownerNew}),
-            'Token can not be sale for coins'
+            'sale for coins only'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.buyWithToken(tokenID, {from: ownerNew}),
@@ -478,7 +477,7 @@ contract('NFTSeries', (accounts) => {
     it('getCommission: should validate params ', async () => {
         await truffleAssert.reverts(
             NFTSeriesMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,0,10000], amountTokensToCreate, {from: accountFive}),
-            'IntervalSeconds can not be zero'
+            'wrong intervalSeconds'
         );
     });
     
@@ -558,7 +557,7 @@ contract('NFTSeries', (accounts) => {
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.reduceCommission(tokenID, 9999999999, {from: accountFive}),
-            'reduceCommission can be in interval [0;10000]'
+            'wrong reduceCommission'
         );
         await NFTSeriesMockInstance.reduceCommission(tokenID, 10000, {from: accountFive});
         
@@ -591,11 +590,11 @@ contract('NFTSeries', (accounts) => {
          
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
-            'addresses and proportions length should be equal length'
+            'addresses and proportions length should be equal'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
-            'addresses and proportions length should be equal length'
+            'addresses and proportions length should be equal'
         );
         await truffleAssert.reverts(
             NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, author], [coAuthor1Part, coAuthor2Part], {from: author}),

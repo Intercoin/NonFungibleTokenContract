@@ -148,11 +148,15 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     ) 
         public
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, bool isSingle) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         _validateTokenAuthor(rangeId);
         
-        require((proportions.length == addresses.length), "addresses and proportions length should be equal length");
+        if (!isSingle) {
+            (, rangeId) = splitSeries(tokenId);
+        }
+        
+        require((proportions.length == addresses.length), "addresses and proportions length should be equal");
         
         uint256 i;
         uint256 tmpProportions;
@@ -186,9 +190,12 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         public 
         override
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, bool isSingle) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         _validateTokenAuthor(rangeId);
+        if (!isSingle) {
+            (, rangeId) = splitSeries(tokenId);
+        }
         
         address author = __getAuthor(rangeId);
         require(to != author, "transferAuthorship to current author");
@@ -209,7 +216,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         view
         returns (address) 
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId,) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
         return _getAuthor(tokenId);
     }
@@ -261,7 +268,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
 
         
-        (uint256 serieId,/* uint256 rangeId*/) = _getSeriesIds(tokenId);
+        (uint256 serieId,/* uint256 rangeId*/,) = _getSeriesIds(tokenId);
         
         // string memory base = _baseURI();
         string memory _tokenURI = series[serieId].uri;
@@ -371,7 +378,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         view
         returns(address t, uint256 r)
     {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, ) = _getSeriesIds(tokenId);
 
         //initialCommission
         r = ranges[rangeId].commission.amount;
@@ -406,7 +413,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
                     ).div(uint256(10000));
                 
         }
-        
     }
 
     /**
@@ -429,7 +435,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
 
     function _ownerOf(uint256 tokenId) internal view returns (address owner) {
         
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, ) = _getSeriesIds(tokenId);
         owner = ranges[rangeId].owner;
         
     }
@@ -567,7 +573,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         return(serieId, rangeId);
     }
     
-    function _getSeriesIds(uint256 tokenId) internal view returns(uint256 serieId, uint256 rangeId) {
+    function _getSeriesIds(uint256 tokenId) internal view returns(uint256 serieId, uint256 rangeId, bool isSingleRange) {
         
         for(uint256 i=1; i<_seriesIds.current(); i++) {
             
@@ -576,7 +582,11 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
                 uint256 j = series[i].rangesTree.root;
                 while (j != 0) {
                     if (tokenId >= ranges[j].from && tokenId <= ranges[j].to) {
-                        return (i,j);
+                        return (
+                            i,
+                            j,
+                            (tokenId == ranges[j].from && tokenId == ranges[j].to) ? true : false
+                        );
                     }
                     if (tokenId < ranges[j].from && tokenId < ranges[j].to) {
                         j = series[i].rangesTree.prev(j);
@@ -589,7 +599,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             
            
         }
-        return (0,0);
+        return (0,0,false);
     }
     
     
@@ -619,7 +629,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
      */
      
     function splitSeries(uint256 tokenId) internal returns(uint256 infoId, uint256 newRangeId) {
-        (uint256 serieId, uint256 rangeId) = _getSeriesIds(tokenId);
+        (uint256 serieId, uint256 rangeId, ) = _getSeriesIds(tokenId);
         return __splitSeries(serieId, rangeId, tokenId);
     }
     
@@ -828,7 +838,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     
         
     function _getAuthor(uint256 tokenId) private view returns(address) {
-        (, uint256 rangeId) = _getSeriesIds(tokenId);
+        (, uint256 rangeId, ) = _getSeriesIds(tokenId);
         return __getAuthor(rangeId);
     }
     function __getAuthor(uint256 rangeId) private view returns(address) {
