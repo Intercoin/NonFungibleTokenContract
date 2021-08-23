@@ -19,11 +19,18 @@ contract NFT is INFT, NFTAuthorship {
     using CoAuthors for CoAuthors.List;
     
     CommunitySettings communitySettings;
-
-    // Mapping from token ID to commission
-    mapping (uint256 => CommissionSettings) private _commissions;
     
-    mapping (uint256 => SalesData) private _salesData;
+    struct TokenData {
+        CommissionSettings commissions;
+        SalesData salesData;
+    }
+    
+    mapping (uint256 => TokenData) private tokenData;
+    
+    // Mapping from token ID to commission
+    // mapping (uint256 => CommissionSettings) private _commissions;
+    
+    // mapping (uint256 => SalesData) private _salesData;
     
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
     event TokenRemovedFromSale(uint256 tokenId);
@@ -36,15 +43,15 @@ contract NFT is INFT, NFTAuthorship {
     }
     
     modifier onlySale(uint256 tokenId) {
-        require(_salesData[tokenId].isSale == true, "NFT: Token does not in sale");
+        require(tokenData[tokenId].salesData.isSale == true, "NFT: Token does not in sale");
         _;
     }
     modifier onlySaleForCoins(uint256 tokenId) {
-        require(_salesData[tokenId].erc20Address == address(0), "NFT: Token can not be sale for coins");
+        require(tokenData[tokenId].salesData.erc20Address == address(0), "NFT: Token can not be sale for coins");
         _;
     }
     modifier onlySaleForTokens(uint256 tokenId) {
-        require(_salesData[tokenId].erc20Address != address(0), "NFT: Token can not be sale for tokens");
+        require(tokenData[tokenId].salesData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
         _;
     }
     
@@ -160,7 +167,7 @@ contract NFT is INFT, NFTAuthorship {
         onlyIfTokenExists(tokenId)
         onlyNFTOwner(tokenId)
     {
-        _salesData[tokenId].isSale = false;    
+        tokenData[tokenId].salesData.isSale = false;    
         
         emit TokenRemovedFromSale(tokenId);
     }
@@ -180,7 +187,7 @@ contract NFT is INFT, NFTAuthorship {
         onlySale(tokenId)
         returns(address, uint256)
     {
-        return (_salesData[tokenId].erc20Address, _salesData[tokenId].amount);
+        return (tokenData[tokenId].salesData.erc20Address, tokenData[tokenId].salesData.amount);
     }
     
     /**
@@ -200,10 +207,10 @@ contract NFT is INFT, NFTAuthorship {
 
         bool success;
         uint256 funds = msg.value;
-        require(funds >= _salesData[tokenId].amount, "NFT: The coins sent are not enough");
+        require(funds >= tokenData[tokenId].salesData.amount, "NFT: The coins sent are not enough");
         
         // Refund
-        uint256 refund = (funds).sub(_salesData[tokenId].amount);
+        uint256 refund = (funds).sub(tokenData[tokenId].salesData.amount);
         if (refund > 0) {
             (success, ) = (_msgSender()).call{value: refund}("");    
             require(success, "NFT: Failed when send back coins to caller");
@@ -212,7 +219,7 @@ contract NFT is INFT, NFTAuthorship {
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
-        (success, ) = (owner).call{value: _salesData[tokenId].amount}("");    
+        (success, ) = (owner).call{value: tokenData[tokenId].salesData.amount}("");    
         require(success, "NFT: Failed when send coins to owner");
         
         removeFromSale(tokenId);
@@ -233,9 +240,9 @@ contract NFT is INFT, NFTAuthorship {
         onlySaleForTokens(tokenId)
     {
         
-        uint256 needToObtain = _salesData[tokenId].amount;
+        uint256 needToObtain = tokenData[tokenId].salesData.amount;
         
-        IERC20Upgradeable saleToken = IERC20Upgradeable(_salesData[tokenId].erc20Address);
+        IERC20Upgradeable saleToken = IERC20Upgradeable(tokenData[tokenId].salesData.erc20Address);
         uint256 minAmount = saleToken.allowance(_msgSender(), address(this)).min(saleToken.balanceOf(_msgSender()));
         
         require (minAmount >= needToObtain, "NFT: The allowance tokens are not enough");
@@ -268,13 +275,13 @@ contract NFT is INFT, NFTAuthorship {
         onlyIfTokenExists(tokenId)
     {
         if (amount == 0) {
-            if (_commissions[tokenId].offerAddresses.contains(_msgSender())) {
-                _commissions[tokenId].offerAddresses.remove(_msgSender());
-                delete _commissions[tokenId].offerPayAmount[_msgSender()];
+            if (tokenData[tokenId].commissions.offerAddresses.contains(_msgSender())) {
+                tokenData[tokenId].commissions.offerAddresses.remove(_msgSender());
+                delete tokenData[tokenId].commissions.offerPayAmount[_msgSender()];
             }
         } else {
-            _commissions[tokenId].offerPayAmount[_msgSender()] = amount;
-            _commissions[tokenId].offerAddresses.add(_msgSender());
+            tokenData[tokenId].commissions.offerPayAmount[_msgSender()] = amount;
+            tokenData[tokenId].commissions.offerAddresses.add(_msgSender());
         }
 
     }
@@ -294,7 +301,7 @@ contract NFT is INFT, NFTAuthorship {
     {
         _validateReduceCommission(reduceCommissionPercent);
         
-        _commissions[tokenId].reduceCommission = reduceCommissionPercent;
+        tokenData[tokenId].commissions.reduceCommission = reduceCommissionPercent;
     }
     
     function _create(
@@ -312,14 +319,14 @@ contract NFT is INFT, NFTAuthorship {
         
         tokenId = _createNFT(URI);
         
-        _commissions[tokenId].token = commissionParams.token;
-        _commissions[tokenId].amount = commissionParams.amount;
-        _commissions[tokenId].multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
-        _commissions[tokenId].accrue = commissionParams.accrue;
-        _commissions[tokenId].intervalSeconds = commissionParams.intervalSeconds;
-        _commissions[tokenId].reduceCommission = commissionParams.reduceCommission;
-        _commissions[tokenId].createdTs = block.timestamp;
-        _commissions[tokenId].lastTransferTs = block.timestamp;
+        tokenData[tokenId].commissions.token = commissionParams.token;
+        tokenData[tokenId].commissions.amount = commissionParams.amount;
+        tokenData[tokenId].commissions.multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
+        tokenData[tokenId].commissions.accrue = commissionParams.accrue;
+        tokenData[tokenId].commissions.intervalSeconds = commissionParams.intervalSeconds;
+        tokenData[tokenId].commissions.reduceCommission = commissionParams.reduceCommission;
+        tokenData[tokenId].commissions.createdTs = block.timestamp;
+        tokenData[tokenId].commissions.lastTransferTs = block.timestamp;
       
         _createAfter();
     }
@@ -331,9 +338,9 @@ contract NFT is INFT, NFTAuthorship {
     )
         internal
     {
-        _salesData[tokenId].amount = amount;
-        _salesData[tokenId].isSale = true;
-        _salesData[tokenId].erc20Address = consumeToken;
+        tokenData[tokenId].salesData.amount = amount;
+        tokenData[tokenId].salesData.isSale = true;
+        tokenData[tokenId].salesData.erc20Address = consumeToken;
         emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
 
@@ -351,36 +358,36 @@ contract NFT is INFT, NFTAuthorship {
     {
         
         //initialCommission
-        r = _commissions[tokenId].amount;
-        t = _commissions[tokenId].token;
+        r = tokenData[tokenId].commissions.amount;
+        t = tokenData[tokenId].commissions.token;
         if (r == 0) {
             
         } else {
-            if (_commissions[tokenId].multiply == 10000) {
+            if (tokenData[tokenId].commissions.multiply == 10000) {
                 // left initial commission
             } else {
                 
-                uint256 intervalsSinceCreate = (block.timestamp.sub(_commissions[tokenId].createdTs)).div(_commissions[tokenId].intervalSeconds);
-                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(_commissions[tokenId].lastTransferTs)).div(_commissions[tokenId].intervalSeconds);
+                uint256 intervalsSinceCreate = (block.timestamp.sub(tokenData[tokenId].commissions.createdTs)).div(tokenData[tokenId].commissions.intervalSeconds);
+                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(tokenData[tokenId].commissions.lastTransferTs)).div(tokenData[tokenId].commissions.intervalSeconds);
                 
                 // (   
                 //     initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
                 // ) * (10000 - reduceCommission) / 10000
                 
                 for(uint256 i = 0; i < intervalsSinceCreate; i++) {
-                    r = r.mul(_commissions[tokenId].multiply).div(10000);
+                    r = r.mul(tokenData[tokenId].commissions.multiply).div(10000);
                     
                 }
                 
                 r = r.add(
-                        intervalsSinceLastTransfer.mul(_commissions[tokenId].accrue)
+                        intervalsSinceLastTransfer.mul(tokenData[tokenId].commissions.accrue)
                     );
                 
                 
             }
             
             r = r.mul(
-                    uint256(10000).sub(_commissions[tokenId].reduceCommission)
+                    uint256(10000).sub(tokenData[tokenId].commissions.reduceCommission)
                 ).div(uint256(10000));
                 
         }
@@ -409,17 +416,17 @@ contract NFT is INFT, NFTAuthorship {
         } else {
             
             uint256 commissionAmountLeft = commissionAmount;
-            if (_commissions[tokenId].offerAddresses.contains(owner)) {
+            if (tokenData[tokenId].commissions.offerAddresses.contains(owner)) {
                 commissionAmountLeft = _transferPay(tokenId, owner, commissionToken, commissionAmountLeft);
             }
             uint256 i;
-            uint256 len = _commissions[tokenId].offerAddresses.length();
+            uint256 len = tokenData[tokenId].commissions.offerAddresses.length();
             uint256 tmpCommission;
             
             for (i = 0; i < len; i++) {
                 tmpCommission = commissionAmountLeft;
                 if (tmpCommission > 0) {
-                    commissionAmountLeft  = _transferPay(tokenId, _commissions[tokenId].offerAddresses.at(i), commissionToken, tmpCommission);
+                    commissionAmountLeft  = _transferPay(tokenId, tokenData[tokenId].commissions.offerAddresses.at(i), commissionToken, tmpCommission);
                 }
                 if (commissionAmountLeft == 0) {
                     break;
@@ -480,7 +487,7 @@ contract NFT is INFT, NFTAuthorship {
         private
         returns(uint256 commissionAmountLeft)
     {
-        uint256 minAmount = (_commissions[tokenId].offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
+        uint256 minAmount = (tokenData[tokenId].commissions.offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
         if (minAmount > 0) {
             if (minAmount > commissionAmountNeedToPay) {
                 minAmount = commissionAmountNeedToPay;
@@ -491,10 +498,10 @@ contract NFT is INFT, NFTAuthorship {
             bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
             require(success, "NFT: Failed when 'transferFrom' funds");
             
-            _commissions[tokenId].offerPayAmount[addr] = _commissions[tokenId].offerPayAmount[addr].sub(minAmount);
-            if (_commissions[tokenId].offerPayAmount[addr] == 0) {
-                delete _commissions[tokenId].offerPayAmount[addr];
-                _commissions[tokenId].offerAddresses.remove(addr);
+            tokenData[tokenId].commissions.offerPayAmount[addr] = tokenData[tokenId].commissions.offerPayAmount[addr].sub(minAmount);
+            if (tokenData[tokenId].commissions.offerPayAmount[addr] == 0) {
+                delete tokenData[tokenId].commissions.offerPayAmount[addr];
+                tokenData[tokenId].commissions.offerAddresses.remove(addr);
             }
             
         }
