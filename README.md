@@ -165,8 +165,7 @@ Params:<br>
 name  | type | description
 --|--|--
 tokenId|uint256|tokenID of transferred token
-addresses|address[]|co-authors's addresses
-proportions|uint256[]|proportions (mul by 100)
+proportions|tuple[]| array of tuples <a href="ratio">Ratio</a>.  
 
 #### claimLostToken
 claiming lost token which can be mistakenly sent to contract<br>
@@ -236,6 +235,12 @@ ret|uint256[]|list of tokenIds that belongs to author
 
 
 ## Tuples
+
+#### Ratio
+name  | type | description
+--|--|--
+addr|address|coauthor's address
+proportion|uint256|percent (mul by 100) represented how much co-authors will obtain of amount that author can be receive
 
 #### CommunitySettings
 name  | type | description

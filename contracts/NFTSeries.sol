@@ -143,6 +143,9 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
     
+    
+    
+    
     /**
      * remove NFT from list for sale.
      * @param tokenId NFT tokenId

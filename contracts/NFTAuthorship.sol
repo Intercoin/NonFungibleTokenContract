@@ -94,31 +94,26 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     
     function addAuthors(
         uint256 tokenId,
-        address[] memory addresses,
-        uint256[] memory proportions
+        CoAuthors.Ratio[] memory proportions
     ) 
         public
         onlyIfTokenExists(tokenId)
         onlyNFTAuthor(tokenId)
     {
         
-        require((proportions.length == addresses.length), "addresses and proportions length should be equal length");
-        
         uint256 i;
         uint256 tmpProportions;
         
         _coauthors[tokenId].empty();
-        for (i = 0; i < addresses.length; i++) {
-            require (addresses[i] != _getAuthor(tokenId), "author can not be in addresses array");
-            require (_coauthors[tokenId].contains(addresses[i]) == false, "addresses array have a duplicate values");
-            require (proportions[i] != 0, "proportions array can not contain a zero value");
+        for (i = 0; i < proportions.length; i++) {
+            require (proportions[i].addr != _getAuthor(tokenId), "author can not be co-author");
+            require (_coauthors[tokenId].contains(proportions[i].addr) == false, "can not have a duplicate values");
+            require (proportions[i].proportion != 0, "proportions can not be zero value");
             
-            tmpProportions = tmpProportions.add(proportions[i]);
+            tmpProportions = tmpProportions.add(proportions[i].proportion);
             
-            _coauthors[tokenId].add(addresses[i], proportions[i]);
+            _coauthors[tokenId].add(proportions[i].addr, proportions[i].proportion);
         }
-        
-        
         
         require (tmpProportions <= 100, "total proportions can not be more than 100%");
         

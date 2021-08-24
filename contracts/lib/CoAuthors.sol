@@ -10,6 +10,12 @@ library CoAuthors{
         EnumerableSetUpgradeable.AddressSet addresses;
     }
     
+    struct Ratio {
+        address addr;
+        uint256 proportion;
+    }
+    
+    
     function addBulk(List storage list, address[] memory addresses, uint256[] memory proportions) internal returns (bool) {
         
         empty(list);

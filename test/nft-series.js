@@ -587,35 +587,26 @@ contract('NFTSeries', (accounts) => {
         
         var tokenID = getArgs(tmpTr, "TokenSeriesCreated")[1].toString(); 
         
-         
         await truffleAssert.reverts(
-            NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
-            'addresses and proportions length should be equal'
+            NFTSeriesMockInstance.addAuthors(tokenID, [[coAuthor1, coAuthor1Part], [author, coAuthor2Part]], {from: author}),
+            'author can not be co-author'
         );
         await truffleAssert.reverts(
-            NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1], [coAuthor1Part, coAuthor2Part, coAuthor2Part], {from: author}),
-            'addresses and proportions length should be equal'
+            NFTSeriesMockInstance.addAuthors(tokenID, [[coAuthor1, coAuthor1Part], [coAuthor1, coAuthor2Part]], {from: author}),
+            'can not have a duplicate values'
         );
         await truffleAssert.reverts(
-            NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, author], [coAuthor1Part, coAuthor2Part], {from: author}),
-            'author can not be in addresses array'
+            NFTSeriesMockInstance.addAuthors(tokenID, [[coAuthor1, coAuthor1Part], [coAuthor2, 0]], {from: author}),
+            'proportions can not be zero value'
         );
         await truffleAssert.reverts(
-            NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor1], [coAuthor1Part, coAuthor2Part], {from: author}),
-            'addresses array have a duplicate values'
-        );
-        await truffleAssert.reverts(
-            NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, 0], {from: author}),
-            'proportions array can not contain a zero value'
-        );
-        await truffleAssert.reverts(
-            NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, hugePart], {from: author}),
+            NFTSeriesMockInstance.addAuthors(tokenID, [[coAuthor1, coAuthor1Part], [coAuthor2, hugePart]], {from: author}),
             'total proportions can not be more than 100%'
         );
          
         
         // add co-authors
-        await NFTSeriesMockInstance.addAuthors(tokenID, [coAuthor1, coAuthor2], [coAuthor1Part, coAuthor2Part], {from: author});
+        await NFTSeriesMockInstance.addAuthors(tokenID, [[coAuthor1, coAuthor1Part], [coAuthor2, coAuthor2Part]], {from: author});
         
         
         // transfer to new owner#2(accountTwo)
@@ -662,7 +653,7 @@ contract('NFTSeries', (accounts) => {
             'wrong rewards'
         );
         // clear co-authors
-        await NFTSeriesMockInstance.addAuthors(tokenID, [], [], {from: author});
+        await NFTSeriesMockInstance.addAuthors(tokenID, [] , {from: author});
         
         
     });

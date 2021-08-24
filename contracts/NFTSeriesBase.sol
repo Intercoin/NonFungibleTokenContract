@@ -79,6 +79,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         
     }
     
+    
     function _validateTokenExists(uint256 rangeId) internal view {
         require(ranges[rangeId].owner != address(0), "Nonexistent token");
     }
@@ -138,13 +139,12 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     /**
      * adding co-authors ot NFT token
      * @param tokenId  token ID
-     * @param addresses array of co-author's addresses
-     * @param proportions array of co-author's proportions (mul by 100). here 40% looks like "40". (40%|0.4|0.4*100=40)
+     * proportions array of tuples like [co-author's addresses, co-author's proportions]
+     * proportions (mul by 100). here 40% looks like "40". (40%|0.4|0.4*100=40)
      */
     function addAuthors(
         uint256 tokenId,
-        address[] memory addresses,
-        uint256[] memory proportions
+        CoAuthors.Ratio[] memory proportions
     ) 
         public
     {
@@ -156,20 +156,19 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             (, rangeId) = splitSeries(tokenId);
         }
         
-        require((proportions.length == addresses.length), "addresses and proportions length should be equal");
-        
         uint256 i;
         uint256 tmpProportions;
         
         ranges[rangeId].coauthors.empty();
-        for (i = 0; i < addresses.length; i++) {
-            require (addresses[i] != ranges[rangeId].author, "author can not be in addresses array");
-            require (ranges[rangeId].coauthors.contains(addresses[i]) == false, "addresses array have a duplicate values");
-            require (proportions[i] != 0, "proportions array can not contain a zero value");
+        for (i = 0; i < proportions.length; i++) {
             
-            tmpProportions = tmpProportions.add(proportions[i]);
+            require (proportions[i].addr != ranges[rangeId].author, "author can not be co-author");
+            require (ranges[rangeId].coauthors.contains(proportions[i].addr) == false, "can not have a duplicate values");
+            require (proportions[i].proportion != 0, "proportions can not be zero value");
             
-            ranges[rangeId].coauthors.add(addresses[i], proportions[i]);
+            tmpProportions = tmpProportions.add(proportions[i].proportion);
+            
+            ranges[rangeId].coauthors.add(proportions[i].addr, proportions[i].proportion);
         }
         
         
