@@ -4,3 +4,4 @@ artifacts
 .env
 .deps
 secret.*.json
+TODO.txt

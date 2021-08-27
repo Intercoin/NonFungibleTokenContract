@@ -1,7 +1,7 @@
 const BigNumber = require('bignumber.js');
 const truffleAssert = require('truffle-assertions');
 
-const NFTMock = artifacts.require("NFTMock");
+const NFTMock = artifacts.require("NFT");
 const CommunityMock = artifacts.require("CommunityMock");
 const ERC20Mintable = artifacts.require("ERC20Mintable");
 const helper = require("../helpers/truffleTestHelper");
@@ -36,7 +36,7 @@ contract('NFT', (accounts) => {
     });
     // beforeEach(async () => {
     // });
-  
+ 
     it('should create ', async () => {
                                       //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
         await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
@@ -399,7 +399,7 @@ contract('NFT', (accounts) => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         
@@ -447,9 +447,8 @@ contract('NFT', (accounts) => {
         );
         // put in offerToPay list
         await NFTMockInstance.offerToPayCommission(tokenID, oneToken, {from: ownerNew});
-        
+
         await NFTMockInstance.buyWithToken(tokenID, {from: ownerNew});
-        
         
         let ownerNewConfirm = await NFTMockInstance.ownerOf(tokenID);
 
@@ -521,7 +520,7 @@ contract('NFT', (accounts) => {
         );
         
         // forward to 5 times
-        helper.advanceTimeAndBlock(35*3602);
+        await helper.advanceTimeAndBlock(35*3602);
         tmpTr = await NFTMockInstance.getCommission(tokenID);
         retCommission = tmpTr[1]; 
         
@@ -578,7 +577,7 @@ contract('NFT', (accounts) => {
        
         await truffleAssert.reverts(
             NFTMockInstance.addAuthors(tokenID, [[coAuthor1, coAuthor1Part], [author, coAuthor2Part]], {from: author}),
-            'author can not be co-author'
+            'author can not be in list'
         );
         await truffleAssert.reverts(
             NFTMockInstance.addAuthors(tokenID, [[coAuthor1, coAuthor1Part], [coAuthor1, coAuthor2Part]], {from: author}),

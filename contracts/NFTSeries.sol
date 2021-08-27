@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./interfaces/ICommunity.sol";
-
 import "./NFTSeriesBase.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
@@ -16,24 +14,23 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     using MathUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using CoAuthors for CoAuthors.List;
+    using LibCommunity for LibCommunity.Settings;
     
-    CommunitySettings internal communitySettings;
+    LibCommunity.Settings internal communitySettings;
 
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
     event TokenRemovedFromSale(uint256 tokenId);
     event TokensAddedToSale(uint256 tokenIdFrom, uint256 tokenIdTo, uint256 amount, address consumeToken);
     
     modifier canRecord(string memory communityRole) {
-        bool s = _canRecord(communityRole);
-        
-        require(s == true, "Sender has not in accessible List");
+        require(communitySettings._canRecord(communityRole) == true, "Sender has not in accessible List");
         _;
     }
     
     function initialize(
         string memory name,
         string memory symbol,
-        CommunitySettings memory communitySettings_
+        LibCommunity.Settings memory communitySettings_
     ) 
         public 
         override 
@@ -132,15 +129,27 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     )
         public
     {
-        (uint256 serieId, uint256 rangeId, ) = _getSeriesIds(tokenId);
-        _validateTokenExists(rangeId);
-        _validateTokenOwner(rangeId);
+        uint256 rangeId = _preListForSale(tokenId);
         
-        (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
+        _postListForSale(rangeId, tokenId, amount, consumeToken);
         
-        _listForSale(newRangeId, amount, consumeToken);
-
-        emit TokenAddedToSale(tokenId, amount, consumeToken);
+    }
+    
+    function listForSale(
+        uint256 tokenId,
+        uint256 amount,
+        address consumeToken,
+        CoAuthors.Ratio[] memory proportions
+    )
+        public
+    {
+        
+        uint256 rangeId = _preListForSale(tokenId);
+        
+        
+        ranges[rangeId].onetimeConsumers.smartAdd(proportions, ranges[rangeId].author);
+        
+        _postListForSale(rangeId, tokenId, amount, consumeToken);
     }
     
     
@@ -162,6 +171,7 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
         
         ranges[newRangeId].saleData.isSale = false;    
+        ranges[rangeId].onetimeConsumers.empty();
         
         emit TokenRemovedFromSale(tokenId);
     }
@@ -219,8 +229,32 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
-        (success, ) = (owner).call{value: ranges[rangeId].saleData.amount}("");    
-        require(success, "Failed when send coins to owner");
+        
+        uint256 fundsLeft = ranges[rangeId].saleData.amount;
+        funds = ranges[rangeId].saleData.amount;
+        
+        uint256 len = ranges[rangeId].onetimeConsumers.length();
+    
+        if (len > 0) {
+            uint256 tmpFunds;     
+            address tmpAddr;
+            for (uint256 i = 0; i < len; i++) {
+                (tmpAddr, tmpFunds) = ranges[rangeId].onetimeConsumers.at(i);
+                tmpFunds = (funds).mul(tmpFunds).div(100);
+                
+                (success, ) = (tmpAddr).call{value: tmpFunds}("");    
+                require(success, "Failed when send coins");
+        
+                fundsLeft = fundsLeft.sub(tmpFunds);
+            }
+        }
+    
+        if (fundsLeft>0) {
+            (success, ) = (owner).call{value: fundsLeft}("");    
+            require(success, "Failed when send coins to owner");
+        }
+        
+        
         
         removeFromSale(tokenId);
         
@@ -262,11 +296,32 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
-        success = saleToken.transfer(owner, needToObtain);
-        // require(success, "Failed when 'transfer' funds to owner");
-        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-        require(success);
+        
+        uint256 needToObtainLeft = needToObtain;
+           
+        uint256 len = ranges[rangeId].onetimeConsumers.length();
+        if (len > 0) {
+            uint256 tmpCommission;     
+            address tmpAddr;
+            for (uint256 i = 0; i < len; i++) {
+                (tmpAddr, tmpCommission) = ranges[rangeId].onetimeConsumers.at(i);
+                tmpCommission = needToObtain.mul(tmpCommission).div(100);
+                
+                success = saleToken.transfer(tmpAddr, tmpCommission);
+                // require(success, "Failed when 'transfer' funds to co-author");
+                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                require(success);
+                needToObtainLeft = needToObtainLeft.sub(tmpCommission);
+            }
             
+        }
+        
+        if (needToObtainLeft>0) {
+            success = saleToken.transfer(owner, needToObtain);
+            // require(success, "Failed when 'transfer' funds to owner");
+            // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+            require(success);
+        }
         removeFromSale(tokenId);
     }
     
@@ -333,6 +388,34 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         _validateReduceCommission(commissionParams.reduceCommission);
         
         (serieId, rangeId) = _mint(msg.sender, URI, tokenAmount, commissionParams);  
+    }
+    
+    
+    function _preListForSale(
+        uint256 tokenId
+    )
+        internal
+        returns(uint256 newRangeId)
+    {
+         
+        (uint256 serieId, uint256 rangeId, ) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateTokenOwner(rangeId);
+        
+        (, newRangeId) = __splitSeries(serieId, rangeId, tokenId);
+    }
+    
+    function _postListForSale(
+        uint256 rangeId,
+        uint256 tokenId,
+        uint256 amount,
+        address consumeToken
+    )
+        internal
+    {
+       _listForSale(rangeId, amount, consumeToken);
+
+        emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
     
     function _listForSale(
@@ -421,18 +504,16 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
             require(commissionAmountLeft == 0, "author's commission should be paid");
             
             // 'transfer' commission to the author
-            // if Author have co-authors then pays goes proportionally to co-authors and left send to main author
+            // if Author have co-authors then pays goes proportionally to co-authors 
+            // else all send to author
             // ------------------------
             bool success;
+            address tmpAddr;
             len = ranges[rangeId].coauthors.length();
+            commissionAmountLeft = commissionAmount;
             if (len == 0) {
-                success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-                // require(success, "Failed when 'transfer' funds to author");
-                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-                require(success);
             } else {
-                commissionAmountLeft = commissionAmount;
-                address tmpAddr;
+
                 for (i = 0; i < len; i++) {
                     (tmpAddr, tmpCommission) = ranges[rangeId].coauthors.at(i);
                     tmpCommission = commissionAmount.mul(tmpCommission).div(100);
@@ -443,14 +524,15 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
                     require(success);
                     commissionAmountLeft = commissionAmountLeft.sub(tmpCommission);
                 }
-                
-                if (commissionAmountLeft > 0) {
-                    success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmountLeft);
-                    // require(success, "Failed when 'transfer' funds to author");
-                    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-                    require(success);
-                }
+            }    
+            
+            if (commissionAmountLeft > 0) {
+                success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmountLeft);
+                // require(success, "Failed when 'transfer' funds to author");
+                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                require(success);
             }
+            
         }
     }
     
@@ -495,30 +577,4 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         
     }
     
-    /**
-     * return true if {roleName} exist in Community contract for msg.sender
-     * @param roleName role name
-     */
-    function _canRecord(
-        string memory roleName
-    ) 
-        private 
-        view 
-        returns(bool s)
-    {
-        //s = false;
-        if (communitySettings.addr == address(0)) {
-            // if the community address set to zero then we must skip the check
-            s = true;
-        } else {
-            string[] memory roles = ICommunity(communitySettings.addr).getRoles(msg.sender);
-            for (uint256 i=0; i< roles.length; i++) {
-                
-                if (keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked(roles[i]))) {
-                    s = true;
-                }
-            }
-        }
-
-    }
 }

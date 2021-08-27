@@ -101,22 +101,7 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         onlyNFTAuthor(tokenId)
     {
         
-        uint256 i;
-        uint256 tmpProportions;
-        
-        _coauthors[tokenId].empty();
-        for (i = 0; i < proportions.length; i++) {
-            require (proportions[i].addr != _getAuthor(tokenId), "author can not be co-author");
-            require (_coauthors[tokenId].contains(proportions[i].addr) == false, "can not have a duplicate values");
-            require (proportions[i].proportion != 0, "proportions can not be zero value");
-            
-            tmpProportions = tmpProportions.add(proportions[i].proportion);
-            
-            _coauthors[tokenId].add(proportions[i].addr, proportions[i].proportion);
-        }
-        
-        require (tmpProportions <= 100, "total proportions can not be more than 100%");
-        
+        _coauthors[tokenId].smartAdd(proportions, _getAuthor(tokenId));
         
     }
     
@@ -153,7 +138,20 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         delete _authors[tokenId];
 
     }
-   
+    
+    /**
+     * @param tokenId token ID
+     */
+    function _getAuthor(
+        uint256 tokenId
+    ) 
+        internal 
+        view 
+        returns (address)  
+    {
+        return _authors[tokenId];
+    }
+    
     /**
      * @param tokenId token ID
      * @param from old author's address(if address == address(0) - it's newly created NFT)
@@ -173,17 +171,5 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         _coauthors[tokenId].removeIfExists(to);
     }
     
-    /**
-     * @param tokenId token ID
-     */
-    function _getAuthor(
-        uint256 tokenId
-    ) 
-        private 
-        view 
-        returns (address)  
-    {
-        return _authors[tokenId];
-    }
     
 }

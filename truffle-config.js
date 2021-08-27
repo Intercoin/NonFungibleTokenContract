@@ -89,7 +89,8 @@ module.exports = {
     rinkeby: {
         provider: () => new HDWalletProvider(process.env.private_key, 'https://rinkeby.infura.io/v3/'+process.env.infura_project_id),
         network_id: 4,       // Rinkeby's id
-        gas: 9000000,        
+        gas: 9000000,
+        gasPrice: 5000000000, // 5 gwei
         //confirmations: 2,    
         timeoutBlocks: 200,  
         skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
@@ -123,13 +124,13 @@ module.exports = {
       settings: {          // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
             enabled: true,
-            runs: 200
+            runs: 1
         },
       //  evmVersion: "byzantium"
       }
     }
   },
-  plugins: ['truffle-plugin-verify', 'truffle-plugin-solhint'],
+  plugins: ['truffle-plugin-verify', 'truffle-plugin-solhint', 'truffle-contract-size'],
   
   api_keys: {
     etherscan: process.env.etherscan_api_key,

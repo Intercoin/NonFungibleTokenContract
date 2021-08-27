@@ -74,6 +74,8 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         //CoAuthorsSettings coauthors;
         CoAuthors.List coauthors;
         
+        CoAuthors.List onetimeConsumers;
+        
         CommissionSettings commission;
         SalesData saleData;
         
@@ -134,6 +136,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
                 }    
         }
         return ret;
+     
     }
 
     /**
@@ -156,25 +159,8 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             (, rangeId) = splitSeries(tokenId);
         }
         
-        uint256 i;
-        uint256 tmpProportions;
         
-        ranges[rangeId].coauthors.empty();
-        for (i = 0; i < proportions.length; i++) {
-            
-            require (proportions[i].addr != ranges[rangeId].author, "author can not be co-author");
-            require (ranges[rangeId].coauthors.contains(proportions[i].addr) == false, "can not have a duplicate values");
-            require (proportions[i].proportion != 0, "proportions can not be zero value");
-            
-            tmpProportions = tmpProportions.add(proportions[i].proportion);
-            
-            ranges[rangeId].coauthors.add(proportions[i].addr, proportions[i].proportion);
-        }
-        
-        
-        
-        require (tmpProportions <= 100, "total proportions can not be more than 100%");
-        
+        ranges[rangeId].coauthors.smartAdd(proportions, ranges[rangeId].author);
         
     }
 
@@ -289,10 +275,10 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
             // ?&t=726&s=4&i=4&c=10
             return string(abi.encodePacked(
             _tokenURI,
-            's=', serieId.toString(), '&',  //serieId
-            'i=', index.toString(), '&',    //indexId
-            't=', tokenId.toString(), '&',  //tokenId
-            'c=', count.toString()          //count
+            's=', serieId.toString(),   //serieId
+            '&i=', index.toString(),    //indexId
+            '&t=', tokenId.toString(),  //tokenId
+            '&c=', count.toString()     //count
             ));
         }
 
@@ -653,20 +639,23 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
                     
                     //----
                     tmpRangeId = rangeId+1;
-                    ranges[tmpRangeId].from = tokenId+1;
-                    ranges[tmpRangeId].to = ranges[rangeId].to;
-                    ranges[tmpRangeId].owner = ranges[rangeId].owner;
-                    ranges[tmpRangeId].author = ranges[rangeId].author;
                     //---
-                    ranges[tmpRangeId].commission.token             = ranges[rangeId].commission.token;
-                    ranges[tmpRangeId].commission.amount            = ranges[rangeId].commission.amount;
-                    ranges[tmpRangeId].commission.multiply          = ranges[rangeId].commission.multiply;
-                    ranges[tmpRangeId].commission.accrue            = ranges[rangeId].commission.accrue;
-                    ranges[tmpRangeId].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
-                    ranges[tmpRangeId].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
-                    ranges[tmpRangeId].commission.createdTs         = ranges[rangeId].commission.createdTs;
-                    ranges[tmpRangeId].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
-                    //----
+                    // ranges[tmpRangeId].from = tokenId+1;
+                    // ranges[tmpRangeId].to = ranges[rangeId].to;
+                    //---
+                    // ranges[tmpRangeId].owner = ranges[rangeId].owner;
+                    // ranges[tmpRangeId].author = ranges[rangeId].author;
+                    // ranges[tmpRangeId].commission.token             = ranges[rangeId].commission.token;
+                    // ranges[tmpRangeId].commission.amount            = ranges[rangeId].commission.amount;
+                    // ranges[tmpRangeId].commission.multiply          = ranges[rangeId].commission.multiply;
+                    // ranges[tmpRangeId].commission.accrue            = ranges[rangeId].commission.accrue;
+                    // ranges[tmpRangeId].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
+                    // ranges[tmpRangeId].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
+                    // ranges[tmpRangeId].commission.createdTs         = ranges[rangeId].commission.createdTs;
+                    // ranges[tmpRangeId].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                    copyRangePart(tmpRangeId, rangeId, tokenId+1, ranges[rangeId].to);
+                    //---------
+                    
                     ranges[newRangeId].from = tokenId;
                     ranges[newRangeId].to = tokenId;
                     
@@ -675,39 +664,44 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
                     //  when split (id==N)[4:8].  where 4<N<=8
                     
                     newRangeId = tokenId;
-                    
-                    ranges[newRangeId].from = tokenId;
-                    ranges[newRangeId].to = tokenId;
-                    ranges[newRangeId].owner = ranges[rangeId].owner;
-                    ranges[newRangeId].author = ranges[rangeId].author;
                     //---
-                    ranges[newRangeId].commission.token             = ranges[rangeId].commission.token;
-                    ranges[newRangeId].commission.amount            = ranges[rangeId].commission.amount;
-                    ranges[newRangeId].commission.multiply          = ranges[rangeId].commission.multiply;
-                    ranges[newRangeId].commission.accrue            = ranges[rangeId].commission.accrue;
-                    ranges[newRangeId].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
-                    ranges[newRangeId].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
-                    ranges[newRangeId].commission.createdTs         = ranges[rangeId].commission.createdTs;
-                    ranges[newRangeId].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                    // ranges[newRangeId].from = tokenId;
+                    // ranges[newRangeId].to = tokenId;
+                    //---
+                    // ranges[newRangeId].owner = ranges[rangeId].owner;
+                    // ranges[newRangeId].author = ranges[rangeId].author;
+                    // ranges[newRangeId].commission.token             = ranges[rangeId].commission.token;
+                    // ranges[newRangeId].commission.amount            = ranges[rangeId].commission.amount;
+                    // ranges[newRangeId].commission.multiply          = ranges[rangeId].commission.multiply;
+                    // ranges[newRangeId].commission.accrue            = ranges[rangeId].commission.accrue;
+                    // ranges[newRangeId].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
+                    // ranges[newRangeId].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
+                    // ranges[newRangeId].commission.createdTs         = ranges[rangeId].commission.createdTs;
+                    // ranges[newRangeId].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                    copyRangePart(newRangeId, rangeId, tokenId, tokenId);
+                    //---------
                     
                     series[serieId].rangesTree.insert(newRangeId);
                     
                     // if N!=8 then create right part
                     if (tokenId != ranges[rangeId].to) {
                         tmpRangeId2 = tokenId+1;
-                        ranges[tmpRangeId2].from = tokenId+1;
-                        ranges[tmpRangeId2].to = ranges[rangeId].to;
-                        ranges[tmpRangeId2].owner = ranges[rangeId].owner;
-                        ranges[tmpRangeId2].author = ranges[rangeId].author;
                         //---
-                        ranges[tmpRangeId2].commission.token             = ranges[rangeId].commission.token;
-                        ranges[tmpRangeId2].commission.amount            = ranges[rangeId].commission.amount;
-                        ranges[tmpRangeId2].commission.multiply          = ranges[rangeId].commission.multiply;
-                        ranges[tmpRangeId2].commission.accrue            = ranges[rangeId].commission.accrue;
-                        ranges[tmpRangeId2].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
-                        ranges[tmpRangeId2].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
-                        ranges[tmpRangeId2].commission.createdTs         = ranges[rangeId].commission.createdTs;
-                        ranges[tmpRangeId2].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                        // ranges[tmpRangeId2].from = tokenId+1;
+                        // ranges[tmpRangeId2].to = ranges[rangeId].to;
+                        //---
+                        // ranges[tmpRangeId2].owner = ranges[rangeId].owner;
+                        // ranges[tmpRangeId2].author = ranges[rangeId].author;
+                        // ranges[tmpRangeId2].commission.token             = ranges[rangeId].commission.token;
+                        // ranges[tmpRangeId2].commission.amount            = ranges[rangeId].commission.amount;
+                        // ranges[tmpRangeId2].commission.multiply          = ranges[rangeId].commission.multiply;
+                        // ranges[tmpRangeId2].commission.accrue            = ranges[rangeId].commission.accrue;
+                        // ranges[tmpRangeId2].commission.intervalSeconds   = ranges[rangeId].commission.intervalSeconds;
+                        // ranges[tmpRangeId2].commission.reduceCommission  = ranges[rangeId].commission.reduceCommission;
+                        // ranges[tmpRangeId2].commission.createdTs         = ranges[rangeId].commission.createdTs;
+                        // ranges[tmpRangeId2].commission.lastTransferTs    = ranges[rangeId].commission.lastTransferTs;
+                        copyRangePart(tmpRangeId2, rangeId, tokenId+1, ranges[rangeId].to);
+                        //---------
                         
                         series[serieId].rangesTree.insert(tmpRangeId2);
                     }
@@ -721,6 +715,30 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         }
         
         return (serieId, newRangeId);
+    }
+    
+    function copyRangePart(
+        uint256 newId, 
+        uint256 oldId, 
+        uint256 from, 
+        uint256 to
+    ) 
+        private
+    {
+        ranges[newId].from = from;
+        ranges[newId].to = to;
+        
+        ranges[newId].owner = ranges[oldId].owner;
+        ranges[newId].author = ranges[oldId].author;
+        
+        ranges[newId].commission.token             = ranges[oldId].commission.token;
+        ranges[newId].commission.amount            = ranges[oldId].commission.amount;
+        ranges[newId].commission.multiply          = ranges[oldId].commission.multiply;
+        ranges[newId].commission.accrue            = ranges[oldId].commission.accrue;
+        ranges[newId].commission.intervalSeconds   = ranges[oldId].commission.intervalSeconds;
+        ranges[newId].commission.reduceCommission  = ranges[oldId].commission.reduceCommission;
+        ranges[newId].commission.createdTs         = ranges[oldId].commission.createdTs;
+        ranges[newId].commission.lastTransferTs    = ranges[oldId].commission.lastTransferTs;
     }
     
     /**

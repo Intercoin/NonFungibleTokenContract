@@ -21,6 +21,7 @@ contract NFT is INFT, NFTAuthorship {
     CommunitySettings communitySettings;
     
     struct TokenData {
+        CoAuthors.List onetimeConsumers;
         CommissionSettings commissions;
         SalesData salesData;
     }
@@ -156,6 +157,23 @@ contract NFT is INFT, NFTAuthorship {
         _listForSale(tokenId, amount, consumeToken);
     }
     
+    function listForSale(
+        uint256 tokenId,
+        uint256 amount,
+        address consumeToken,
+        CoAuthors.Ratio[] memory proportions
+    )
+        public
+        onlyIfTokenExists(tokenId)
+        onlyNFTOwner(tokenId)
+    {
+        _listForSale(tokenId, amount, consumeToken);
+        
+        tokenData[tokenId].onetimeConsumers.smartAdd(proportions, _getAuthor(tokenId));
+        
+    }
+    
+    
     /**
      * remove NFT from list for sale.
      * @param tokenId NFT tokenId
@@ -184,10 +202,10 @@ contract NFT is INFT, NFTAuthorship {
         public
         view
         onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        returns(address, uint256)
+        //onlySale(tokenId)
+        returns(address, uint256, bool)
     {
-        return (tokenData[tokenId].salesData.erc20Address, tokenData[tokenId].salesData.amount);
+        return (tokenData[tokenId].salesData.erc20Address, tokenData[tokenId].salesData.amount, tokenData[tokenId].salesData.isSale);
     }
     
     /**
@@ -219,11 +237,42 @@ contract NFT is INFT, NFTAuthorship {
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
-        (success, ) = (owner).call{value: tokenData[tokenId].salesData.amount}("");    
-        require(success, "NFT: Failed when send coins to owner");
+        uint256 fundsLeft = tokenData[tokenId].salesData.amount;
+        funds = tokenData[tokenId].salesData.amount;
+        
+        uint256 len = tokenData[tokenId].onetimeConsumers.length();
+
+        if (len > 0) {
+            uint256 tmpFunds;     
+            address tmpAddr;
+            for (uint256 i = 0; i < len; i++) {
+                
+                //(tmpAddr, tmpFunds) = tokenData[tokenId].onetimeConsumers.at(i);
+                (tmpAddr, tmpFunds) = getConsumerTuple(tokenId,i);
+                
+                tmpFunds = (funds).mul(tmpFunds).div(100);
+                
+                (success, ) = (tmpAddr).call{value: tmpFunds}("");    
+                require(success, "Failed when send coins");
+        
+                fundsLeft = fundsLeft.sub(tmpFunds);
+            }
+        }
+
+        if (fundsLeft>0) {
+            (success, ) = (owner).call{value: fundsLeft}("");    
+            require(success, "Failed when send coins to owner");
+        }
         
         removeFromSale(tokenId);
-        
+       
+    }
+    
+    /**
+     * additional method to avoid stack too deep error
+     */
+    function getConsumerTuple(uint256 tokenId, uint256 i) internal view returns(address a, uint256 f) {
+        (a,f) = tokenData[tokenId].onetimeConsumers.at(i);
     }
     
     /**
@@ -246,7 +295,7 @@ contract NFT is INFT, NFTAuthorship {
         uint256 minAmount = saleToken.allowance(_msgSender(), address(this)).min(saleToken.balanceOf(_msgSender()));
         
         require (minAmount >= needToObtain, "NFT: The allowance tokens are not enough");
-        
+       
         bool success;
         
         success = saleToken.transferFrom(_msgSender(), address(this), needToObtain);
@@ -255,9 +304,35 @@ contract NFT is INFT, NFTAuthorship {
         address owner = ownerOf(tokenId);
         _transfer(owner, _msgSender(), tokenId);
         
-        success = saleToken.transfer(owner, needToObtain);
-        require(success, "NFT: Failed when 'transfer' funds to owner");
+     
+        uint256 needToObtainLeft = needToObtain;
+           
+        uint256 len = tokenData[tokenId].onetimeConsumers.length();
+        if (len > 0) {
+            uint256 tmpCommission;     
+            address tmpAddr;
+            for (uint256 i = 0; i < len; i++) {
+                //(tmpAddr, tmpCommission) = tokenData[tokenId].onetimeConsumers.at(i);
+                (tmpAddr, tmpCommission) = getConsumerTuple(tokenId,i);
+                
+                tmpCommission = needToObtain.mul(tmpCommission).div(100);
+                
+                success = saleToken.transfer(tmpAddr, tmpCommission);
+                // require(success, "Failed when 'transfer' funds to co-author");
+                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                require(success);
+                needToObtainLeft = needToObtainLeft.sub(tmpCommission);
+            }
             
+        }
+
+        if (needToObtainLeft>0) {
+            success = saleToken.transfer(owner, needToObtain);
+            // require(success, "Failed when 'transfer' funds to owner");
+            // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+            require(success);
+        }
+        
         removeFromSale(tokenId);
         
     }
@@ -435,19 +510,26 @@ contract NFT is INFT, NFTAuthorship {
             
             require(commissionAmountLeft == 0, "NFT: author's commission should be paid");
             
+            
+            
             // 'transfer' commission to the author
-            // if Author have co-authors then pays goes proportionally to co-authors and left send to main author
+            // if Author have co-authors then pays goes proportionally to co-authors 
+            // then 
+            //      if was set onetimeConsumers then 
+            //          pays goes proportionally to them
+            //          and finally left send to main author
+            //      else all send to main author
             // ------------------------
+            
             bool success;
+            address tmpAddr;
+            commissionAmountLeft = commissionAmount;
             len = _coauthors[tokenId].length();
+            
             if (len == 0) {
-                success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-                // require(success, "Failed when 'transfer' funds to author");
-                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-                require(success);
+
             } else {
-                commissionAmountLeft = commissionAmount;
-                address tmpAddr;
+                
                 for (i = 0; i < len; i++) {
                     (tmpAddr, tmpCommission) = _coauthors[tokenId].at(i);
                     tmpCommission = commissionAmount.mul(tmpCommission).div(100);
@@ -459,14 +541,15 @@ contract NFT is INFT, NFTAuthorship {
                     commissionAmountLeft = commissionAmountLeft.sub(tmpCommission);
                 }
                 
-                if (commissionAmountLeft > 0) {
-                    success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmountLeft);
-                    // require(success, "Failed when 'transfer' funds to author");
-                    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-                    require(success);
-                }
+                
             }
-        
+            
+            if (commissionAmountLeft > 0) {    
+                success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmountLeft);
+                // require(success, "Failed when 'transfer' funds to author");
+                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                require(success);
+            }
         }
         
     }

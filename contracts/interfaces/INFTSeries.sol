@@ -5,11 +5,10 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 
+import "../lib/LibCommunity.sol";
+
 interface INFTSeries  is IERC721Upgradeable {
-    struct CommunitySettings {
-        address addr;
-        string roleMint;
-    }
+    
     struct CommissionParams {
         address token; 
         uint256 amount;
@@ -38,5 +37,5 @@ interface INFTSeries  is IERC721Upgradeable {
     }
     
     
-    function initialize(string memory, string memory, CommunitySettings memory) external;
+    function initialize(string memory, string memory, LibCommunity.Settings memory) external;
 }

@@ -9,7 +9,7 @@ contract NFTSeriesFactory is FactoryBase {
     function produce(
         string memory name,
         string memory symbol,
-        INFTSeries.CommunitySettings memory communitySettings
+        LibCommunity.Settings memory communitySettings
     ) public returns(address) {
         
         address proxy = _produce();
