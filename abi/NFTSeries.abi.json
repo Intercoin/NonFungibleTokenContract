@@ -220,14 +220,21 @@
 				"type": "uint256"
 			},
 			{
-				"internalType": "address[]",
-				"name": "addresses",
-				"type": "address[]"
-			},
-			{
-				"internalType": "uint256[]",
+				"components": [
+					{
+						"internalType": "address",
+						"name": "addr",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "proportion",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct CoAuthors.Ratio[]",
 				"name": "proportions",
-				"type": "uint256[]"
+				"type": "tuple[]"
 			}
 		],
 		"name": "addAuthors",
@@ -518,7 +525,7 @@
 						"type": "string"
 					}
 				],
-				"internalType": "struct INFTSeries.CommunitySettings",
+				"internalType": "struct LibCommunity.Settings",
 				"name": "communitySettings_",
 				"type": "tuple"
 			}
@@ -568,6 +575,46 @@
 				"internalType": "address",
 				"name": "consumeToken",
 				"type": "address"
+			}
+		],
+		"name": "listForSale",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "consumeToken",
+				"type": "address"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "addr",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "proportion",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct CoAuthors.Ratio[]",
+				"name": "proportions",
+				"type": "tuple[]"
 			}
 		],
 		"name": "listForSale",
