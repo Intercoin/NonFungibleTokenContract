@@ -211,6 +211,14 @@ name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
 
+Return tuple with params:
+
+name  | type | description
+--|--|--
+amount|uint256|amount in coins(bnb, eth etc.)
+consumeToken|address|token address. if address(0) then owner expect coins for sale
+isSale|bool|return true if token put into sale list
+
 #### buy
 can buy token by sending coins bnb or eth to contract<br>
 Params:
