@@ -98,7 +98,8 @@ Once installed will be use methods:
 
 #### initialize
 initialize contract after deploy or clone. need to be called before using<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 name|string| name of NFT token
@@ -109,7 +110,8 @@ symbol|string|symbol of NFT token
 creating NFT <br>
 Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
 or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
@@ -120,7 +122,8 @@ tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries 
 creating NFT and adding to sale<br>
 Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
 or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
@@ -131,20 +134,23 @@ consumeToken|address|token address. if address(0) then owner expect coins for sa
 
 #### getCommission
 getting Commission for NFT token<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256| `tokenId`
 
 #### reduceCommission
 reducing Commission for NFT token<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256| `tokenId`
 reduceCommissionPercent|uint256| percent in interval [0;10000]  0%-100%
 
-Return Values:<br>
+Return Values:
+
 name  | type | description
 --|--|--   
 token|address|address of ERC20 token
@@ -152,7 +158,8 @@ amount|uint256|amount commission
 
 #### transferAuthorship
 Transfer authorship for NFT token<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 from|address|old author's address
@@ -161,7 +168,8 @@ tokenId|uint256|tokenID of transferred token
 
 #### addAuthors
 Adding co-authors for NFT token<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256|tokenID of transferred token
@@ -169,7 +177,8 @@ proportions|tuple[]| array of tuples <a href="ratio">Ratio</a>.
 
 #### claimLostToken
 claiming lost token which can be mistakenly sent to contract<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 erc20address|address| ERC20 contract's address
@@ -177,7 +186,8 @@ erc20address|address| ERC20 contract's address
 #### listForSale
 adding token to sale<br>
 Emitted event <a href="#tokenaddedtosale">TokenAddedToSale</a><br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
@@ -187,35 +197,40 @@ consumeToken|address|token address. if address(0) then owner expect coins for sa
 #### removeFromSale
 removing token from sale list<br>
 Emitted event <a href="#tokenremovedfromsale">TokenRemovedFromSale</a><br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
 
 #### saleInfo
 viewing sale info<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
 
 #### buy
 can buy token by sending coins bnb or eth to contract<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
 
 #### buyWithToken
 can buy token by sending erc20 tokens to contract (need approving before)<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
 
 #### offerToPayCommission
 offering to pay commission for token<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 tokenId|uint256|`tokenId`
@@ -223,12 +238,14 @@ amount|uint256|amount in coins(bnb, eth etc.)
 
 #### tokensByAuthor
 viewing tokens list by author<br>
-Params:<br>
+Params:
+
 name  | type | description
 --|--|--
 author|address| author's address
 
-Return Values:<br>
+Return Values:
+
 name  | type | description
 --|--|--   
 ret|uint256[]|list of tokenIds that belongs to author
@@ -270,6 +287,7 @@ reduceCommission|uint256| reduced commission in percents from final calculated v
 
 #### TokenCreated
 emitted only in NFT contract
+
 name  | type | description
 --|--|--
 author|address|author's address of newly created token
@@ -277,6 +295,7 @@ tokenId|uint256|tokenID of newly created token
 
 #### TokenSeriesCreated
 emitted only in NFTSeries contract
+
 name  | type | description
 --|--|--
 author|address|author's address of newly created token
