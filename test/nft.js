@@ -36,6 +36,224 @@ contract('NFT', (accounts) => {
     });
     // beforeEach(async () => {
     // });
+    
+    it('[info]gas consuming ', async () => {
+                                      //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString();
+        
+        let avgGasUsed={
+            'listForSale': 0,
+            'buy': 0,
+            'transferFrom': 0
+        };
+        let countIterations = 10;
+        for (let i=0; i<countIterations; i++) {
+            
+            // let put into sale-list for coins
+            tmpTr = await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: accountFive});
+            avgGasUsed['listForSale'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.buy(tokenID, {from: accountFourth, value: oneToken});
+            avgGasUsed['buy'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.transferFrom(accountFourth, accountFive, tokenID, {from: accountFourth});
+            avgGasUsed['transferFrom'] += tmpTr.receipt.gasUsed;
+        }
+        
+        avgGasUsed['listForSale'] /= countIterations;
+        avgGasUsed['buy'] /= countIterations;
+        avgGasUsed['transferFrom'] /= countIterations;
+        
+        console.log(avgGasUsed['listForSale']);
+        console.log(avgGasUsed['buy']);
+        console.log(avgGasUsed['transferFrom']);
+        assert.equal((avgGasUsed['listForSale']) < 80000, true, 'too much gas consuming `listForSale`');
+        assert.equal((avgGasUsed['buy']) < 80000, true, 'too much gas consuming `buy`');
+        assert.equal((avgGasUsed['transferFrom']) < 80000, true, 'too much gas consuming `transferFrom`');
+    });
+   
+    it('[info2]gas consuming ', async () => {
+                                      //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString();
+        
+        let avgGasUsed={
+            'first':{
+                'listForSale': 0,
+                'buy': 0,
+                'transferFrom': 0
+            },
+            'last':{
+                'listForSale': 0,
+                'buy': 0,
+                'transferFrom': 0
+            }
+        };
+        let i;
+        for (i=0; i<50; i++) {
+            tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], {from: accountFive});
+        }
+        let countIterations = 10;
+        tokenID = tmpTr.logs[0].args[1].toString();
+        for (i=0; i<countIterations; i++) {
+            
+            // first token
+            tmpTr = await NFTMockInstance.listForSale(0,oneToken,zeroAddress, {from: accountFive});
+            avgGasUsed['first']['listForSale'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.buy(0, {from: accountFourth, value: oneToken});
+            avgGasUsed['first']['buy'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.transferFrom(accountFourth, accountFive, 0, {from: accountFourth});
+            avgGasUsed['first']['transferFrom'] += tmpTr.receipt.gasUsed;
+            
+            // last token
+            tmpTr = await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: accountFive});
+            avgGasUsed['last']['listForSale'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.buy(tokenID, {from: accountFourth, value: oneToken});
+            avgGasUsed['last']['buy'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.transferFrom(accountFourth, accountFive, tokenID, {from: accountFourth});
+            avgGasUsed['last']['transferFrom'] += tmpTr.receipt.gasUsed;
+        }
+        
+        avgGasUsed['first']['listForSale'] /= countIterations;
+        avgGasUsed['first']['buy'] /= countIterations;
+        avgGasUsed['first']['transferFrom'] /= countIterations;
+        
+        avgGasUsed['last']['listForSale'] /= countIterations;
+        avgGasUsed['last']['buy'] /= countIterations;
+        avgGasUsed['last']['transferFrom'] /= countIterations;
+        
+        // console.log(avgGasUsed['first']['listForSale']);
+        // console.log(avgGasUsed['first']['buy']);
+        // console.log(avgGasUsed['first']['transferFrom']);
+        
+        // console.log(avgGasUsed['last']['listForSale']);
+        // console.log(avgGasUsed['last']['buy']);
+        // console.log(avgGasUsed['last']['transferFrom']);
+        
+        assert.equal((avgGasUsed['first']['listForSale']) < 80000, true, 'too much gas consuming `listForSale`');
+        assert.equal((avgGasUsed['first']['buy']) < 100000, true, 'too much gas consuming `buy`');
+        assert.equal((avgGasUsed['first']['transferFrom']) < 80000, true, 'too much gas consuming `transferFrom`');
+        
+        assert.equal((avgGasUsed['last']['listForSale']) < 80000, true, 'too much gas consuming `listForSale`');
+        assert.equal((avgGasUsed['last']['buy']) < 100000, true, 'too much gas consuming `buy`');
+        assert.equal((avgGasUsed['last']['transferFrom']) < 80000, true, 'too much gas consuming `transferFrom`');
+    });
+    
+    it('[info3]gas consuming ', async () => {
+                                      //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
+        tmpTr = await NFTMockInstance.createAndSale("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], oneToken,zeroAddress, {from: accountFive});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString();
+        
+        let avgGasUsed={
+            'listForSale': 0,
+            'buy': 0,
+            'transferFrom': 0
+        };
+        let countIterations = 10;
+        for (let i=0; i<countIterations; i++) {
+            
+            // let put into sale-list for coins
+            tmpTr = await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: accountFive});
+            avgGasUsed['listForSale'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.buy(tokenID, {from: accountFourth, value: oneToken});
+            avgGasUsed['buy'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.transferFrom(accountFourth, accountFive, tokenID, {from: accountFourth});
+            avgGasUsed['transferFrom'] += tmpTr.receipt.gasUsed;
+        }
+        
+        avgGasUsed['listForSale'] /= countIterations;
+        avgGasUsed['buy'] /= countIterations;
+        avgGasUsed['transferFrom'] /= countIterations;
+        
+        console.log(avgGasUsed['listForSale']);
+        console.log(avgGasUsed['buy']);
+        console.log(avgGasUsed['transferFrom']);
+        assert.equal((avgGasUsed['listForSale']) < 80000, true, 'too much gas consuming `listForSale`');
+        assert.equal((avgGasUsed['buy']) < 80000, true, 'too much gas consuming `buy`');
+        assert.equal((avgGasUsed['transferFrom']) < 80000, true, 'too much gas consuming `transferFrom`');
+    });
+    
+    it('[info4]gas consuming ', async () => {
+                                      //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
+        tmpTr = await NFTMockInstance.createAndSale("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000],oneToken,zeroAddress, {from: accountFive});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString();
+        
+        let avgGasUsed={
+            'first':{
+                'listForSale': 0,
+                'buy': 0,
+                'transferFrom': 0
+            },
+            'last':{
+                'listForSale': 0,
+                'buy': 0,
+                'transferFrom': 0
+            }
+        };
+        let i;
+        for (i=0; i<50; i++) {
+            tmpTr = await NFTMockInstance.createAndSale("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000],oneToken,zeroAddress, {from: accountFive});
+        }
+        let countIterations = 10;
+        tokenID = tmpTr.logs[0].args[1].toString();
+        for (i=0; i<countIterations; i++) {
+            
+            // first token
+            tmpTr = await NFTMockInstance.listForSale(0,oneToken,zeroAddress, {from: accountFive});
+            avgGasUsed['first']['listForSale'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.buy(0, {from: accountFourth, value: oneToken});
+            avgGasUsed['first']['buy'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.transferFrom(accountFourth, accountFive, 0, {from: accountFourth});
+            avgGasUsed['first']['transferFrom'] += tmpTr.receipt.gasUsed;
+            
+            // last token
+            tmpTr = await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: accountFive});
+            avgGasUsed['last']['listForSale'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.buy(tokenID, {from: accountFourth, value: oneToken});
+            avgGasUsed['last']['buy'] += tmpTr.receipt.gasUsed;
+            
+            tmpTr = await NFTMockInstance.transferFrom(accountFourth, accountFive, tokenID, {from: accountFourth});
+            avgGasUsed['last']['transferFrom'] += tmpTr.receipt.gasUsed;
+        }
+        
+        avgGasUsed['first']['listForSale'] /= countIterations;
+        avgGasUsed['first']['buy'] /= countIterations;
+        avgGasUsed['first']['transferFrom'] /= countIterations;
+        
+        avgGasUsed['last']['listForSale'] /= countIterations;
+        avgGasUsed['last']['buy'] /= countIterations;
+        avgGasUsed['last']['transferFrom'] /= countIterations;
+        
+        // console.log(avgGasUsed['first']['listForSale']);
+        // console.log(avgGasUsed['first']['buy']);
+        // console.log(avgGasUsed['first']['transferFrom']);
+        
+        // console.log(avgGasUsed['last']['listForSale']);
+        // console.log(avgGasUsed['last']['buy']);
+        // console.log(avgGasUsed['last']['transferFrom']);
+        
+        assert.equal((avgGasUsed['first']['listForSale']) < 80000, true, 'too much gas consuming `listForSale`');
+        assert.equal((avgGasUsed['first']['buy']) < 100000, true, 'too much gas consuming `buy`');
+        assert.equal((avgGasUsed['first']['transferFrom']) < 80000, true, 'too much gas consuming `transferFrom`');
+        
+        assert.equal((avgGasUsed['last']['listForSale']) < 80000, true, 'too much gas consuming `listForSale`');
+        assert.equal((avgGasUsed['last']['buy']) < 100000, true, 'too much gas consuming `buy`');
+        assert.equal((avgGasUsed['last']['transferFrom']) < 80000, true, 'too much gas consuming `transferFrom`');
+    });
  
     it('should create ', async () => {
                                       //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
@@ -335,7 +553,8 @@ contract('NFT', (accounts) => {
         tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
-        
+        // let put into sale-list for coins
+        await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: ownerOld});
         
         
         
