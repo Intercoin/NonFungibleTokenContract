@@ -1,7 +1,7 @@
 const BigNumber = require('bignumber.js');
 const truffleAssert = require('truffle-assertions');
 
-const NFTMock = artifacts.require("NFT");
+const NFTMock = artifacts.require("NFTMock");
 const CommunityMock = artifacts.require("CommunityMock");
 const ERC20Mintable = artifacts.require("ERC20Mintable");
 const helper = require("../helpers/truffleTestHelper");
@@ -550,11 +550,11 @@ contract('NFT', (accounts) => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
         
-        tmpTr = await await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
         
         var tokenID = tmpTr.logs[0].args[1].toString(); 
         // let put into sale-list for coins
-        await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: ownerOld});
+        //await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: ownerOld});
         
         
         
@@ -611,9 +611,9 @@ contract('NFT', (accounts) => {
             ), 
             "buying for coins was failed"
         );
-        
+      
     });
-  
+
     it('should buy NFT for tokens', async () => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
@@ -863,5 +863,263 @@ contract('NFT', (accounts) => {
         
         
     });
+    
+    it('check view calls', async () => {
+        let ownerOld = accountFive;
+        let ownerNew = accountOne;
+        let tmpTr2;
+        
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString(); 
+        
+        tmpTr = await NFTMockInstance.getAllAuthors();
+        tmpTr2 = await NFTMockInstance.getAllOwners();
+        
+        assert.isTrue(
+            (
+                (tmpTr.length == tmpTr2.length) &&
+                (tmpTr[0] == tmpTr2[0]) &&
+                (tmpTr[0] == ownerOld)
+            ), 
+            "wrong getAllAuthors && getAllOwners"
+        );
+        
+        tmpTr = await NFTMockInstance.tokensByOwner(ownerOld);
+        tmpTr2 = await NFTMockInstance.tokensByAuthor(ownerOld);
+        assert.isTrue(
+            (
+                (tmpTr.length == tmpTr2.length) &&
+                (tmpTr[0].toString() == tmpTr2[0].toString()) &&
+                (tmpTr[0].toString() == tokenID.toString())
+            ), 
+            "wrong tokensByOwner(ownerOld) && tokensByAuthor(ownerOld)"
+        );
+        
+        tmpTr = await NFTMockInstance.tokensByOwner(ownerNew);
+        tmpTr2 = await NFTMockInstance.tokensByAuthor(ownerNew);
+        assert.isTrue(
+            (
+                (tmpTr.length == tmpTr2.length) &&
+                (tmpTr.length == 0)
+            ), 
+            "wrong tokensByOwner(ownerNew) && tokensByAuthor(ownerNew)"
+        );
+        
+        // let put into sale-list for coins
+        await NFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: ownerOld});
+        
+        // mint oneToken and pay commission
+        await ERC20MintableInstance.mint(ownerNew, oneToken);
+        await ERC20MintableInstance.approve(NFTMockInstance.address, oneToken, {from: ownerNew});
+        await NFTMockInstance.offerToPayCommission(tokenID, oneToken, {from: ownerNew});
+        
+        await NFTMockInstance.buy(tokenID, {from: ownerNew, value: oneToken});
+        
+        
+        let ownerNewConfirm = await NFTMockInstance.ownerOf(tokenID);
+
+        assert.isTrue(
+            (
+                (ownerOld != ownerNew) &&
+                (ownerNew == ownerNewConfirm)
+            ), 
+            "buying for coins was failed"
+        );
+        
+        
+        tmpTr = await NFTMockInstance.getAllAuthors();
+        tmpTr2 = await NFTMockInstance.getAllOwners();
+        assert.isTrue(
+            (
+                (tmpTr.length == tmpTr2.length) &&
+                (tmpTr[0] != tmpTr2[0]) &&
+                (tmpTr[0] == ownerOld) &&
+                (tmpTr2[0] == ownerNew)
+            ), 
+            "wrong getAllAuthors && getAllOwners"
+        );
+        
+        tmpTr = await NFTMockInstance.tokensByOwner(ownerOld);
+        tmpTr2 = await NFTMockInstance.tokensByAuthor(ownerOld);
+        assert.isTrue(
+            (
+                (tmpTr.length != tmpTr2.length) &&
+                (tmpTr.length == 0) &&
+                (tmpTr2.length == 1) &&
+                (tmpTr2[0] == tokenID.toString())
+            ), 
+            "wrong tokensByOwner(ownerOld) && tokensByAuthor(ownerOld)"
+        );
+        
+        tmpTr = await NFTMockInstance.tokensByOwner(ownerNew);
+        tmpTr2 = await NFTMockInstance.tokensByAuthor(ownerNew);
+        assert.isTrue(
+            (
+                (tmpTr.length != tmpTr2.length) &&
+                (tmpTr.length == 1) &&
+                (tmpTr2.length== 0) &&
+                (tmpTr[0] == tokenID.toString())
+            ), 
+            "wrong tokensByOwner(ownerNew) && tokensByAuthor(ownerNew)"
+        );
+        
+        tmpTr = await NFTMockInstance.historyOfBids(tokenID);
+        assert.isTrue(
+            (
+                (tmpTr.length == 0)
+            ), 
+            "historyOfBids should be empty"
+        );
+      
+    });
    
+    it('auction full check (endtime = 0)', async () => {
+        let ownerOld = accountFive;
+        let ownerNew = accountOne;
+        let ownerNew2 = accountTwo;
+        let tmpTr2;
+        
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString(); 
+        
+        // let put into sale-list for coins
+        var startTime = 0;
+        var endTime = 0;
+        var minIncrement = oneToken;
+        var pay1 = BigNumber(oneToken);
+        var pay2 = BigNumber(oneToken).plus(BigNumber(minIncrement));
+        var pay3 = BigNumber(oneToken).plus(BigNumber(minIncrement)).plus(BigNumber(minIncrement));
+        
+        await truffleAssert.reverts(
+            NFTMockInstance.listForAuction(noneExistTokenID, oneToken,zeroAddress, startTime, endTime, minIncrement, {from: ownerOld}),
+            "NFTBase: Nonexistent token"
+        );
+        await truffleAssert.reverts(
+            NFTMockInstance.listForAuction(tokenID,oneToken,zeroAddress, startTime, endTime, minIncrement, {from: ownerNew}),
+            "NFTBase: Sender is not owner of token"
+        );
+ 
+        await truffleAssert.reverts(
+            NFTMockInstance.listForAuction(tokenID,oneToken,zeroAddress, 444, 222, minIncrement, {from: ownerOld}),
+            "wrong startTime"
+        );
+        
+        await NFTMockInstance.listForAuction(tokenID,oneToken,zeroAddress, startTime, endTime, minIncrement, {from: ownerOld});
+        
+        // mint oneToken and pay commission
+        await ERC20MintableInstance.mint(ownerNew, oneToken);
+        await ERC20MintableInstance.approve(NFTMockInstance.address, oneToken, {from: ownerNew});
+        await NFTMockInstance.offerToPayCommission(tokenID, oneToken, {from: ownerNew});
+        
+        
+        await truffleAssert.reverts(
+            NFTMockInstance.buy(tokenID, {from: ownerNew, value: pay1}),
+            "bid should be more"
+        );
+        
+        await NFTMockInstance.buy(tokenID, {from: ownerNew, value: pay2});
+        
+        let currentOwner = await NFTMockInstance.ownerOf(tokenID);
+        assert.isTrue(
+            (
+                (currentOwner == ownerOld)
+            ), 
+            "auction is not complete yet"
+        );
+        
+        await truffleAssert.reverts(
+            NFTMockInstance.buy(tokenID, {from: ownerNew2, value: pay2}),
+            "bid should be more"
+        );
+        
+        await NFTMockInstance.buy(tokenID, {from: ownerNew2, value: pay3});
+        
+        tmpTr = await NFTMockInstance.historyOfBids(tokenID);
+        assert.isTrue(
+            (
+                (tmpTr[0].bid == pay2) &&
+                (tmpTr[1].bid == pay3)
+            ), 
+            "wrong history"
+        );
+        
+        // still old owner 
+        assert.isTrue(
+            (
+                ((await NFTMockInstance.ownerOf(tokenID)) == ownerOld)
+            ), 
+            "auction is not complete yet"
+        );
+        
+        //try to claim another person
+        await truffleAssert.reverts(
+            NFTMockInstance.claim(tokenID, {from: ownerNew}),
+            "can't claim"
+        );
+        
+        //try to claim by winnerm but auction with endtime==0 can be accepting by nft owner only
+        await truffleAssert.reverts(
+            NFTMockInstance.claim(tokenID, {from: ownerNew2}),
+            "can't claim"
+        );
+        
+        await NFTMockInstance.acceptLastBid(tokenID, {from: ownerOld});
+        
+        assert.isTrue(
+            (
+                ((await NFTMockInstance.ownerOf(tokenID)) == ownerNew2)
+            ), 
+            "claim incorrect"
+        );
+        //console.log(tmpTr);
+      
+    });
+    
+    it('auction short check(endtime != 0)', async () => {
+        let ownerOld = accountFive;
+        let ownerNew = accountOne;
+        let ownerNew2 = accountTwo;
+        let tmpTr2;
+        
+        tmpTr = await NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,0], {from: ownerOld});
+        
+        var tokenID = tmpTr.logs[0].args[1].toString(); 
+        
+        // let put into sale-list for coins
+        var startTime = 0;
+        var getCurrTime = parseInt((await NFTMockInstance.getCurrTime()).toString());        
+
+        var endTime = getCurrTime+60;
+        var minIncrement = oneToken;
+        var pay1 = BigNumber(oneToken);
+        var pay2 = BigNumber(oneToken).plus(BigNumber(minIncrement));
+        var pay3 = BigNumber(oneToken).plus(BigNumber(minIncrement)).plus(BigNumber(minIncrement));
+        
+        await NFTMockInstance.listForAuction(tokenID,oneToken,zeroAddress, startTime, endTime, minIncrement, {from: ownerOld});
+        
+        // mint oneToken and pay commission
+        await ERC20MintableInstance.mint(ownerNew, oneToken);
+        await ERC20MintableInstance.approve(NFTMockInstance.address, oneToken, {from: ownerNew});
+        await NFTMockInstance.offerToPayCommission(tokenID, oneToken, {from: ownerNew});
+        
+        await NFTMockInstance.buy(tokenID, {from: ownerNew, value: pay2});
+        
+        await NFTMockInstance.buy(tokenID, {from: ownerNew2, value: pay3});
+        
+        await helper.advanceTimeAndBlock(300);
+        
+        //try to claim by winner
+        await NFTMockInstance.claim(tokenID, {from: ownerNew2});
+        
+        assert.isTrue(
+            (
+                ((await NFTMockInstance.ownerOf(tokenID)) == ownerNew2)
+            ), 
+            "claim incorrect"
+        );
+        
+      
+    });
 });

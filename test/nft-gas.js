@@ -58,7 +58,7 @@ contract('NFT', (accounts) => {
         }
             tmpTr = await NFTMockInstance.buy(tokenID, {from: accountTwo, value: price_0_01});
             avgGasUsed['buy'] += tmpTr.receipt.gasUsed;
-avgGasUsed['buy['+i+']'] /= tmpTr.receipt.gasUsed;
+            avgGasUsed['buy['+i+']'] /= tmpTr.receipt.gasUsed;
 
             tmpTr = await NFTMockInstance.listForSale(tokenID, price_0_01, zeroAddress, {from: accountTwo});
             avgGasUsed['listForSale'] += tmpTr.receipt.gasUsed;

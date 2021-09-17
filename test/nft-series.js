@@ -659,6 +659,8 @@ contract('NFTSeries', (accounts) => {
         
         
     });
+    
+    
 /*
     it('reward to onetimeConsumer', async () => {
         let author = accountFive;

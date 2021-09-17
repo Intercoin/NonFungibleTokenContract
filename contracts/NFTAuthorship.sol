@@ -7,12 +7,11 @@ import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 import "./NFTBase.sol";
 import "./interfaces/INFTAuthorship.sol";
-import "./lib/CoAuthors.sol";
 
 abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using SafeMathUpgradeable for uint256;
-    using CoAuthors for CoAuthors.List;
     
     function __NFTAuthorship_init(
         string memory name,
@@ -28,7 +27,9 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     mapping (uint256 => address) private _authors;
     mapping (address => EnumerableSetUpgradeable.UintSet) private _authoredTokens;
     
-    mapping (uint256 => CoAuthors.List) internal _coauthors;
+    mapping (uint256 => address[]) private authorsHistory;
+    
+    EnumerableSetUpgradeable.AddressSet totalAuthorsList;
     
     modifier onlyNFTAuthor(uint256 tokenId) {
         require(_msgSender() == _getAuthor(tokenId), "NFTAuthorship: sender is not author of token");
@@ -68,8 +69,18 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         onlyIfTokenExists(tokenId)
         onlyNFTAuthor(tokenId)
     {
+        
         address author = _getAuthor(tokenId);
         require(to != author, "NFTAuthorship: transferAuthorship to current author");
+        
+        if (to != address(0)) {
+            totalAuthorsList.add(to);
+        } else {
+            if (_authoredTokens[author].length() == 1) {
+                totalAuthorsList.remove(author);    
+            }    
+        }
+        
         
         _setAuthor(tokenId, author, to);
         
@@ -92,19 +103,46 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         return author;
     }
     
-    function addAuthors(
-        uint256 tokenId,
-        CoAuthors.Ratio[] memory proportions
-    ) 
-        public
-        onlyIfTokenExists(tokenId)
-        onlyNFTAuthor(tokenId)
+    function historyOfAuthors(
+        uint256 tokenId
+    )
+        public 
+        view
+        returns(address[] memory) 
     {
-        
-        _coauthors[tokenId].smartAdd(proportions, _getAuthor(tokenId));
-        
+        uint256 len = authorsHistory[tokenId].length;
+        address[] memory ret = new address[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] =  authorsHistory[tokenId][i];
+        }
+        return ret;
     }
     
+    function getAllAuthors(
+    ) 
+        public
+        view 
+        returns(address[] memory) 
+    {
+        uint256 len = 0;
+        for (uint256 i = 0; i < currentTokenIds(); i++) {
+            if (_exists(i) == true) {
+                len = len.add(1);
+            }
+        }
+        
+        address[] memory ret = new address[](len);
+        uint256 index = 0;
+
+        for (uint256 i = 0; i < currentTokenIds(); i++) {
+            if (_exists(i) == true) {
+                ret[index] = _authors[i];
+                index = index.add(1);
+            }
+        }
+        return ret;
+    }
     /**
      * @param to address
      * @param tokenId token ID
@@ -164,12 +202,15 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     ) 
         private 
     {
+        authorsHistory[tokenId].push(to);
+        
         _authors[tokenId] = to;
         _authoredTokens[from].remove(tokenId); // old author
         _authoredTokens[to].add(tokenId); // new author
         
-        _coauthors[tokenId].removeIfExists(to);
+        //_coauthors[tokenId].removeIfExists(to);
     }
+    
     
     
 }

@@ -45,11 +45,6 @@ Once installed will be use methods:
 		<td>NFTAuthor</td>
 		<td>transfer authorship for NFT token</td>
 	</tr>
-	<tr>
-		<td><a href="#addauthors">addAuthors</a></td>
-		<td>NFTAuthor</td>
-		<td>adding co-authors for NFT token</td>
-	</tr>
     <tr>
 		<td><a href="#claimlosttoken">claimLostToken</a></td>
 		<td>owner</td>
@@ -60,6 +55,11 @@ Once installed will be use methods:
 		<td>NFTOwner</td>
 		<td>adding token to sale</td>
 	</tr>
+	<tr>
+		<td><a href="#listforauction">listForAuction</a></td>
+		<td>NFTOwner</td>
+		<td>adding token to auction sale. such nft can not be purchase immediately. auction's winner can be claim nft after auction ending</td>
+	</tr>
     <tr>
 		<td><a href="#removefromsale">removeFromSale</a></td>
 		<td>NFTOwner</td>
@@ -68,7 +68,52 @@ Once installed will be use methods:
 	<tr>
 		<td><a href="#saleinfo">saleInfo</a></td>
 		<td>anyone</td>
-		<td>viewing sale info (consume tokens address and amount)</td>
+		<td>viewing sale info</td>
+	</tr>
+	<tr>
+		<td><a href="#tokensbyowner">tokensByOwner</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#tokensbyauthor">tokensByAuthor</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#historyofowners">historyOfOwners</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#historyofauthors">historyOfAuthors</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#historyofbids">historyOfBids</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#getallowners">getAllOwners</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#getallauthors">getAllAuthors</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#claim">claim</a></td>
+		<td>anyone</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><a href="#acceptlastbid">acceptLastBid</a></td>
+		<td>NFTOwner</td>
+		<td></td>
 	</tr>
     <tr>
 		<td><a href="#buy">buy</a></td>
@@ -166,15 +211,6 @@ from|address|old author's address
 to|address|new author's address
 tokenId|uint256|tokenID of transferred token
 
-#### addAuthors
-Adding co-authors for NFT token<br>
-Params:
-
-name  | type | description
---|--|--
-tokenId|uint256|tokenID of transferred token
-proportions|tuple[]| array of tuples <a href="ratio">Ratio</a>.  
-
 #### claimLostToken
 claiming lost token which can be mistakenly sent to contract<br>
 Params:
@@ -193,6 +229,21 @@ name  | type | description
 tokenId|uint256|`tokenId`
 amount|uint256|amount in coins(bnb, eth etc.)
 consumeToken|address|token address. if address(0) then owner expect coins for sale
+
+#### listForAuction
+adding token to auction sale. such nft can not be purchase immediately. auction's winner can be claim nft after auction ending <br>
+Emitted events:<br> 
+<a href="#tokenaddedtosale">TokenAddedToSale</a>, <a href="#tokenaddedtoauctionsale">TokenAddedToAuctionSale</a><br>
+Params:
+
+name  | type | description
+--|--|--
+tokenId|uint256|`tokenId`
+amount|uint256|amount in coins(bnb, eth etc.)
+consumeToken|address|token address. if address(0) then owner expect coins for sale
+startTime|uint256| start auction's time. can be 0, then auction start immediately(in block mined time)
+endTime|uint256| end auction's time. can be 0, then auction never end and owner should accept last higher bid to make bidder a new nft owner
+minIncrement|uint256| minimal increment from last bid can be acceptable for next bid
 
 #### removeFromSale
 removing token from sale list<br>
@@ -218,7 +269,39 @@ name  | type | description
 amount|uint256|amount in coins(bnb, eth etc.)
 consumeToken|address|token address. if address(0) then owner expect coins for sale
 isSale|bool|return true if token put into sale list
+startTime|uint256|starting auction time
+endTime|uint256|ending auction time
+minIncrement|uint256| minimum increment from last bid
+isAuction|bool|return true if token put into sale list (auction type)
 
+
+#### tokensByOwner
+viewing tokens list by owner<br>
+
+#### tokensByAuthor
+viewing tokens list by author<br>
+
+#### historyOfOwners
+history of all previous owners<br>
+
+#### historyOfAuthors
+history of all previous authors<br>
+
+#### historyOfBids
+viewing history of bids previous auction<br>
+
+#### getAllOwners
+viewing list total NFT's owners<br>
+
+#### getAllAuthors
+viewing list total NFT's authors<br>
+
+#### claim
+claim nft for person who winner auction sale<br>
+
+#### acceptLastBid
+nft owner can manually accept last bid<br>
+	
 #### buy
 can buy token by sending coins bnb or eth to contract<br>
 Params:

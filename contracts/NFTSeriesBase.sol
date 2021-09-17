@@ -19,7 +19,6 @@ import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 import "./interfaces/INFTAuthorship.sol";
 import "./interfaces/INFTSeries.sol";
-import "./lib/CoAuthors.sol";
 
 abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgradeable, INFTSeries, IERC721MetadataUpgradeable, INFTAuthorship {
     using SafeMathUpgradeable for uint256;
@@ -28,9 +27,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using StringsUpgradeable for uint256;
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
-    using CoAuthors for CoAuthors.List;
 
-    
     // Token name
     string private _name;
 
@@ -71,11 +68,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         address owner;
         address author;
 
-        //CoAuthorsSettings coauthors;
-        CoAuthors.List coauthors;
-        
-        CoAuthors.List onetimeConsumers;
-        
         CommissionSettings commission;
         SalesData saleData;
         
@@ -137,31 +129,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         }
         return ret;
      
-    }
-
-    /**
-     * adding co-authors ot NFT token
-     * @param tokenId  token ID
-     * proportions array of tuples like [co-author's addresses, co-author's proportions]
-     * proportions (mul by 100). here 40% looks like "40". (40%|0.4|0.4*100=40)
-     */
-    function addAuthors(
-        uint256 tokenId,
-        CoAuthors.Ratio[] memory proportions
-    ) 
-        public
-    {
-        (, uint256 rangeId, bool isSingle) = _getSeriesIds(tokenId);
-        _validateTokenExists(rangeId);
-        _validateTokenAuthor(rangeId);
-        
-        if (!isSingle) {
-            (, rangeId) = splitSeries(tokenId);
-        }
-        
-        
-        ranges[rangeId].coauthors.smartAdd(proportions, ranges[rangeId].author);
-        
     }
 
     /**
@@ -559,7 +526,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     }
     
     function _getSeriesIds(uint256 tokenId) internal view returns(uint256 serieId, uint256 rangeId, bool isSingleRange) {
-        
+        // TODO 0: loop over series need to remake to rb list
         for(uint256 i=1; i<_seriesIds.current(); i++) {
             
             if (tokenId >= series[i].from && tokenId <= series[i].to) {
@@ -603,8 +570,6 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         (, uint256 rangeId) = splitSeries(tokenId);
 
         ranges[rangeId].author = newAuthor;
-        
-        ranges[rangeId].coauthors.removeIfExists(newAuthor);
         
     }
     

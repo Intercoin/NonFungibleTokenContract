@@ -53,6 +53,25 @@
 		"anonymous": false,
 		"inputs": [
 			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newBid",
+				"type": "uint256"
+			}
+		],
+		"name": "OutBid",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
 				"indexed": true,
 				"internalType": "address",
 				"name": "previousOwner",
@@ -66,6 +85,49 @@
 			}
 		],
 		"name": "OwnershipTransferred",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "consumeToken",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "endTime",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "minIncrement",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenAddedToAuctionSale",
 		"type": "event"
 	},
 	{
@@ -181,26 +243,9 @@
 				"internalType": "uint256",
 				"name": "tokenId",
 				"type": "uint256"
-			},
-			{
-				"components": [
-					{
-						"internalType": "address",
-						"name": "addr",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "proportion",
-						"type": "uint256"
-					}
-				],
-				"internalType": "struct CoAuthors.Ratio[]",
-				"name": "proportions",
-				"type": "tuple[]"
 			}
 		],
-		"name": "addAuthors",
+		"name": "acceptLastBid",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -283,6 +328,19 @@
 			}
 		],
 		"name": "buyWithToken",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "claim",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -413,6 +471,107 @@
 	{
 		"inputs": [
 			{
+				"internalType": "string",
+				"name": "URI",
+				"type": "string"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "multiply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "accrue",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "intervalSeconds",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reduceCommission",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct INFT.CommissionParams",
+				"name": "commissionParams",
+				"type": "tuple"
+			},
+			{
+				"internalType": "uint256",
+				"name": "consumeAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "consumeToken",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "endTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "minIncrement",
+				"type": "uint256"
+			}
+		],
+		"name": "createAndSaleAuction",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllAuthors",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllOwners",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "tokenId",
 				"type": "uint256"
@@ -448,6 +607,75 @@
 				"internalType": "uint256",
 				"name": "r",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "historyOfAuthors",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "historyOfBids",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "bidder",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "bid",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct INFT.Bid[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "historyOfOwners",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
 			}
 		],
 		"stateMutability": "view",
@@ -528,9 +756,24 @@
 				"internalType": "address",
 				"name": "consumeToken",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "endTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "minIncrement",
+				"type": "uint256"
 			}
 		],
-		"name": "listForSale",
+		"name": "listForAuction",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -551,23 +794,6 @@
 				"internalType": "address",
 				"name": "consumeToken",
 				"type": "address"
-			},
-			{
-				"components": [
-					{
-						"internalType": "address",
-						"name": "addr",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "proportion",
-						"type": "uint256"
-					}
-				],
-				"internalType": "struct CoAuthors.Ratio[]",
-				"name": "proportions",
-				"type": "tuple[]"
 			}
 		],
 		"name": "listForSale",
@@ -739,17 +965,37 @@
 		"outputs": [
 			{
 				"internalType": "address",
-				"name": "",
+				"name": "erc20Address",
 				"type": "address"
 			},
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "amount",
 				"type": "uint256"
 			},
 			{
 				"internalType": "bool",
-				"name": "",
+				"name": "isSale",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "endTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "minIncrement",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "isAuction",
 				"type": "bool"
 			}
 		],
@@ -877,6 +1123,25 @@
 			}
 		],
 		"name": "tokensByAuthor",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			}
+		],
+		"name": "tokensByOwner",
 		"outputs": [
 			{
 				"internalType": "uint256[]",

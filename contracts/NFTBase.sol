@@ -83,7 +83,6 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
         _tokenIds.increment();
     }
     
-     
     function _transfer(
         address from, 
         address to, 
@@ -92,26 +91,18 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
         internal 
         override 
     {
-        _transferHook(tokenId);
+        _transferHook(from, to, tokenId);
         
         // then usual transfer as expected
         super._transfer(from, to, tokenId);
-        
     }
     
-    function _transferHook(
-        uint256 tokenId
-    ) 
-        internal 
-        virtual
-    {
-        revert("NFTBase: need to be override in child");
-    }
-
+    function _transferHook(address from, address to, uint256 tokenId) internal virtual;
     
     function _burn(uint256 tokenId) internal virtual override(ERC721URIStorageUpgradeable, ERC721Upgradeable) {
         super._burn(tokenId);
     }
+    
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
