@@ -2,6 +2,12 @@
 NFT contracts that support a new ERC token standard for paying commissions to authors
 NFTSeries contract do the same but have ability to create several NFT in one transaction. The rest of the interface are the same
 
+# Latest contract instances in test networks
+Binance SmartChain TestNet
+<a href="https://testnet.bscscan.com/address/0xF4eFc2cB258754AEe772361e034E37716eA324d0#contracts">NFTFactory</a><br>
+<a href="https://testnet.bscscan.com/address/0x58DFdE51CD6dDB92EF5DD21A14Fe078a376FE549#code">Created instance NFT</a><br>
+
+
 # Overview
 
 Once installed will be use methods:
