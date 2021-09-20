@@ -98,7 +98,7 @@ module.exports = {
     bsctest: {
       provider: () => new HDWalletProvider(process.env.private_key, `https://data-seed-prebsc-1-s1.binance.org:8545`),
       network_id: 97,//0x61,
-      confirmations: 10,
+      confirmations: 2,
       timeoutBlocks: 200,
       skipDryRun: true
     },
