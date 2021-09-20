@@ -31,6 +31,11 @@ Once installed will be use methods:
 		<td>creating NFT token and immediately adding to sale</td>
 	</tr>
     <tr>
+		<td><a href="#createandsaleauction">createAndSaleAuction</a></td>
+		<td>anyone<span>&#42;</span></td>
+		<td>creating NFT token and immediately adding to auction sale</td>
+	</tr>
+    <tr>
 		<td><a href="#getcommission">getCommission</a></td>
 		<td>anyone</td>
 		<td>getting the amount of the commission that will be paid to the author when transferring</td>
@@ -73,47 +78,47 @@ Once installed will be use methods:
 	<tr>
 		<td><a href="#tokensbyowner">tokensByOwner</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>viewing tokens list by owner</td>
 	</tr>
 	<tr>
 		<td><a href="#tokensbyauthor">tokensByAuthor</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>viewing tokens list by author</td>
 	</tr>
 	<tr>
 		<td><a href="#historyofowners">historyOfOwners</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>history of all previous owners</td>
 	</tr>
 	<tr>
 		<td><a href="#historyofauthors">historyOfAuthors</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>history of all previous authors</td>
 	</tr>
 	<tr>
 		<td><a href="#historyofbids">historyOfBids</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>viewing history of bids previous auction</td>
 	</tr>
 	<tr>
 		<td><a href="#getallowners">getAllOwners</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>viewing list total NFT's owners</td>
 	</tr>
 	<tr>
 		<td><a href="#getallauthors">getAllAuthors</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>viewing list total NFT's authors</td>
 	</tr>
 	<tr>
 		<td><a href="#claim">claim</a></td>
 		<td>anyone</td>
-		<td></td>
+		<td>claim nft for person who winner auction sale</td>
 	</tr>
 	<tr>
 		<td><a href="#acceptlastbid">acceptLastBid</a></td>
 		<td>NFTOwner</td>
-		<td></td>
+		<td>nft owner can manually accept last bid</td>
 	</tr>
     <tr>
 		<td><a href="#buy">buy</a></td>
@@ -176,6 +181,24 @@ URI|string|The Uniform Resource Identifier (URI)
 tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
 consumeAmount|uint256|amount in coins(bnb, eth etc.)
 consumeToken|address|token address. if address(0) then owner expect coins for sale
+
+#### createAndSaleAuction
+creating NFT and adding to  auction sale<br>
+Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
+or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
+also emitted <a href="#tokenaddedtoauctionsale">TokenAddedToAuctionSale</a><br>
+Params:
+
+name  | type | description
+--|--|--
+URI|string|The Uniform Resource Identifier (URI)
+<a href="#commissionparams">commissionParams</a>|tuple|
+tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
+consumeAmount|uint256|amount in coins(bnb, eth etc.)
+consumeToken|address|token address. if address(0) then owner expect coins for sale
+startTime|uint256| start auction's time. can be 0, then auction start immediately(in block mined time)
+endTime|uint256| end auction's time. can be 0, then auction never end and owner should accept last higher bid to make bidder a new nft owner
+minIncrement|uint256| minimal increment from last bid can be acceptable for next bid
 
 #### getCommission
 getting Commission for NFT token<br>
@@ -277,33 +300,111 @@ isAuction|bool|return true if token put into sale list (auction type)
 
 #### tokensByOwner
 viewing tokens list by owner<br>
+Params:
+
+name  | type | description
+--|--|--
+owner|address| owner's address
+
+Return array of token ID's
+
+name  | type | description
+--|--|--
+ret|uint256[]| tokenID's
 
 #### tokensByAuthor
 viewing tokens list by author<br>
+Params:
+
+name  | type | description
+--|--|--
+author|address| author's address
+
+Return array of token ID's
+
+name  | type | description
+--|--|--
+ret|uint256[]| tokenID's
 
 #### historyOfOwners
 history of all previous owners<br>
+Params:
+
+name  | type | description
+--|--|--
+tokenId|uint256| `tokenId`
+
+Return
+
+name  | type | description
+--|--|--
+ret|address[]| addresses's
 
 #### historyOfAuthors
 history of all previous authors<br>
+Params:
+
+name  | type | description
+--|--|--
+tokenId|uint256| `tokenId`
+
+Return
+
+name  | type | description
+--|--|--
+ret|address[]| addresses's
 
 #### historyOfBids
 viewing history of bids previous auction<br>
+Params:
+
+name  | type | description
+--|--|--
+tokenId|uint256| `tokenId`
+
+Return
+
+name  | type | description
+--|--|--
+ret|Bid[]| tuples of Bid's struct
 
 #### getAllOwners
 viewing list total NFT's owners<br>
 
+Return
+
+name  | type | description
+--|--|--
+ret|address[]| addresses's
+
 #### getAllAuthors
 viewing list total NFT's authors<br>
 
+Return
+
+name  | type | description
+--|--|--
+ret|address[]| addresses's
+
 #### claim
 claim nft for person who winner auction sale<br>
+Params:
+
+name  | type | description
+--|--|--
+tokenId|uint256| `tokenId`
 
 #### acceptLastBid
 nft owner can manually accept last bid<br>
+Params:
+
+name  | type | description
+--|--|--
+tokenId|uint256| `tokenId`
 	
 #### buy
 can buy token by sending coins bnb or eth to contract<br>
+Emitted event <a href="outbid">OutBid</a>(if token put into auction sale by <a href="listforauction">listForAuction</a>) <br>
 Params:
 
 name  | type | description
@@ -312,6 +413,7 @@ tokenId|uint256|`tokenId`
 
 #### buyWithToken
 can buy token by sending erc20 tokens to contract (need approving before)<br>
+Emitted event <a href="outbid">OutBid</a>(if token put into auction sale by <a href="listforauction">listForAuction</a>) <br>
 Params:
 
 name  | type | description
@@ -374,6 +476,12 @@ accrue|uint256| additional value that would be pow in interval passed since last
 intervalSeconds|uint256| interval period in seconds
 reduceCommission|uint256| reduced commission in percents from final calculated value
 
+#### Bid
+name  | type | description
+--|--|--
+bidder|address|bid address 
+bid|uint256| bid amount
+    
 ## Events
 
 #### TokenCreated
@@ -406,6 +514,16 @@ name  | type | description
 tokenId|uint256|tokenID
 amount|uint256|amount that need to be paid to owner when some1 buy token
 consumeToken|address|erc20 token. if set address(0) then expected coins to pay for NFT
+
+#### TokenAddedToAuctionSale
+name  | type | description
+--|--|--
+tokenId|uint256|tokenID
+amount|uint256|amount that need to be paid to owner when some1 buy token
+consumeToken|address|erc20 token. if set address(0) then expected coins to pay for NFT
+startTime|uint256|starting auction time
+endTime|uint256|ending auction time
+minIncrement|uint256| minimum increment from last bid
 	
 #### TokenRemovedFromSale
 name  | type | description
@@ -470,6 +588,13 @@ In params NFT owner(user1) can specify `tokenID`, `amount` and `consumeToken`'s 
 If `consumeToken` are zero than owner expects coins(ETH or BNB) for sale.<br>
 for example `213,1000000000000000000,"0x0000000000000000000000000000000000000000"` means that owner expects 1 ETH(or BNB) for TokenID number "213".<br>
 
+<b>b1.</b> aleternative NFT owner(user1) can call <a href="#listforauction">listForAuction<a/> and put own NFT token to auction sale.<br> 
+In params NFT owner(user1) can specify `tokenID`, `amount`, `consumeToken`'s address, `startTime`, `endTime` and `minIncrement`. <br>
+If `consumeToken` are zero than owner expects coins(ETH or BNB) for sale.<br>
+`startTime` can specified as zero. in this case auction will start immediately.<br>
+`endTime` can be zero, in this case auctino will never expire and ended only if previous owner will call <a href="acceptlastbid">acceptLastBid</a><br>
+for example `213,1000000000000000000,"0x0000000000000000000000000000000000000000"0,0,500000000000000000` means that owner stating unlimited by time auction with started price 1 ETH(or BNB) for TokenID number "213". and expecting minimum 0.5 ETH(or BNB) for every next bid<br>
+
 <b>c.</b> now need offer to pay commission for this tokenID "213". there are several ways:
 - anyone can offer to pay commission by: 
     - calling method <a href="offertopaycommission">offerToPayCommission</a> specify tokenID and amount of tokens (describe in point a). in our cases it's WETH.
@@ -479,6 +604,7 @@ for example `213,1000000000000000000,"0x0000000000000000000000000000000000000000
 
 <b>d.</b> finally user2 can buy token by calling method `buy` or `buyWithTokens`. In our cases he should to make payable transaction `buy` with value 1ETH (see point b).
 If commissions for author and price for old owner are enough, user2 will become a new owner of this token. Token are automatically removed from sale.
+if nft put in to auction sale then calling method `buy` or `buyWithTokens` we just increase bid. and bid from previous user will refund back
 
 
 
