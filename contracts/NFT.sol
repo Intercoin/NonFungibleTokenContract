@@ -124,6 +124,9 @@ contract NFT is INFT, NFTAuthorship {
      * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
      * @param consumeAmount amount that need to be paid to owner when some1 buy token
      * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
+     * @param startTime time when auction will start. can be zero, then auction will start immediately
+     * @param endTime time when auction will end. can be zero, then auction will never expire
+     * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
      */
     function createAndSaleAuction(
         string memory URI,
@@ -192,6 +195,15 @@ contract NFT is INFT, NFTAuthorship {
         _listForSale(tokenId, amount, consumeToken);
     }
 
+    /**
+     * put NFT to list for auction sale. then anyone can put a bid to buy it
+     * @param tokenId NFT tokenId
+     * @param amount amount that need to be paid to owner when some1 buy token
+     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
+     * @param startTime time when auction will start. can be zero, then auction will start immediately
+     * @param endTime time when auction will end. can be zero, then auction will never expire
+     * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
+     */
     function listForAuction(
         uint256 tokenId,
         uint256 amount,
@@ -789,7 +801,7 @@ contract NFT is INFT, NFTAuthorship {
         require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
     }
        
-   function _validateAuctionActive(
+    function _validateAuctionActive(
         uint256 tokenId
     ) 
         internal

@@ -125,22 +125,14 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         view 
         returns(address[] memory) 
     {
-        uint256 len = 0;
-        for (uint256 i = 0; i < currentTokenIds(); i++) {
-            if (_exists(i) == true) {
-                len = len.add(1);
-            }
-        }
+        uint256 len = totalAuthorsList.length();
         
         address[] memory ret = new address[](len);
-        uint256 index = 0;
-
-        for (uint256 i = 0; i < currentTokenIds(); i++) {
-            if (_exists(i) == true) {
-                ret[index] = _authors[i];
-                index = index.add(1);
-            }
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] = totalAuthorsList.at(i);
+            
         }
+        
         return ret;
     }
     /**

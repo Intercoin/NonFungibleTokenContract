@@ -18,13 +18,20 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     LibCommunity.Settings internal communitySettings;
 
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
-    event TokenRemovedFromSale(uint256 tokenId);
+    event TokenAddedToAuctionSale(uint256 tokenId, uint256 amount, address consumeToken, uint256 startTime, uint256 endTime, uint256 minIncrement);
+    
     event TokensAddedToSale(uint256 tokenIdFrom, uint256 tokenIdTo, uint256 amount, address consumeToken);
+    event TokensAddedToAuctionSale(uint256 tokenIdFrom, uint256 tokenIdTo, uint256 amount, address consumeToken, uint256 startTime, uint256 endTime, uint256 minIncrement);
+    
+    event TokenRemovedFromSale(uint256 tokenId);
+    
+    event OutBid(uint256 tokenId, uint256 newBid);
     
     modifier canRecord(string memory communityRole) {
         require(communitySettings._canRecord(communityRole) == true, "Sender has not in accessible List");
         _;
     }
+    
     
     function initialize(
         string memory name,
@@ -78,6 +85,42 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         emit TokensAddedToSale(ranges[rangeId].from, ranges[rangeId].to, consumeAmount, consumeToken);
         
     }
+    
+     /**
+     * creation NFT token and immediately put to list for sale
+     * @param URI Token URI
+     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
+     * @param tokenAmount amount of created tokens
+     * @param consumeAmount amount that need to be paid to owner when some1 buy token
+     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
+     * @param startTime time when auction will start. can be zero, then auction will start immediately
+     * @param endTime time when auction will end. can be zero, then auction will never expire
+     * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
+     */
+    function createAndSaleAuction(
+        string memory URI,
+        CommissionParams memory commissionParams,
+        uint256 tokenAmount,
+        uint256 consumeAmount,
+        address consumeToken,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 minIncrement
+    ) 
+        public 
+        virtual  
+    {
+        (, uint256 rangeId) = _create(URI, commissionParams, tokenAmount);
+        
+        _listForSale(rangeId, consumeAmount, consumeToken);
+        
+        emit TokensAddedToSale(ranges[rangeId].from, ranges[rangeId].to, consumeAmount, consumeToken);
+        
+        _listForAuction(rangeId, startTime, endTime, minIncrement);
+        
+        emit TokensAddedToAuctionSale(ranges[rangeId].from, ranges[rangeId].to, consumeAmount, consumeToken, startTime, endTime, minIncrement);
+    }
+    
     
     /** 
      * returned commission that will be paid to token's author while transferring NFT
@@ -134,6 +177,30 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         
     }
     
+    /**
+     * put NFT to list for auction sale. then anyone can put a bid to buy it
+     * @param tokenId NFT tokenId
+     * @param amount amount that need to be paid to owner when some1 buy token
+     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
+     * @param startTime time when auction will start. can be zero, then auction will start immediately
+     * @param endTime time when auction will end. can be zero, then auction will never expire
+     * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
+     */
+    function listForAuction(
+        uint256 tokenId,
+        uint256 amount,
+        address consumeToken,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 minIncrement
+    )
+        public
+    {
+        uint256 rangeId = _preListForSale(tokenId);
+        
+        _postListForAuctionSale(rangeId, tokenId, amount, consumeToken, startTime, endTime, minIncrement);
+    }
+
     
     /**
      * remove NFT from list for sale.
@@ -150,29 +217,45 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         
         (, uint256 newRangeId) = __splitSeries(serieId, rangeId, tokenId);
         
-        ranges[newRangeId].saleData.isSale = false;    
-
-        emit TokenRemovedFromSale(tokenId);
+        _removeFromSale(newRangeId, tokenId);
     }
     
     /**
      * sale info
      * @param tokenId NFT tokenId
-     * @return address consumeToken
-     * @return uint256 amount
+     * @return erc20Address
+     * @return amount
+     * @return isSale
+     * @return startTime
+     * @return endTime
+     * @return minIncrement
+     * @return isAuction
      */
     function saleInfo(
         uint256 tokenId
     )   
         public
         view
-        returns(address, uint256)
+        returns(
+            address erc20Address, 
+            uint256 amount, 
+            bool isSale, 
+            uint256 startTime, 
+            uint256 endTime, 
+            uint256 minIncrement, 
+            bool isAuction
+        )
     {
         (, uint256 rangeId, ) = _getSeriesIds(tokenId);
         _validateTokenExists(rangeId);
-        _validateOnlySale(rangeId);
-        
-        return (ranges[rangeId].saleData.erc20Address, ranges[rangeId].saleData.amount);
+
+        erc20Address = ranges[rangeId].saleData.erc20Address;
+        amount = ranges[rangeId].saleData.amount; 
+        isSale = ranges[rangeId].saleData.isSale;
+        startTime = ranges[rangeId].saleData.startTime;
+        endTime = ranges[rangeId].saleData.endTime;
+        minIncrement = ranges[rangeId].saleData.minIncrement;
+        isAuction = ranges[rangeId].saleData.isAuction;
     }
     
     /**
@@ -193,34 +276,28 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         if (!isSingle) {
             (, rangeId) = splitSeries(tokenId);
         }
-
+        
+        _validateAuctionActive(rangeId);
+        
         bool success;
         uint256 funds = msg.value;
         require(funds >= ranges[rangeId].saleData.amount, "The coins sent are not enough");
         
-        // Refund
-        uint256 refund = (funds).sub(ranges[rangeId].saleData.amount);
-        if (refund > 0) {
-            (success, ) = (_msgSender()).call{value: refund}("");    
-            require(success, "Failed when send back coins to caller");
+        if (_isInAuction(tokenId) == 1) {
+            putInToAuctionList(rangeId, tokenId, _msgSender(), funds, 0);
+        } else {
+                
+            // Refund
+            uint256 refund = (funds).sub(ranges[rangeId].saleData.amount);
+            if (refund > 0) {
+                (success, ) = (_msgSender()).call{value: refund}("");    
+                require(success, "Failed when send back coins to caller");
+            }
+            
+            _executeTransfer(rangeId, tokenId, _msgSender(), ranges[rangeId].saleData.amount, 0);
+            
+            
         }
-        
-        address owner = ownerOf(tokenId);
-        _transfer(owner, _msgSender(), tokenId);
-        
-        
-        uint256 fundsLeft = ranges[rangeId].saleData.amount;
-        
-    
-        if (fundsLeft>0) {
-            (success, ) = (owner).call{value: fundsLeft}("");    
-            require(success, "Failed when send coins to owner");
-        }
-        
-        
-        
-        removeFromSale(tokenId);
-        
     }
     
     /**
@@ -316,6 +393,136 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         ranges[newRangeId].commission.reduceCommission = reduceCommissionPercent;
     }
     
+    function claim(
+        uint256 tokenId
+    )
+        public
+    {
+        (uint256 serieId, uint256 rangeId, bool isSingle) = _getSeriesIds(tokenId);
+        _validateTokenExists(rangeId);
+        _validateOnlySale(rangeId);
+        _validateClaim(rangeId);
+        if (!isSingle) {
+            (, rangeId) = __splitSeries(serieId, rangeId, tokenId);
+        }
+        
+        _claim(rangeId, tokenId);
+    }
+     
+    
+    function acceptLastBid(
+        uint256 tokenId
+    )
+        public
+    {
+        (uint256 serieId, uint256 rangeId,) = _getSeriesIds(tokenId);
+        
+        _validateTokenExists(rangeId);
+        _validateOnlySale(rangeId);
+        _validateTokenOwner(rangeId);
+        
+        uint256 len = ranges[rangeId].saleData.bids.length;
+        if (len > 0) {
+            _claim(rangeId, tokenId);
+        } else {
+            revert("there are no any bids");
+        }
+    }
+   
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    // internal section ///////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    function putInToAuctionList(
+        uint256 rangeId, 
+        uint256 tokenId,
+        address sender, 
+        uint256 amount,
+        uint256 typeTransfer
+    ) 
+        internal 
+    {
+        uint256 len = ranges[rangeId].saleData.bids.length;
+  
+        uint256 prevBid = (len > 0) ? ranges[rangeId].saleData.bids[len-1].bid : ranges[rangeId].saleData.amount;
+        
+        require((prevBid).add(ranges[rangeId].saleData.minIncrement) <= amount, "bid should be more");
+        
+        // tokenData[tokenId].salesData.bids[len].bidder = sender;
+        // tokenData[tokenId].salesData.bids[len].bid = amount;
+        ranges[rangeId].saleData.bids.push(Bid({bidder: sender, bid: amount}));
+        
+        if (len > 0) {
+            bool success;
+            address prevBidder = ranges[rangeId].saleData.bids[len-1].bidder;
+            
+            // refund previous
+            if (typeTransfer == 0) {
+                (success, ) = (prevBidder).call{value: prevBid}("");    
+                require(success, "Failed when send coins");
+            } else {
+                
+                success = IERC20Upgradeable(ranges[rangeId].saleData.erc20Address).transfer(prevBidder, prevBid);
+                // require(success, "Failed when 'transfer' funds to co-author");
+                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+                require(success);
+            }
+            
+            emit OutBid(tokenId, amount);
+        }
+        
+    }
+    
+    /**
+     * typeTransfer: 0 - coin;  1 -erc20transfer
+     */
+    function _executeTransfer(
+        uint256 rangeId, 
+        uint256 tokenId, 
+        address newOwner,
+        uint256 needToObtain,
+        uint256 typeTransfer
+    ) 
+        internal
+    {
+        bool success;
+        address owner = ownerOf(tokenId);
+        _transfer(owner, newOwner, tokenId);
+        
+        if (needToObtain>0) {
+            if (typeTransfer == 0) {
+                (success, ) = (owner).call{value: needToObtain}("");    
+            } else {
+                success = IERC20Upgradeable(ranges[rangeId].saleData.erc20Address).transfer(owner, needToObtain);
+                // require(success, "Failed when 'transfer' funds to owner");
+                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+            }
+            require(success);
+        }
+        _removeFromSale(rangeId, tokenId);
+    }
+    
+    function _claim(
+        uint256 rangeId,
+        uint256 tokenId
+    )
+        internal
+    {
+        uint256 len = ranges[rangeId].saleData.bids.length;
+        
+        address sender = ranges[rangeId].saleData.bids[len-1].bidder;
+        uint256 amount = ranges[rangeId].saleData.bids[len-1].bid;
+        
+        _executeTransfer(
+            rangeId,
+            tokenId, 
+            sender, 
+            amount, 
+            (ranges[rangeId].saleData.erc20Address == address(0)? 0 : 1)
+        );
+        
+    }
+    
+    
     function _create(
         string memory URI,
         CommissionParams memory commissionParams,
@@ -372,11 +579,51 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
         ranges[rangeId].saleData.amount = amount;
         ranges[rangeId].saleData.isSale = true;
         ranges[rangeId].saleData.erc20Address = consumeToken;
-        
     }
     
+    function _postListForAuctionSale(
+        uint256 rangeId,
+        uint256 tokenId,
+        uint256 amount,
+        address consumeToken,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 minIncrement
+    )
+        internal
+    {
+       
+        _listForAuction(rangeId, startTime, endTime, minIncrement);
+        emit TokenAddedToAuctionSale(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
+    }
     
-     function _transfer(
+    function _listForAuction(
+        uint256 rangeId,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 minIncrement
+    )
+        internal
+    {
+        ranges[rangeId].saleData.startTime = startTime;
+        ranges[rangeId].saleData.endTime = endTime;
+        ranges[rangeId].saleData.minIncrement = minIncrement;
+        ranges[rangeId].saleData.isAuction = true;
+    }
+    
+    function _removeFromSale(
+        uint256 rangeId,
+        uint256 tokenId
+    )
+        internal
+    {
+        ranges[rangeId].saleData.isSale = false;
+        ranges[rangeId].saleData.isAuction = false;
+
+        emit TokenRemovedFromSale(tokenId);
+    }
+    
+    function _transfer(
         address from, 
         address to, 
         uint256 tokenId
@@ -402,6 +649,48 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
     }
     function _validateOnlySaleForTokens(uint256 rangeId) internal view {
         require(ranges[rangeId].saleData.erc20Address != address(0), "sale for tokens only");
+    }
+    
+    
+    function _validateClaim(uint256 rangeId) internal view {
+        // can claim if auction time == 0 or expire
+        // can claim if last bidder is sender
+        uint256 len = ranges[rangeId].saleData.bids.length;
+        require(
+            (
+                ranges[rangeId].saleData.endTime != 0 && 
+                ranges[rangeId].saleData.endTime < block.timestamp &&
+                len > 0 && 
+                ranges[rangeId].saleData.bids[len-1].bidder == _msgSender()
+            ), 
+            "can't claim"
+        );
+    }
+    
+    function _validateAuctionActive(uint256 rangeId) internal view {
+        if (ranges[rangeId].saleData.isAuction == true) {
+            require(
+                ranges[rangeId].saleData.startTime <= block.timestamp &&
+                (
+                    ranges[rangeId].saleData.endTime >= block.timestamp
+                    ||
+                    ranges[rangeId].saleData.endTime == 0
+                ), 
+                "Auction out of time"
+            );
+        }
+        
+    }
+    
+     
+    function _isInAuction(
+        uint256 rangeId
+    ) 
+        internal 
+        view 
+        returns(uint256)
+    {
+        return ranges[rangeId].saleData.isAuction == true ? 1 : 0;
     }
     
     /**

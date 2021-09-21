@@ -29,11 +29,23 @@ interface INFTSeries  is IERC721Upgradeable {
         mapping (address => uint256) offerPayAmount;
         EnumerableSetUpgradeable.AddressSet offerAddresses;
     }
-
+    
+    struct Bid {
+        address bidder;
+        uint256 bid;
+    }
+    
     struct SalesData {
         address erc20Address;
         uint256 amount;
         bool isSale;
+        
+        uint256 startTime;
+        uint256 endTime;
+        uint256 minIncrement;
+        bool isAuction;
+        
+        Bid[] bids;
     }
     
     

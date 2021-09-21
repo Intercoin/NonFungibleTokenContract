@@ -10,7 +10,6 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 
-
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
@@ -27,6 +26,7 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     using StringsUpgradeable for uint256;
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using CountersUpgradeable for CountersUpgradeable.Counter;
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
     // Token name
     string private _name;
@@ -54,6 +54,13 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
     
     mapping(uint256 => Serie) internal series;
     mapping(uint256 => Range) internal ranges;
+    
+    mapping (uint256 => address[]) private ownersHistory;
+    EnumerableSetUpgradeable.AddressSet totalOwnersList;
+    
+    mapping (uint256 => address[]) private authorsHistory;
+    EnumerableSetUpgradeable.AddressSet totalAuthorsList;
+    
     
     struct Serie {
         uint256 from;
@@ -316,7 +323,129 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         _safeTransfer(from, to, tokenId, _data);
     }
+    
+    function tokensByOwner(
+        address owner
+    ) 
+        public
+        view 
+        returns(uint256[] memory) 
+    {
+        uint256 len = 0;
+        uint256 j;
+        // TODO 0:  can we replace this it to balance[owner] ?
+        for(uint256 i=1; i<_seriesIds.current(); i++) {
+            j = series[i].rangesTree.first();
+            while (j != 0) {
+                if (ranges[j].owner == owner) {
+                    len = len.add(ranges[j].to).sub(ranges[j].from).add(1);
+                }
 
+                j = series[i].rangesTree.next(j);
+            }
+        }
+        
+        uint256[] memory ret = new uint256[](len);
+        uint256 index = 0;
+
+        for(uint256 i=1; i<_seriesIds.current(); i++) {
+            j = series[i].rangesTree.first();
+            while (j != 0) {
+                if (ranges[j].owner == owner) {
+                    ret[index] = i;
+                    index = index.add(1);
+                }
+
+                j = series[i].rangesTree.next(j);
+            }
+        }
+        
+        return ret;
+    }
+    
+    function historyOfOwners(
+        uint256 tokenId
+    )
+        public 
+        view
+        returns(address[] memory) 
+    {
+        uint256 len = ownersHistory[tokenId].length;
+        address[] memory ret = new address[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] =  ownersHistory[tokenId][i];
+        }
+        return ret;
+    }
+    
+    function historyOfBids(
+        uint256 tokenId
+    )
+        public 
+        view
+        returns(Bid[] memory) 
+    {
+        (, uint256 rangeId,) = _getSeriesIds(tokenId);
+        
+        uint256 len = ranges[rangeId].saleData.bids.length;
+        Bid[] memory ret = new Bid[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] =  ranges[rangeId].saleData.bids[i];
+        }
+        return ret;
+    }
+    
+    function getAllOwners(
+    ) 
+        public
+        view 
+        returns(address[] memory) 
+    {
+        
+        
+        uint256 len = totalOwnersList.length();
+        address[] memory ret = new address[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] = totalOwnersList.at(i);
+        }
+        return ret;
+    }
+    
+    function historyOfAuthors(
+        uint256 tokenId
+    )
+        public 
+        view
+        returns(address[] memory) 
+    {
+        uint256 len = authorsHistory[tokenId].length;
+        address[] memory ret = new address[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] =  authorsHistory[tokenId][i];
+        }
+        return ret;
+    }
+    
+    function getAllAuthors(
+    ) 
+        public
+        view 
+        returns(address[] memory) 
+    {
+        uint256 len = totalAuthorsList.length();
+        
+        address[] memory ret = new address[](len);
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] = totalAuthorsList.at(i);
+            
+        }
+        
+        return ret;
+    }
 
     /**
      * commission amount that need to be paid while NFT token transferring
@@ -704,6 +833,13 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         ranges[newId].commission.reduceCommission  = ranges[oldId].commission.reduceCommission;
         ranges[newId].commission.createdTs         = ranges[oldId].commission.createdTs;
         ranges[newId].commission.lastTransferTs    = ranges[oldId].commission.lastTransferTs;
+        
+        ranges[newId].saleData.startTime            = ranges[oldId].saleData.startTime;
+        ranges[newId].saleData.endTime              = ranges[oldId].saleData.endTime;
+        ranges[newId].saleData.minIncrement         = ranges[oldId].saleData.minIncrement;
+        ranges[newId].saleData.isAuction            = ranges[oldId].saleData.isAuction;
+        
+        
     }
     
     /**
@@ -769,7 +905,8 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
         _tokenApprovals[tokenId] = to;
         emit Approval(NFTSeriesBase.ownerOf(tokenId), to, tokenId);
     }
-
+ 
+    
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
      * The call is not executed if the target address is not a contract.
@@ -816,7 +953,27 @@ abstract contract NFTSeriesBase is Initializable, ContextUpgradeable, ERC165Upgr
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual { }
+    //function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual { }
+    function _beforeTokenTransfer(
+        address from, 
+        address to, 
+        uint256 tokenId
+    ) 
+        internal 
+        virtual 
+
+    {
+        ownersHistory[tokenId].push(to);
+        
+        if (to != address(0)) {
+            totalOwnersList.add(to);
+        } 
+        
+        if ((from != address(0)) && (balanceOf(from) == 1)) {
+            totalOwnersList.remove(from);    
+        }    
+        
+    }
     
         
     function _getAuthor(uint256 tokenId) private view returns(address) {
