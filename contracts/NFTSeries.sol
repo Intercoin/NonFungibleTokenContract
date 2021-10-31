@@ -68,7 +68,8 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
      * @param consumeAmount amount that need to be paid to owner when some1 buy token
      * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
      */
-    function createAndSale(
+    //function createAndSale(
+    function createAndListForSale(
         string memory URI,
         CommissionParams memory commissionParams,
         uint256 tokenAmount,
@@ -97,7 +98,8 @@ contract NFTSeries is NFTSeriesBase, OwnableUpgradeable, ReentrancyGuardUpgradea
      * @param endTime time when auction will end. can be zero, then auction will never expire
      * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
      */
-    function createAndSaleAuction(
+    //function createAndSaleAuction(
+    function createAndListForAuction(
         string memory URI,
         CommissionParams memory commissionParams,
         uint256 tokenAmount,

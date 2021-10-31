@@ -39,7 +39,7 @@ contract('NFT', (accounts) => {
     it('[info]gas consuming ', async () => {
         
                                       //address token; uint256 amount;uint256 multiply;uint256 intervalSeconds;
-        tmpTr = await NFTMockInstance.createAndSale("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], price_0_01, zeroAddress, {from: accountOne});
+        tmpTr = await NFTMockInstance.createAndListForSale("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,10000], price_0_01, zeroAddress, {from: accountOne});
         
         
         var tokenID = tmpTr.logs[0].args[1].toString();
