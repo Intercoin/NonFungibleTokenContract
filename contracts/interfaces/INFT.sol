@@ -46,6 +46,16 @@ interface INFT {
         Bid[] bids;
     }
     
+    struct SaleInfo {
+        uint256 tokenId;
+        uint256 time;
+        address from;
+        address to;
+        uint256 price; // may have x zeros
+        address token; // 0 for BNB
+        uint256 commission;
+        address commissionToken; // may be WBNB
+    }
     
     function initialize(string memory, string memory, CommunitySettings memory) external;
 }

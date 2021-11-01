@@ -33,9 +33,24 @@ Once installed will be use methods:
 </thead>
 <tbody>
 	<tr>
-		<td><a href="#initialize">initialize</a></td>
+		<td><a href="#acceptlastbid">acceptLastBid</a></td>
+		<td>NFTOwner</td>
+		<td>nft owner can manually accept last bid</td>
+	</tr>
+    <tr>
+		<td><a href="#buy">buy</a></td>
+		<td>anyone</td>
+		<td>buying token by sending coins bnb or eth to contract</td>
+	</tr>
+	<tr>
+		<td><a href="#buywithtoken">buyWithToken</a></td>
+		<td>anyone</td>
+		<td>buying token by sending tokens to contract</td>
+	</tr>
+	<tr>
+		<td><a href="#claimlosttoken">claimLostToken</a></td>
 		<td>owner</td>
-		<td>initializing after deploy</td>
+		<td>claiming lost token which can be mistakenly sent to contract</td>
 	</tr>
     <tr>
 		<td><a href="#create">create</a></td>
@@ -52,60 +67,25 @@ Once installed will be use methods:
 		<td>anyone<span>&#42;</span></td>
 		<td>creating NFT token and immediately adding to auction sale</td>
 	</tr>
+	<tr>
+		<td><a href="#claim">claim</a></td>
+		<td>anyone</td>
+		<td>claim nft for person who winner auction sale</td>
+	</tr>
+	<tr>
+		<td><a href="#getallowners">getAllOwners</a></td>
+		<td>anyone</td>
+		<td>viewing list total NFT's owners</td>
+	</tr>
+	<tr>
+		<td><a href="#getallauthors">getAllAuthors</a></td>
+		<td>anyone</td>
+		<td>viewing list total NFT's authors</td>
+	</tr>
     <tr>
 		<td><a href="#getcommission">getCommission</a></td>
 		<td>anyone</td>
 		<td>getting the amount of the commission that will be paid to the author when transferring</td>
-	</tr>
-	<tr>
-		<td><a href="#reducecommission">reduceCommission</a></td>
-		<td>NFTAuthor</td>
-		<td>reducing Commission for NFT token</td>
-	</tr>
-	<tr>
-		<td><a href="#transferauthorship">transferAuthorship</a></td>
-		<td>NFTAuthor</td>
-		<td>transfer authorship for NFT token</td>
-	</tr>
-    <tr>
-		<td><a href="#claimlosttoken">claimLostToken</a></td>
-		<td>owner</td>
-		<td>claiming lost token which can be mistakenly sent to contract</td>
-	</tr>
-    <tr>
-		<td><a href="#listforsale">listForSale</a></td>
-		<td>NFTOwner</td>
-		<td>adding token to sale</td>
-	</tr>
-	<tr>
-		<td><a href="#listforauction">listForAuction</a></td>
-		<td>NFTOwner</td>
-		<td>adding token to auction sale. such nft can not be purchase immediately. auction's winner can be claim nft after auction ending</td>
-	</tr>
-    <tr>
-		<td><a href="#removefromsale">removeFromSale</a></td>
-		<td>NFTOwner</td>
-		<td>removing token from sale</td>
-	</tr>
-	<tr>
-		<td><a href="#saleinfo">saleInfo</a></td>
-		<td>anyone</td>
-		<td>viewing sale info</td>
-	</tr>
-	<tr>
-		<td><a href="#tokensbyowner">tokensByOwner</a></td>
-		<td>anyone</td>
-		<td>viewing tokens list by owner</td>
-	</tr>
-	<tr>
-		<td><a href="#tokensbyauthor">tokensByAuthor</a></td>
-		<td>anyone</td>
-		<td>viewing tokens list by author</td>
-	</tr>
-	<tr>
-		<td><a href="#historyofowners">historyOfOwners</a></td>
-		<td>anyone</td>
-		<td>history of all previous owners</td>
 	</tr>
 	<tr>
 		<td><a href="#historyofauthors">historyOfAuthors</a></td>
@@ -118,39 +98,64 @@ Once installed will be use methods:
 		<td>viewing history of bids previous auction</td>
 	</tr>
 	<tr>
-		<td><a href="#getallowners">getAllOwners</a></td>
+		<td><a href="#historyofowners">historyOfOwners</a></td>
 		<td>anyone</td>
-		<td>viewing list total NFT's owners</td>
+		<td>history of all previous owners</td>
 	</tr>
 	<tr>
-		<td><a href="#getallauthors">getAllAuthors</a></td>
+		<td><a href="#historyofsale">historyOfSale</a></td>
 		<td>anyone</td>
-		<td>viewing list total NFT's authors</td>
+		<td>getting sale data that stored when transferring</td>
 	</tr>
-	<tr>
-		<td><a href="#claim">claim</a></td>
-		<td>anyone</td>
-		<td>claim nft for person who winner auction sale</td>
+    <tr>
+		<td><a href="#initialize">initialize</a></td>
+		<td>owner</td>
+		<td>initializing after deploy</td>
 	</tr>
-	<tr>
-		<td><a href="#acceptlastbid">acceptLastBid</a></td>
+    <tr>
+		<td><a href="#listforsale">listForSale</a></td>
 		<td>NFTOwner</td>
-		<td>nft owner can manually accept last bid</td>
-	</tr>
-    <tr>
-		<td><a href="#buy">buy</a></td>
-		<td>anyone</td>
-		<td>buying token by sending coins bnb or eth to contract</td>
+		<td>adding token to sale</td>
 	</tr>
 	<tr>
-		<td><a href="#buywithtoken">buyWithToken</a></td>
-		<td>anyone</td>
-		<td>buying token by sending tokens to contract</td>
+		<td><a href="#listforauction">listForAuction</a></td>
+		<td>NFTOwner</td>
+		<td>adding token to auction sale. such nft can not be purchase immediately. auction's winner can be claim nft after auction ending</td>
 	</tr>
-    <tr>
+	<tr>
 		<td><a href="#offertopaycommission">offerToPayCommission</a></td>
 		<td>anyone</td>
 		<td>offering to pay commission for token</td>
+	</tr>
+	<tr>
+		<td><a href="#reducecommission">reduceCommission</a></td>
+		<td>NFTAuthor</td>
+		<td>reducing Commission for NFT token</td>
+	</tr>
+    <tr>
+		<td><a href="#removefromsale">removeFromSale</a></td>
+		<td>NFTOwner</td>
+		<td>removing token from sale</td>
+	</tr>
+	<tr>
+		<td><a href="#saleinfo">saleInfo</a></td>
+		<td>anyone</td>
+		<td>viewing sale info</td>
+	</tr>
+	<tr>
+		<td><a href="#transferauthorship">transferAuthorship</a></td>
+		<td>NFTAuthor</td>
+		<td>transfer authorship for NFT token</td>
+	</tr>
+	<tr>
+		<td><a href="#tokensbyowner">tokensByOwner</a></td>
+		<td>anyone</td>
+		<td>viewing tokens list by owner</td>
+	</tr>
+	<tr>
+		<td><a href="#tokensbyauthor">tokensByAuthor</a></td>
+		<td>anyone</td>
+		<td>viewing tokens list by author</td>
 	</tr>
     <tr>
 		<td><a href="#tokensbyauthor">tokensByAuthor</a></td>
@@ -295,7 +300,7 @@ name  | type | description
 tokenId|uint256|`tokenId`
 
 #### saleInfo
-viewing sale info<br>
+viewing current sale info<br>
 Params:
 
 name  | type | description
@@ -460,6 +465,20 @@ name  | type | description
 --|--|--   
 ret|uint256[]|list of tokenIds that belongs to author
 
+#### historyOfSale
+viewing tokens sale data stored when token trasferring<br>
+Params:
+
+name  | type | description
+--|--|--
+tokenId|uint256|`tokenId`
+indexFromEnd|uint256|(optional)timestamp from
+
+Return Values:
+
+name  | type | description
+--|--|--   
+ret|SaleInfo[]|array of tuples 
 
 ## Tuples
 
@@ -493,13 +512,25 @@ accrue|uint256| additional value that would be pow in interval passed since last
 intervalSeconds|uint256| interval period in seconds
 reduceCommission|uint256| reduced commission in percents from final calculated value
 
-#### Bid
+#### Bid    
 name  | type | description
 --|--|--
 bidder|address|bid address 
 bid|uint256| bid amount
-    
-## Events
+
+#### SaleInfo    
+name  | type | description
+--|--|--
+tokenId|uint256|`tokenId`
+time|uint256|timesstamp
+from|address|from
+to|address|to
+price|uint256|price payed
+token|address|token payed
+commission|uint256|price commission
+commissionToken|address|token commission
+
+## Events    
 
 #### TokenCreated
 emitted only in NFT contract

@@ -24,6 +24,8 @@ contract NFT is INFT, NFTAuthorship {
     mapping (uint256 => TokenData) private tokenData;
     mapping (uint256 => address[]) private ownersHistory;
     
+    mapping (uint256 => SaleInfo[]) private saleHistory;
+    
     EnumerableSetUpgradeable.AddressSet totalOwnersList;
     
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
@@ -484,6 +486,36 @@ contract NFT is INFT, NFTAuthorship {
         }
         return ret;
     }
+    
+    function historyOfSale(uint256 tokenId) public view onlyIfTokenExists(tokenId) returns(SaleInfo[] memory) {
+        return saleHistory[tokenId];
+    }
+    
+    function historyOfSale(uint256 tokenId, uint256 indexFromEnd) public view onlyIfTokenExists(tokenId) returns(SaleInfo[] memory) {
+        return _getSaleInfo(tokenId, indexFromEnd);
+    }
+    
+    function _getSaleInfo(uint256 tokenId, uint256 indexFromEnd) internal view returns(SaleInfo[] memory) {
+        uint256 len;
+        for (uint256 i = 0; i < saleHistory[tokenId].length; i++) {
+            if (saleHistory[tokenId][i].time > indexFromEnd) {
+                len = len+1;
+            }
+        }
+        
+        SaleInfo[] memory ret = new SaleInfo[](len);
+        uint256 j=0;
+        for (uint256 i = 0; i < saleHistory[tokenId].length; i++) {
+            if (saleHistory[tokenId][i].time > indexFromEnd) {
+                ret[j] = saleHistory[tokenId][i];
+                j = j.add(1);
+            }
+        }
+        
+        return ret;
+    }
+    
+
    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     // internal section ///////////////////////////////////////////////////////////////////////////////////
@@ -722,6 +754,18 @@ contract NFT is INFT, NFTAuthorship {
         if ((from != address(0)) && (balanceOf(from) == 1)) {
             totalOwnersList.remove(from);    
         }    
+        
+        // adding saleHistory 
+        saleHistory[tokenId].push(SaleInfo(
+            tokenId,
+            block.timestamp,
+            from,
+            to,
+            tokenData[tokenId].salesData.amount,
+            tokenData[tokenId].salesData.erc20Address,
+            tokenData[tokenId].commissions.amount,
+            tokenData[tokenId].commissions.token
+        ));
         
         super._beforeTokenTransfer(from, to, tokenId);
     }

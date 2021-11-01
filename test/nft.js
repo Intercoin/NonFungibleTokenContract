@@ -558,7 +558,7 @@ contract('NFT', (accounts) => {
         );
         
     });
-   
+
     it('check view calls', async () => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
@@ -572,6 +572,7 @@ contract('NFT', (accounts) => {
 
         tmpTr = await localNFTMockInstance.getAllAuthors();
         tmpTr2 = await localNFTMockInstance.getAllOwners();
+
 
         assert.isTrue(
             (
@@ -605,6 +606,8 @@ contract('NFT', (accounts) => {
         
         // let put into sale-list for coins
         await localNFTMockInstance.listForSale(tokenID,oneToken,zeroAddress, {from: ownerOld});
+        
+        let timeBeforeBuy = await localNFTMockInstance.getCurrTime();
         
         // mint oneToken and pay commission
         await ERC20MintableInstance.mint(ownerNew, oneToken);
@@ -668,9 +671,36 @@ contract('NFT', (accounts) => {
             ), 
             "historyOfBids should be empty"
         );
+        
+        
+        
+
+        tmpTr = await localNFTMockInstance.historyOfSale(tokenID, 0);
+        assert.isTrue(
+            (
+                (tmpTr.length == 2)
+            ), 
+            "total must equal 2"
+        );
+        
+        tmpTr = await localNFTMockInstance.historyOfSale(tokenID, timeBeforeBuy);
+        assert.isTrue(
+            (
+                (tmpTr.length == 1)
+            ), 
+            "total must equal 1"
+        );
+        
+        tmpTr = await localNFTMockInstance.historyOfSale(tokenID, 9999999999);
+        assert.isTrue(
+            (
+                (tmpTr.length == 0)
+            ), 
+            "total must equal 0"
+        );
       
     });
-   
+
     it('auction full check (endtime = 0)', async () => {
         let ownerOld = accountFive;
         let ownerNew = accountOne;
@@ -819,4 +849,5 @@ contract('NFT', (accounts) => {
         
       
     });
+
 });

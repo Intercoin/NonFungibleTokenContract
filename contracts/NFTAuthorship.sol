@@ -73,15 +73,6 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         address author = _getAuthor(tokenId);
         require(to != author, "NFTAuthorship: transferAuthorship to current author");
         
-        if (to != address(0)) {
-            totalAuthorsList.add(to);
-        } else {
-            if (_authoredTokens[author].length() == 1) {
-                totalAuthorsList.remove(author);    
-            }    
-        }
-        
-        
         _setAuthor(tokenId, author, to);
         
         emit TransferAuthorship(author, to, tokenId);
@@ -199,6 +190,16 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         _authors[tokenId] = to;
         _authoredTokens[from].remove(tokenId); // old author
         _authoredTokens[to].add(tokenId); // new author
+        
+        
+        if (to != address(0)) {
+            totalAuthorsList.add(to);
+        } else {
+            if (_authoredTokens[from].length() == 1) {
+                totalAuthorsList.remove(from);    
+            }    
+        }
+        
         
         //_coauthors[tokenId].removeIfExists(to);
     }
