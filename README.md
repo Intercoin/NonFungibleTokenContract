@@ -4,9 +4,20 @@ NFTSeries contract do the same but have ability to create several NFT in one tra
 
 # Latest contract instances in test networks
 Binance SmartChain TestNet<br>
+
+<a href="https://testnet.bscscan.com/address/0xF331051D1Ae614d2554a3121a02fEf3a56882C35#contracts">NFTFactory</a><br>
+<a href="https://testnet.bscscan.com/address/0x4a948d22a1d8c9f64c68a5db503aa982f5682f68#code">Created instance NFT</a><br>
+<a href="https://ipfs.io/ipfs/QmZnE3Ku2nHqi7TNWUMuyzxZkp87cnn4X4bkPWyWkCR8aM">https://ipfs.io/ipfs/QmZnE3Ku2nHqi7TNWUMuyzxZkp87cnn4X4bkPWyWkCR8aM</a>
+
+<details>
+<summary>
+# Old versions
+</summary>
+<p>
 <a href="https://testnet.bscscan.com/address/0xF4eFc2cB258754AEe772361e034E37716eA324d0#contracts">NFTFactory</a><br>
 <a href="https://testnet.bscscan.com/address/0x58DFdE51CD6dDB92EF5DD21A14Fe078a376FE549#code">Created instance NFT</a><br>
-
+</p>
+</details>
 
 # Overview
 
