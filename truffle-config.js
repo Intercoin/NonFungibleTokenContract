@@ -119,7 +119,7 @@ module.exports = {
   // Configure your compilers
   compilers: {
     solc: {
-      version: "0.8.4",    // Fetch exact version from solc-bin (default: truffle's version)
+      version: "0.8.7",    // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
       settings: {          // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
@@ -130,7 +130,7 @@ module.exports = {
       }
     }
   },
-  plugins: ['truffle-plugin-verify', 'truffle-plugin-solhint', 'truffle-contract-size', 'truffle-flattener'],
+  plugins: ['truffle-plugin-verify', 'truffle-plugin-solhint', 'truffle-contract-size'],
   
   api_keys: {
     etherscan: process.env.etherscan_api_key,

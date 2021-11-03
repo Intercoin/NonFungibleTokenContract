@@ -69,16 +69,16 @@ contract NFT is INFT, NFTAuthorship {
     //     _;   
     // }
     
-    function _validateOnlySale(uint256 tokenId) internal {
+    function _validateOnlySale(uint256 tokenId) internal view {
         require(tokenData[tokenId].salesData.isSale == true, "NFT: Token does not in sale");
     }
-    function _validateOnlySaleForCoins(uint256 tokenId) internal {
+    function _validateOnlySaleForCoins(uint256 tokenId) internal view {
         require(tokenData[tokenId].salesData.erc20Address == address(0), "NFT: Token can not be sale for coins");   
     }
-    function _validateOnlySaleForTokens(uint256 tokenId) internal {
+    function _validateOnlySaleForTokens(uint256 tokenId) internal view {
         require(tokenData[tokenId].salesData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
     }
-    function _validateCanClaim(uint256 tokenId) internal {
+    function _validateCanClaim(uint256 tokenId) internal view {
         // can claim if auction time == 0 or expire
         // can claim if last bidder is sender
         uint256 len = tokenData[tokenId].salesData.bids.length;
