@@ -1,6 +1,6 @@
 {
   "name": "nft",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "truffle-config.js",
   "directories": {
@@ -14,13 +14,13 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/contracts-upgradeable": "^4.1.0",
-    
-    "@truffle/hdwallet-provider": "1.5.0",
-    
+    "@solidity-parser/parser": "^0.14.0",
+    "@truffle/hdwallet-provider": "^1.0.37",
     "bignumber.js": "^9.0.1",
     "dotenv": "^8.2.0",
     "truffle-assertions": "^0.9.2",
     "truffle-contract-size": "^2.0.1",
+    "truffle-flattener": "^1.5.0",
     "truffle-plugin-solhint": "^0.0.6"
   },
   "devDependencies": {
