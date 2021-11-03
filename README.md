@@ -521,7 +521,6 @@ bid|uint256| bid amount
 #### SaleInfo    
 name  | type | description
 --|--|--
-tokenId|uint256|`tokenId`
 time|uint256|timesstamp
 from|address|from
 to|address|to

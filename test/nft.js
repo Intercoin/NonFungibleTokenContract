@@ -46,7 +46,7 @@ contract('NFT', (accounts) => {
         
         await truffleAssert.reverts(
             NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,7*3600,999999999], {from: accountFive}),
-            "NFT: reduceCommission can be in interval [0;10000]"
+            "wrong reduceCommission"
         );
 
     });
@@ -464,7 +464,7 @@ contract('NFT', (accounts) => {
     it('getCommission: should validate params ', async () => {
         await truffleAssert.reverts(
             NFTMockInstance.create("http://google.com", [ERC20MintableInstance.address, oneToken,0,0,0,10000], {from: accountFive}),
-            'NFT: IntervalSeconds can not be zero'
+            'wrong IntervalSeconds'
         );
     });
     
@@ -544,7 +544,7 @@ contract('NFT', (accounts) => {
         );
         await truffleAssert.reverts(
             NFTMockInstance.reduceCommission(tokenID, 9999999999, {from: accountFive}),
-            'NFT: reduceCommission can be in interval [0;10000]'
+            'wrong reduceCommission'
         );
         await NFTMockInstance.reduceCommission(tokenID, 10000, {from: accountFive});
         

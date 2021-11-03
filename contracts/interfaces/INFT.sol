@@ -47,7 +47,7 @@ interface INFT {
     }
     
     struct SaleInfo {
-        uint256 tokenId;
+        //uint256 tokenId;
         uint256 time;
         address from;
         address to;

@@ -25,7 +25,9 @@ contract NFT is INFT, NFTAuthorship {
     
     mapping (uint256 => TokenData) private tokenData;
     
-    EnumerableSetUpgradeable.AddressSet totalOwnersList;
+    EnumerableSetUpgradeable.AddressSet private totalOwnersList;
+    
+    string constant private MSG_TRANSFERFROM_FAILED = "NFT: Failed when 'transferFrom' funds";
     
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
     event TokenAddedToAuctionSale(uint256 tokenId, uint256 amount, address consumeToken, uint256 startTime, uint256 endTime, uint256 minIncrement);
@@ -177,7 +179,7 @@ contract NFT is INFT, NFTAuthorship {
         require(funds > 0, "NFT: There are no lost tokens");
             
         bool success = IERC20Upgradeable(erc20address).transfer(_msgSender(), funds);
-        require(success, "NFT: Failed when 'transferFrom' funds");
+        require(success, MSG_TRANSFERFROM_FAILED);
     }
     
     /**
@@ -331,7 +333,7 @@ contract NFT is INFT, NFTAuthorship {
         bool success;
         
         success = saleToken.transferFrom(_msgSender(), address(this), needToObtain);
-        require(success, "NFT: Failed when 'transferFrom' funds");
+        require(success, MSG_TRANSFERFROM_FAILED);
         
         if (_isInAuction(tokenId) == 1) {
             putInToAuctionList(tokenId, _msgSender(), needToObtain, 1);
@@ -629,7 +631,7 @@ contract NFT is INFT, NFTAuthorship {
     {
         
         require(commissionParams.token != address(0), "NFT: Token address can not be zero");
-        require(commissionParams.intervalSeconds > 0, "NFT: IntervalSeconds can not be zero");
+        require(commissionParams.intervalSeconds > 0, "wrong IntervalSeconds");
         _validateReduceCommission(commissionParams.reduceCommission);
         
         tokenId = _createNFT(URI);
@@ -756,7 +758,7 @@ contract NFT is INFT, NFTAuthorship {
         
         // adding saleHistory 
         tokenData[tokenId].saleHistory.push(SaleInfo(
-            tokenId,
+            //tokenId,
             block.timestamp,
             from,
             to,
@@ -843,7 +845,7 @@ contract NFT is INFT, NFTAuthorship {
         internal 
         pure
     {
-        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "NFT: reduceCommission can be in interval [0;10000]");
+        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "wrong reduceCommission");
     }
        
     function _validateAuctionActive(
@@ -891,7 +893,7 @@ contract NFT is INFT, NFTAuthorship {
                 commissionAmountLeft = commissionAmountNeedToPay.sub(minAmount);
             }
             bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
-            require(success, "NFT: Failed when 'transferFrom' funds");
+            require(success, MSG_TRANSFERFROM_FAILED);
             
             tokenData[tokenId].commissions.offerPayAmount[addr] = tokenData[tokenId].commissions.offerPayAmount[addr].sub(minAmount);
             if (tokenData[tokenId].commissions.offerPayAmount[addr] == 0) {
