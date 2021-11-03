@@ -31,9 +31,13 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     
     EnumerableSetUpgradeable.AddressSet totalAuthorsList;
     
-    modifier onlyNFTAuthor(uint256 tokenId) {
-        require(_msgSender() == _getAuthor(tokenId), "NFTAuthorship: sender is not author of token");
-        _;
+    // modifier onlyNFTAuthor(uint256 tokenId) {
+    //     require(_msgSender() == _getAuthor(tokenId), "NFTAuthorship: sender is not author of token");
+    //     _;
+    // }
+    
+    function _validateTokenAuthor(uint256 tokenId) internal view {
+        require(_msgSender() == _getAuthor(tokenId), "Sender is not author of token");
     }
     
     /**
@@ -66,10 +70,11 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     ) 
         public 
         override
-        onlyIfTokenExists(tokenId)
-        onlyNFTAuthor(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlyNFTAuthor(tokenId)
     {
-        
+        _validateOnlyIfTokenExists(tokenId);
+        _validateTokenAuthor(tokenId);
         address author = _getAuthor(tokenId);
         require(to != author, "NFTAuthorship: transferAuthorship to current author");
         
@@ -86,10 +91,11 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     )
         public
         override
-        onlyIfTokenExists(tokenId)
+        //onlyIfTokenExists(tokenId)
         view
         returns (address) 
     {
+        _validateOnlyIfTokenExists(tokenId);
         address author = _getAuthor(tokenId);
         return author;
     }

@@ -81,7 +81,7 @@ contract('NFT', (accounts) => {
         let authorNew = accountTwo;
         await truffleAssert.reverts(
             NFTMockInstance.transferAuthorship(authorNew, tokenID, {from: accountFourth}),
-            'NFTAuthorship: sender is not author of token'
+            'Sender is not author of token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.transferAuthorship(authorOld, tokenID, {from: authorOld}),
@@ -540,7 +540,7 @@ contract('NFT', (accounts) => {
         );
         await truffleAssert.reverts(
             NFTMockInstance.reduceCommission(tokenID, 10000, {from: accountOne}),
-            'NFTAuthorship: sender is not author of token'
+            'Sender is not author of token'
         );
         await truffleAssert.reverts(
             NFTMockInstance.reduceCommission(tokenID, 9999999999, {from: accountFive}),

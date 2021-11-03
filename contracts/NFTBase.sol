@@ -17,14 +17,21 @@ abstract contract NFTBase is INFT, ReentrancyGuardUpgradeable, OwnableUpgradeabl
     
     event TokenCreated(address author, uint256 tokenId);
     
-    modifier onlyIfTokenExists(uint256 tokenId) {
-        require(_exists(tokenId), "NFTBase: Nonexistent token");
-        _;
-    }
+    // modifier onlyIfTokenExists(uint256 tokenId) {
+    //     require(_exists(tokenId), "NFTBase: Nonexistent token");
+    //     _;
+    // }
     
-    modifier onlyNFTOwner(uint256 tokenId) {
+    // modifier onlyNFTOwner(uint256 tokenId) {
+    //     require(_msgSender() == ownerOf(tokenId), "NFTBase: Sender is not owner of token");
+    //     _;
+    // }
+    
+    function _validateOnlyIfTokenExists(uint256 tokenId) internal view {
+        require(_exists(tokenId), "NFTBase: Nonexistent token");
+    }
+    function _validateOnlyNFTOwner(uint256 tokenId) internal view {
         require(_msgSender() == ownerOf(tokenId), "NFTBase: Sender is not owner of token");
-        _;
     }
     
     function tokenURI(uint256 tokenId) public view virtual override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {

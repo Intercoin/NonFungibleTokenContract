@@ -34,26 +34,51 @@ contract NFT is INFT, NFTAuthorship {
     event TokenRemovedFromSale(uint256 tokenId);
     event OutBid(uint256 tokenId, uint256 newBid);
     
-    modifier canRecord(string memory communityRole) {
-        bool s = _canRecord(communityRole);
-        require(s == true, "Sender has not in accessible List");
-        _;
-    }
+    // modifier canRecord(string memory communityRole) {
+    //     bool s = _canRecord(communityRole);
+    //     require(s == true, "Sender has not in accessible List");
+    //     _;
+    // }
     
-    modifier onlySale(uint256 tokenId) {
+    // modifier onlySale(uint256 tokenId) {
+    //     require(tokenData[tokenId].salesData.isSale == true, "NFT: Token does not in sale");
+    //     _;
+    // }
+    // modifier onlySaleForCoins(uint256 tokenId) {
+    //     require(tokenData[tokenId].salesData.erc20Address == address(0), "NFT: Token can not be sale for coins");
+    //     _;
+    // }
+    // modifier onlySaleForTokens(uint256 tokenId) {
+    //     require(tokenData[tokenId].salesData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
+    //     _;
+    // }
+    
+    // modifier canClaim(uint256 tokenId) {
+    //     // can claim if auction time == 0 or expire
+    //     // can claim if last bidder is sender
+    //     uint256 len = tokenData[tokenId].salesData.bids.length;
+    //     require(
+    //         (
+    //             tokenData[tokenId].salesData.endTime != 0 && 
+    //             tokenData[tokenId].salesData.endTime < block.timestamp &&
+    //             len > 0 && 
+    //             tokenData[tokenId].salesData.bids[len-1].bidder == _msgSender()
+    //         ), 
+    //         "can't claim"
+    //     );
+    //     _;   
+    // }
+    
+    function _validateOnlySale(uint256 tokenId) internal {
         require(tokenData[tokenId].salesData.isSale == true, "NFT: Token does not in sale");
-        _;
     }
-    modifier onlySaleForCoins(uint256 tokenId) {
-        require(tokenData[tokenId].salesData.erc20Address == address(0), "NFT: Token can not be sale for coins");
-        _;
+    function _validateOnlySaleForCoins(uint256 tokenId) internal {
+        require(tokenData[tokenId].salesData.erc20Address == address(0), "NFT: Token can not be sale for coins");   
     }
-    modifier onlySaleForTokens(uint256 tokenId) {
+    function _validateOnlySaleForTokens(uint256 tokenId) internal {
         require(tokenData[tokenId].salesData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
-        _;
     }
-    
-    modifier canClaim(uint256 tokenId) {
+    function _validateCanClaim(uint256 tokenId) internal {
         // can claim if auction time == 0 or expire
         // can claim if last bidder is sender
         uint256 len = tokenData[tokenId].salesData.bids.length;
@@ -66,7 +91,6 @@ contract NFT is INFT, NFTAuthorship {
             ), 
             "can't claim"
         );
-        _;   
     }
     
     
@@ -94,9 +118,10 @@ contract NFT is INFT, NFTAuthorship {
         CommissionParams memory commissionParams
     ) 
         public 
-        canRecord(communitySettings.roleMint) 
+        // canRecord(communitySettings.roleMint) 
         virtual  
     {
+        _validateCanRecord(communitySettings.roleMint);
         _create(URI, commissionParams);
     }
     
@@ -159,9 +184,10 @@ contract NFT is INFT, NFTAuthorship {
     ) 
         public
         view
-        onlyIfTokenExists(tokenId)
+        // onlyIfTokenExists(tokenId)
         returns(address t, uint256 r)
     {
+        _validateOnlyIfTokenExists(tokenId);
         (t, r) = _getCommission(tokenId);
     }
     
@@ -194,9 +220,11 @@ contract NFT is INFT, NFTAuthorship {
         address consumeToken
     )
         public
-        onlyIfTokenExists(tokenId)
-        onlyNFTOwner(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlyNFTOwner(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateOnlyNFTOwner(tokenId);
         _listForSale(tokenId, amount, consumeToken);
     }
 
@@ -218,9 +246,11 @@ contract NFT is INFT, NFTAuthorship {
         uint256 minIncrement
     )
         public
-        onlyIfTokenExists(tokenId)
-        onlyNFTOwner(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlyNFTOwner(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateOnlyNFTOwner(tokenId);
         _listForAuction(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
     }
 
@@ -232,9 +262,11 @@ contract NFT is INFT, NFTAuthorship {
         uint256 tokenId
     )
         public 
-        onlyIfTokenExists(tokenId)
-        onlyNFTOwner(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlyNFTOwner(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateOnlyNFTOwner(tokenId);
         _removeFromSale(tokenId);
     }
     
@@ -254,7 +286,7 @@ contract NFT is INFT, NFTAuthorship {
     )   
         public
         view
-        onlyIfTokenExists(tokenId)
+        //onlyIfTokenExists(tokenId)
         returns(
             address erc20Address, 
             uint256 amount, 
@@ -265,6 +297,7 @@ contract NFT is INFT, NFTAuthorship {
             bool isAuction
         )
     {
+        _validateOnlyIfTokenExists(tokenId);
         erc20Address = tokenData[tokenId].salesData.erc20Address;
         amount = tokenData[tokenId].salesData.amount; 
         isSale = tokenData[tokenId].salesData.isSale;
@@ -284,10 +317,13 @@ contract NFT is INFT, NFTAuthorship {
         public 
         payable
         nonReentrant
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        onlySaleForCoins(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlySale(tokenId)
+        // onlySaleForCoins(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateOnlySale(tokenId);
+        _validateOnlySaleForCoins(tokenId);
         _validateAuctionActive(tokenId);
         bool success;
         uint256 funds = msg.value;
@@ -318,10 +354,13 @@ contract NFT is INFT, NFTAuthorship {
     )
         public 
         nonReentrant
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        onlySaleForTokens(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlySale(tokenId)
+        // onlySaleForTokens(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateOnlySale(tokenId);
+        _validateOnlySaleForTokens(tokenId);
         _validateAuctionActive(tokenId);
         uint256 needToObtain = tokenData[tokenId].salesData.amount;
         
@@ -354,8 +393,9 @@ contract NFT is INFT, NFTAuthorship {
         uint256 amount 
     )
         public 
-        onlyIfTokenExists(tokenId)
+        // onlyIfTokenExists(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
         if (amount == 0) {
             if (tokenData[tokenId].commissions.offerAddresses.contains(_msgSender())) {
                 tokenData[tokenId].commissions.offerAddresses.remove(_msgSender());
@@ -378,9 +418,11 @@ contract NFT is INFT, NFTAuthorship {
         uint256 reduceCommissionPercent
     ) 
         public
-        onlyIfTokenExists(tokenId)
-        onlyNFTAuthor(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlyNFTAuthor(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateTokenAuthor(tokenId);
         _validateReduceCommission(reduceCommissionPercent);
         
         tokenData[tokenId].commissions.reduceCommission = reduceCommissionPercent;
@@ -390,10 +432,13 @@ contract NFT is INFT, NFTAuthorship {
         uint256 tokenId
     )
         public
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        canClaim(tokenId)
+        // onlyIfTokenExists(tokenId)
+        // onlySale(tokenId)
+        // canClaim(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateOnlySale(tokenId);
+        _validateCanClaim(tokenId);
         _claim(tokenId);
     }
     
@@ -401,10 +446,14 @@ contract NFT is INFT, NFTAuthorship {
         uint256 tokenId
     )
         public
-        onlyIfTokenExists(tokenId)
-        onlySale(tokenId)
-        onlyNFTOwner(tokenId)
+        //onlyIfTokenExists(tokenId)
+        //onlySale(tokenId)
+        //onlyNFTOwner(tokenId)
     {
+        _validateOnlyIfTokenExists(tokenId);
+        _validateOnlySale(tokenId);
+        _validateOnlyNFTOwner(tokenId);
+        
         uint256 len = tokenData[tokenId].salesData.bids.length;
         if (len > 0) {
             _claim(tokenId);
@@ -488,11 +537,28 @@ contract NFT is INFT, NFTAuthorship {
         return ret;
     }
    
-    function historyOfSale(uint256 tokenId) public view onlyIfTokenExists(tokenId) returns(SaleInfo[] memory) {
+    function historyOfSale(
+        uint256 tokenId
+    ) 
+        public 
+        view 
+        //onlyIfTokenExists(tokenId) 
+        returns(SaleInfo[] memory) 
+    {
+        _validateOnlyIfTokenExists(tokenId);
         return tokenData[tokenId].saleHistory;
     }
     
-    function historyOfSale(uint256 tokenId, uint256 indexFromEnd) public view onlyIfTokenExists(tokenId) returns(SaleInfo[] memory) {
+    function historyOfSale(
+        uint256 tokenId, 
+        uint256 indexFromEnd
+    ) 
+        public 
+        view 
+        //onlyIfTokenExists(tokenId) 
+        returns(SaleInfo[] memory) 
+    {
+        _validateOnlyIfTokenExists(tokenId);
         return _getSaleInfo(tokenId, indexFromEnd);
     }
     
@@ -626,9 +692,10 @@ contract NFT is INFT, NFTAuthorship {
         CommissionParams memory commissionParams
     ) 
         internal 
-        canRecord(communitySettings.roleMint) 
+        // canRecord(communitySettings.roleMint) 
         returns(uint256 tokenId)
     {
+        _validateCanRecord(communitySettings.roleMint);
         
         require(commissionParams.token != address(0), "NFT: Token address can not be zero");
         require(commissionParams.intervalSeconds > 0, "wrong IntervalSeconds");
@@ -924,14 +991,13 @@ contract NFT is INFT, NFTAuthorship {
      * return true if {roleName} exist in Community contract for msg.sender
      * @param roleName role name
      */
-    function _canRecord(
+    function _validateCanRecord(
         string memory roleName
     ) 
         private 
-        view 
-        returns(bool s)
+        view
     {
-        s = false;
+        bool s = false;
         if (communitySettings.addr == address(0)) {
             // if the community address set to zero then we must skip the check
             s = true;
@@ -945,6 +1011,8 @@ contract NFT is INFT, NFTAuthorship {
             }
         }
 
+        require(s == true, "Sender has not in accessible List");
     }
+    
    
 }
