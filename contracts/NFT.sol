@@ -19,12 +19,11 @@ contract NFT is INFT, NFTAuthorship {
     struct TokenData {
         CommissionSettings commissions;
         SalesData salesData;
+        SaleInfo[] saleHistory;
+        address[] ownersHistory;
     }
     
     mapping (uint256 => TokenData) private tokenData;
-    mapping (uint256 => address[]) private ownersHistory;
-    
-    mapping (uint256 => SaleInfo[]) private saleHistory;
     
     EnumerableSetUpgradeable.AddressSet totalOwnersList;
     
@@ -446,11 +445,11 @@ contract NFT is INFT, NFTAuthorship {
         view
         returns(address[] memory) 
     {
-        uint256 len = ownersHistory[tokenId].length;
+        uint256 len = tokenData[tokenId].ownersHistory.length;
         address[] memory ret = new address[](len);
 
         for (uint256 i = 0; i < len; i++) {
-            ret[i] =  ownersHistory[tokenId][i];
+            ret[i] =  tokenData[tokenId].ownersHistory[i];
         }
         return ret;
     }
@@ -486,9 +485,9 @@ contract NFT is INFT, NFTAuthorship {
         }
         return ret;
     }
-    
+   
     function historyOfSale(uint256 tokenId) public view onlyIfTokenExists(tokenId) returns(SaleInfo[] memory) {
-        return saleHistory[tokenId];
+        return tokenData[tokenId].saleHistory;
     }
     
     function historyOfSale(uint256 tokenId, uint256 indexFromEnd) public view onlyIfTokenExists(tokenId) returns(SaleInfo[] memory) {
@@ -497,17 +496,17 @@ contract NFT is INFT, NFTAuthorship {
     
     function _getSaleInfo(uint256 tokenId, uint256 indexFromEnd) internal view returns(SaleInfo[] memory) {
         uint256 len;
-        for (uint256 i = 0; i < saleHistory[tokenId].length; i++) {
-            if (saleHistory[tokenId][i].time > indexFromEnd) {
+        for (uint256 i = 0; i < tokenData[tokenId].saleHistory.length; i++) {
+            if (tokenData[tokenId].saleHistory[i].time > indexFromEnd) {
                 len = len+1;
             }
         }
         
         SaleInfo[] memory ret = new SaleInfo[](len);
         uint256 j=0;
-        for (uint256 i = 0; i < saleHistory[tokenId].length; i++) {
-            if (saleHistory[tokenId][i].time > indexFromEnd) {
-                ret[j] = saleHistory[tokenId][i];
+        for (uint256 i = 0; i < tokenData[tokenId].saleHistory.length; i++) {
+            if (tokenData[tokenId].saleHistory[i].time > indexFromEnd) {
+                ret[j] = tokenData[tokenId].saleHistory[i];
                 j = j.add(1);
             }
         }
@@ -745,7 +744,7 @@ contract NFT is INFT, NFTAuthorship {
         virtual 
         override 
     {
-        ownersHistory[tokenId].push(to);
+        tokenData[tokenId].ownersHistory.push(to);
         
         if (to != address(0)) {
             totalOwnersList.add(to);
@@ -756,7 +755,7 @@ contract NFT is INFT, NFTAuthorship {
         }    
         
         // adding saleHistory 
-        saleHistory[tokenId].push(SaleInfo(
+        tokenData[tokenId].saleHistory.push(SaleInfo(
             tokenId,
             block.timestamp,
             from,
