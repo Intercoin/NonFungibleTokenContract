@@ -35,7 +35,6 @@ Binance SmartChain TestNet<br>
 </details>
 
 # Overview
-- ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) `readme is outofdate`
 
 Once installed will be use methods:
 
@@ -69,17 +68,17 @@ Once installed will be use methods:
 		<td>creating NFT token</td>
 	</tr>
     <tr>
-		<td><a href="#addAuthorized">addAuthorized</a></td>
+		<td><a href="#addauthorized">addAuthorized</a></td>
 		<td>anyone<span>&#42;</span></td>
 		<td>adds an author</td>
 	</tr>
     <tr>
-		<td><a href="#addAuthorized">removeAuthorized</a></td>
+		<td><a href="#addauthorized">removeAuthorized</a></td>
 		<td>anyone<span>&#42;</span></td>
 		<td>removes an author</td>
 	</tr>
 	    <tr>
-		<td><a href="#addAuthorized">isAuthorized</a></td>
+		<td><a href="#addauthorized">isAuthorized</a></td>
 		<td>anyone<span>&#42;</span></td>
 		<td>tests whether a wallet is an author</td>
 	</tr>
@@ -177,18 +176,18 @@ name  | type | description
 --|--|--
 name|string| name of NFT token
 symbol|string|symbol of NFT token
-<a href="#communitysettings">communitySettings_</a>|tuple|
+<a href="#user-content-communitysettings">communitySettings_</a>|tuple|
     
 #### create
 creating NFT <br>
 Emits event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
-or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
+or <a href="#user-content-tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
 Params:
 
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
-<a href="#commissionparams">commissionParams</a>|tuple|
+<a href="#user-content-commissionparams">commissionParams</a>|tuple|
 tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
     
 #### buyWithETHAndCreate
@@ -201,25 +200,24 @@ Params:
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
-<a href="#commissionparams">commissionParams</a>|tuple|
 saleParams|SaleParams|contains `token=0x0`, `amount`, `seller`
-<a href="#commissionparams">commissionParams</a>|tuple|
-signature|bytes|the signature, <a href="#signature">generated like this</a>
+<a href="#user-content-commissionparams">commissionParams</a>|tuple|
+signature|bytes|the signature, <a href="#user-content-how-to-compute-a-signature">generated like this</a>
 
 #### buyWithTokenAndCreate
 Transfers amount of a given token from `SalesData.seller`, and creates the NFT. The seller becomes the authorOf(tokenId).
 Must be pre-authorized by owner's or authorized user's signature.
 The amount must already have been allowed by user signing a call to `token.approve(this contract)`
-Emits event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
-or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
+Emits event <a href="#user-content-tokencreated">TokenCreated</a>(for NFT)<br>
+or <a href="#user-content-tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
 Params:
 
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
 saleParams|SaleParams|contains `token`, `amount`, `seller`
-<a href="#commissionparams">commissionParams</a>|tuple|
-signature|bytes|the signature, <a href="#signature">generated like this</a>
+<a href="#user-content-commissionparams">commissionParams</a>|tuple|
+signature|bytes|the signature, <a href="#user-content-how-to-compute-a-signature">generated like this</a>
 
 #### addAuthorized
 Adds to list of wallets of token authors authorized to pre-sign transactions, that can be used for users to buyAndCreate tokens with preset URIs and parameters
