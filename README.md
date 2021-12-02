@@ -48,45 +48,40 @@ Once installed will be use methods:
 	</tr>
 </thead>
 <tbody>
-	<tr>
-		<td><a href="#acceptlastbid">acceptLastBid</a></td>
-		<td>NFTOwner</td>
-		<td>nft owner can manually accept last bid</td>
-	</tr>
     <tr>
 		<td><a href="#buy">buy</a></td>
 		<td>anyone</td>
-		<td>buying token by sending coins bnb or eth to contract</td>
+		<td>buying token by sending native coins like BNB or ETH to contract</td>
 	</tr>
 	<tr>
 		<td><a href="#buywithtoken">buyWithToken</a></td>
 		<td>anyone</td>
-		<td>buying token by sending tokens to contract</td>
-	</tr>
-	<tr>
-		<td><a href="#claimlosttoken">claimLostToken</a></td>
-		<td>owner</td>
-		<td>claiming lost token which can be mistakenly sent to contract</td>
+		<td>buying token by sending ERC-20 tokens to contract</td>
 	</tr>
     <tr>
-		<td><a href="#create">create</a></td>
+		<td><a href="#buywithethandcreate">buyWithETHAndCreate</a></td>
 		<td>anyone<span>&#42;</span></td>
 		<td>creating NFT token</td>
 	</tr>
     <tr>
-		<td><a href="#createandlistforsale">createAndListForSale</a></td>
+		<td><a href="#buywithtokenandcreate">buyWithTokenAndCreate</a></td>
 		<td>anyone<span>&#42;</span></td>
-		<td>creating NFT token and immediately adding to sale</td>
+		<td>creating NFT token</td>
 	</tr>
     <tr>
-		<td><a href="#createandlistforauction">createAndListForAuction</a></td>
+		<td><a href="#addAuthorized">addAuthorized</a></td>
 		<td>anyone<span>&#42;</span></td>
-		<td>creating NFT token and immediately adding to auction sale</td>
+		<td>adds an author</td>
 	</tr>
-	<tr>
-		<td><a href="#claim">claim</a></td>
-		<td>anyone</td>
-		<td>claim nft for person who winner auction sale</td>
+    <tr>
+		<td><a href="#addAuthorized">removeAuthorized</a></td>
+		<td>anyone<span>&#42;</span></td>
+		<td>removes an author</td>
+	</tr>
+	    <tr>
+		<td><a href="#addAuthorized">isAuthorized</a></td>
+		<td>anyone<span>&#42;</span></td>
+		<td>tests whether a wallet is an author</td>
 	</tr>
 	<tr>
 		<td><a href="#getallowners">getAllOwners</a></td>
@@ -109,11 +104,6 @@ Once installed will be use methods:
 		<td>history of all previous authors</td>
 	</tr>
 	<tr>
-		<td><a href="#historyofbids">historyOfBids</a></td>
-		<td>anyone</td>
-		<td>viewing history of bids previous auction</td>
-	</tr>
-	<tr>
 		<td><a href="#historyofowners">historyOfOwners</a></td>
 		<td>anyone</td>
 		<td>history of all previous owners</td>
@@ -132,11 +122,6 @@ Once installed will be use methods:
 		<td><a href="#listforsale">listForSale</a></td>
 		<td>NFTOwner</td>
 		<td>adding token to sale</td>
-	</tr>
-	<tr>
-		<td><a href="#listforauction">listForAuction</a></td>
-		<td>NFTOwner</td>
-		<td>adding token to auction sale. such nft can not be purchase immediately. auction's winner can be claim nft after auction ending</td>
 	</tr>
 	<tr>
 		<td><a href="#offertopaycommission">offerToPayCommission</a></td>
@@ -173,6 +158,11 @@ Once installed will be use methods:
 		<td>anyone</td>
 		<td>viewing tokens list by author</td>
 	</tr>
+	<tr>
+		<td><a href="#claimlosttoken">claimLostToken</a></td>
+		<td>owner</td>
+		<td>claiming lost token which can be mistakenly sent to contract</td>
+	</tr>
 </tbody>
 </table>
 <sup>*</sup> anyone if while initialize <a href="#communitysettings">communitySettings_.[addr]</a> was set in zero. otherwise method can be called only who belong to community role 'roleMint' in community contract `addr`
@@ -191,7 +181,7 @@ symbol|string|symbol of NFT token
     
 #### create
 creating NFT <br>
-Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
+Emits event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
 or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
 Params:
 
@@ -201,9 +191,10 @@ URI|string|The Uniform Resource Identifier (URI)
 <a href="#commissionparams">commissionParams</a>|tuple|
 tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
     
-#### createAndListForSale
-creating NFT and adding to sale<br>
-Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
+#### buyWithETHAndCreate
+Buys a token with ETH from `SalesData.seller`, and creates the NFT. The seller becomes the authorOf(tokenId).
+Must be pre-authorized by owner's or authorized user's signature.
+Emits event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
 or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
 Params:
 
@@ -211,27 +202,47 @@ name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
 <a href="#commissionparams">commissionParams</a>|tuple|
-tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
-consumeAmount|uint256|amount in coins(bnb, eth etc.)
-consumeToken|address|token address. if address(0) then owner expect coins for sale
+saleParams|SaleParams|contains `token=0x0`, `amount`, `seller`
+<a href="#commissionparams">commissionParams</a>|tuple|
+signature|bytes|the signature, <a href="#signature">generated like this</a>
 
-#### createAndListForAuction
-creating NFT and adding to  auction sale<br>
-Emitted event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
+#### buyWithTokenAndCreate
+Transfers amount of a given token from `SalesData.seller`, and creates the NFT. The seller becomes the authorOf(tokenId).
+Must be pre-authorized by owner's or authorized user's signature.
+The amount must already have been allowed by user signing a call to `token.approve(this contract)`
+Emits event <a href="#tokencreated">TokenCreated</a>(for NFT)<br>
 or <a href="#tokenseriescreated">TokenSeriesCreated</a>(for NFTSeries)<br>
-also emitted <a href="#tokenaddedtoauctionsale">TokenAddedToAuctionSale</a><br>
 Params:
 
 name  | type | description
 --|--|--
 URI|string|The Uniform Resource Identifier (URI)
+saleParams|SaleParams|contains `token`, `amount`, `seller`
 <a href="#commissionparams">commissionParams</a>|tuple|
-tokenAmount|uint256|token amount (third parameter acceptible only for NFTSeries contract)
-consumeAmount|uint256|amount in coins(bnb, eth etc.)
-consumeToken|address|token address. if address(0) then owner expect coins for sale
-startTime|uint256| start auction's time. can be 0, then auction start immediately(in block mined time)
-endTime|uint256| end auction's time. can be 0, then auction never end and owner should accept last higher bid to make bidder a new nft owner
-minIncrement|uint256| minimal increment from last bid can be acceptable for next bid
+signature|bytes|the signature, <a href="#signature">generated like this</a>
+
+#### addAuthorized
+Adds to list of wallets of token authors authorized to pre-sign transactions, that can be used for users to buyAndCreate tokens with preset URIs and parameters
+
+name  | type | description
+--|--|--
+address|address|an NFT author
+
+#### removeAuthorized
+
+Removes from list of wallets of token authors authorized to pre-sign transactions, that can be used for users to buyAndCreate tokens with preset URIs and parameters
+
+name  | type | description
+--|--|--
+address|address|an NFT author
+
+#### isAuthorized
+
+Returns true if the wallet is authorized to be an author
+
+name  | type | description
+--|--|--
+address|address|the wallet to ask about
 
 #### getCommission
 getting Commission for NFT token<br>
@@ -277,7 +288,7 @@ erc20address|address| ERC20 contract's address
 
 #### listForSale
 adding token to sale<br>
-Emitted event <a href="#tokenaddedtosale">TokenAddedToSale</a><br>
+Emits event <a href="#tokenaddedtosale">TokenAddedToSale</a><br>
 Params:
 
 name  | type | description
@@ -285,21 +296,6 @@ name  | type | description
 tokenId|uint256|`tokenId`
 amount|uint256|amount in coins(bnb, eth etc.)
 consumeToken|address|token address. if address(0) then owner expect coins for sale
-
-#### listForAuction
-adding token to auction sale. such nft can not be purchase immediately. auction's winner can be claim nft after auction ending <br>
-Emitted events:<br> 
-<a href="#tokenaddedtosale">TokenAddedToSale</a>, <a href="#tokenaddedtoauctionsale">TokenAddedToAuctionSale</a><br>
-Params:
-
-name  | type | description
---|--|--
-tokenId|uint256|`tokenId`
-amount|uint256|amount in coins(bnb, eth etc.)
-consumeToken|address|token address. if address(0) then owner expect coins for sale
-startTime|uint256| start auction's time. can be 0, then auction start immediately(in block mined time)
-endTime|uint256| end auction's time. can be 0, then auction never end and owner should accept last higher bid to make bidder a new nft owner
-minIncrement|uint256| minimal increment from last bid can be acceptable for next bid
 
 #### removeFromSale
 removing token from sale list<br>
@@ -437,7 +433,7 @@ tokenId|uint256| `tokenId`
 	
 #### buy
 can buy token by sending coins bnb or eth to contract<br>
-Emitted event <a href="outbid">OutBid</a>(if token put into auction sale by <a href="listforauction">listForAuction</a>) <br>
+Emits event <a href="outbid">OutBid</a>(if token put into auction sale by <a href="listforauction">listForAuction</a>) <br>
 Params:
 
 name  | type | description
@@ -446,7 +442,7 @@ tokenId|uint256|`tokenId`
 
 #### buyWithToken
 can buy token by sending erc20 tokens to contract (need approving before)<br>
-Emitted event <a href="outbid">OutBid</a>(if token put into auction sale by <a href="listforauction">listForAuction</a>) <br>
+Emits event <a href="outbid">OutBid</a>(if token put into auction sale by <a href="listforauction">listForAuction</a>) <br>
 Params:
 
 name  | type | description
@@ -588,6 +584,29 @@ name  | type | description
 --|--|--
 tokenId|uint256|tokenID
 
+
+## How to compute a signature
+
+The below code from Javascript console shows how to do it with [ethers.js](https://docs.ethers.io/v5/) (similar things can be done with web3.js)
+
+<pre>
+encoded = ethers.utils.defaultAbiCoder.encode(
+  [ "string tokenURI", "tuple(address token, uint256 amount, address seller)", "tuple(address token,uint256 amount,uint256 multiply,uint256 accrue,uint256 intervalSeconds,uint256 reduceCommission)" ],
+  [
+    "https://yahoo.com",
+    { token: "0x35bd01fc9d6d5d81ca9e055db88dc49aa2c699a8", amount: 7, seller: "0x1111158f88410da5f92c7e34c01e7b8649bc0155" },
+      { token: "0x35bd01fc9d6d5d81ca9e055db88dc49aa2c699a8", amount: 0, multiply: 0, 
+            accrue: 0, intervalSeconds: 60, reduceCommission: 0 }
+  ]
+);
+</pre>
+'0x000000000000000000000000000000000000000000000000000000000000014000000000000000000000000035bd01fc9d6d5d81ca9e055db88dc49aa2c699a800000000000000000000000000000000000000000000000000000000000000070000000000000000000000001111158f88410da5f92c7e34c01e7b8649bc015500000000000000000000000035bd01fc9d6d5d81ca9e055db88dc49aa2c699a8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001168747470733a2f2f7961686f6f2e636f6d000000000000000000000000000000'
+<pre>
+hash = ethers.utils.keccak256(encoded)
+</pre>
+'0x8ad62b726ab33018d0a9ea7c4298625a176f6d62510cd2d93d67fda3ef2bf041'
+<pre>signature = await signer.signMessage(ethers.utils.arrayify(hash));</pre>
+'0x7e9e5f3612ce36cea644a47df5a09e0be53123c976df88fd7bca9a3b571ba55f648af4b4b82418c9bd6a8599fdd03a8cab239729fd4744e51d4931cbba1965991c'
 
 ## Example to use
 NonFungibleTokenContract is a contract represented ERC721 standard with possibility to earn fee to author's NFT token and paying to owner while transfer. <br>
