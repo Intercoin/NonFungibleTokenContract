@@ -39,6 +39,22 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
     function _validateTokenAuthor(uint256 tokenId) internal view {
         require(_msgSender() == _getAuthor(tokenId), "Sender is not author of token");
     }
+
+     function _createNFT(
+        string memory URI,
+        address author
+    ) 
+        internal 
+        virtual
+        returns(uint256 tokenId)
+    {
+        
+        _setAuthor(tokenId, address(0), author);
+        emit TransferAuthorship(address(0), author, tokenId);
+
+        return super._createNFT(URI);
+        
+    }
     
     /**
      * can see all the tokens that an author has.
@@ -132,25 +148,7 @@ abstract contract NFTAuthorship is NFTBase, INFTAuthorship {
         
         return ret;
     }
-    /**
-     * @param to address
-     * @param tokenId token ID
-     */
-    function _mint(
-        address to, 
-        uint256 tokenId
-    ) 
-        internal 
-        virtual 
-        override 
-    {
-        super._mint(to, tokenId);
-        
-        _setAuthor(tokenId, address(0), _msgSender());
-        emit TransferAuthorship(address(0), _msgSender(), tokenId);
-        
-    }
-    
+       
     /**
      * @param tokenId token ID
      */

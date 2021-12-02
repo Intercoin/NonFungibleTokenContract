@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import "./interfaces/ICommunity.sol";
 import "./interfaces/INFT.sol";
@@ -24,50 +25,18 @@ contract NFT is INFT, NFTAuthorship {
     }
     
     mapping (uint256 => TokenData) private tokenData;
-    
+
+    mapping(address => bool) authorized;
+
     EnumerableSetUpgradeable.AddressSet private totalOwnersList;
     
     string constant private MSG_TRANSFERFROM_FAILED = "NFT: Failed when 'transferFrom' funds";
     
     event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
-    event TokenAddedToAuctionSale(uint256 tokenId, uint256 amount, address consumeToken, uint256 startTime, uint256 endTime, uint256 minIncrement);
+    // event TokenAddedToAuctionSale(uint256 tokenId, uint256 amount, address consumeToken, uint256 startTime, uint256 endTime, uint256 minIncrement);
     event TokenRemovedFromSale(uint256 tokenId);
-    event OutBid(uint256 tokenId, uint256 newBid);
+    // event OutBid(uint256 tokenId, uint256 newBid);
     
-    // modifier canRecord(string memory communityRole) {
-    //     bool s = _canRecord(communityRole);
-    //     require(s == true, "Sender has not in accessible List");
-    //     _;
-    // }
-    
-    // modifier onlySale(uint256 tokenId) {
-    //     require(tokenData[tokenId].salesData.isSale == true, "NFT: Token does not in sale");
-    //     _;
-    // }
-    // modifier onlySaleForCoins(uint256 tokenId) {
-    //     require(tokenData[tokenId].salesData.erc20Address == address(0), "NFT: Token can not be sale for coins");
-    //     _;
-    // }
-    // modifier onlySaleForTokens(uint256 tokenId) {
-    //     require(tokenData[tokenId].salesData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
-    //     _;
-    // }
-    
-    // modifier canClaim(uint256 tokenId) {
-    //     // can claim if auction time == 0 or expire
-    //     // can claim if last bidder is sender
-    //     uint256 len = tokenData[tokenId].salesData.bids.length;
-    //     require(
-    //         (
-    //             tokenData[tokenId].salesData.endTime != 0 && 
-    //             tokenData[tokenId].salesData.endTime < block.timestamp &&
-    //             len > 0 && 
-    //             tokenData[tokenId].salesData.bids[len-1].bidder == _msgSender()
-    //         ), 
-    //         "can't claim"
-    //     );
-    //     _;   
-    // }
     
     function _validateOnlySale(uint256 tokenId) internal view {
         require(tokenData[tokenId].salesData.isSale == true, "NFT: Token does not in sale");
@@ -106,74 +75,151 @@ contract NFT is INFT, NFTAuthorship {
     ) public override initializer {
         __NFTAuthorship_init(name, symbol);
         communitySettings = communitySettings_;
-    }
-   
-    /**
-     * creation NFT token
-     * @param URI Token URI
-     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
-     */
-    function create(
-        string memory URI,
-        CommissionParams memory commissionParams
-    ) 
-        public 
-        // canRecord(communitySettings.roleMint) 
-        virtual  
-    {
-        _validateCanRecord(communitySettings.roleMint);
-        _create(URI, commissionParams);
+
     }
     
-    /**
-     * creation NFT token and immediately put to list for sale
-     * @param URI Token URI
-     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
-     * @param consumeAmount amount that need to be paid to owner when some1 buy token
-     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
-     */
-    //function createAndSale(
-    function createAndListForSale(
-        string memory URI,
+    function buyWithETHAndCreate(
+        string memory tokenURI, 
+        SaleParams memory saleParams,
         CommissionParams memory commissionParams,
-        uint256 consumeAmount,
-        address consumeToken
+        bytes memory signature
     ) 
         public 
-        virtual  
+        payable
     {
-        uint256 tokenId = _create(URI, commissionParams);
+        _createValidate(tokenURI, saleParams, commissionParams, signature);
+
+        require(msg.value >= saleParams.amount, "insufficient amount");
+
+        //TransferHelper.safeTransferETH(saleParams.seller, saleParams.amount);
         
-        _listForSale(tokenId, consumeAmount, consumeToken);
+        saleParams.seller.transfer(saleParams.amount);
+
+        uint256 refund = msg.value.sub(saleParams.amount);
+        if (refund > 0) {
+            payable(_msgSender()).transfer(refund);
+        }
+
+        _create(tokenURI, saleParams.seller, commissionParams);
+    }
+
+    function buyWithTokenAndCreate(
+        string memory tokenURI, 
+        SaleParams memory saleParams,
+        CommissionParams memory commissionParams,
+        bytes memory signature
+    ) 
+        public 
+    {
+
+        _createValidate(tokenURI, saleParams, commissionParams, signature);
+
+        require(IERC20Upgradeable(saleParams.token).allowance(_msgSender(), address(this)) >= saleParams.amount, "insufficient allowance");
+
+        // TransferHelper.safeTransferFrom(saleParams.token, _msgSender(), address(this), saleParams.amount);
+        // TransferHelper.safeTransfer(saleParams.token, saleParams.seller, saleParams.amount);
+
+        TransferHelper.safeTransferFrom(saleParams.token, _msgSender(), saleParams.seller, saleParams.amount);
+        
+        _create(tokenURI, saleParams.seller, commissionParams);
+
+
+    }
+
+    function _createValidate(
+        string memory tokenURI, 
+        SaleParams memory saleParams,
+        CommissionParams memory commissionParams,
+        bytes memory signature
+    ) 
+        internal
+    {
+        require(saleParams.seller != address(0), "wrong seller address");
+        bytes memory encoded = abi.encode(tokenURI, saleParams, commissionParams);
+        bytes32 hash = keccak256(encoded);
+        bytes32 esh = getEthSignedMessageHash(hash);
+        
+        
+        address signer = recoverSigner(esh, signature);
+
+        if (signer != owner()) {
+
+            require (isAuthorized(signer) && signer == saleParams.seller, "Invalid signer");
+            
+        }
+
+    }
+
+    
+    function addAuthorized(address addr) public onlyOwner() {
+        require(addr != address(0), "invalid address");
+        authorized[addr] = true;
+    }
+    function removeAuthorized(address addr) public onlyOwner() {
+        delete authorized[addr];
+    }
+    function isAuthorized(address addr) public view returns(bool) {
+        return authorized[addr];
+    }
+
+    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature)
+        public
+        pure
+        returns (address)
+    {
+        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
+
+        return ecrecover(_ethSignedMessageHash, v, r, s);
+    }
+
+    function getEthSignedMessageHash(bytes32 _messageHash)
+        public
+        pure
+        returns (bytes32)
+    {
+        /*
+        Signature is produced by signing a keccak256 hash with the following format:
+        "\x19Ethereum Signed Message\n" + len(msg) + msg
+        */
+        return
+            keccak256(
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash)
+            );
+    }
+
+      function splitSignature(bytes memory sig)
+        public
+        pure
+        returns (
+            bytes32 r,
+            bytes32 s,
+            uint8 v
+        )
+    {
+        require(sig.length == 65, "invalid signature length");
+
+        assembly {
+            /*
+            First 32 bytes stores the length of the signature
+
+            add(sig, 32) = pointer of sig + 32
+            effectively, skips first 32 bytes of signature
+
+            mload(p) loads next 32 bytes starting at the memory address p into memory
+            */
+
+            // first 32 bytes, after the length prefix
+            r := mload(add(sig, 32))
+            // second 32 bytes
+            s := mload(add(sig, 64))
+            // final byte (first byte of the next 32 bytes)
+            v := byte(0, mload(add(sig, 96)))
+        }
+
+        // implicitly return (r, s, v)
     }
     
-    /**
-     * creation NFT token and immediately put to list for sale
-     * @param URI Token URI
-     * @param commissionParams commission will be send to author when token's owner sell to someone it. See {INFT-CommissionParams}.
-     * @param consumeAmount amount that need to be paid to owner when some1 buy token
-     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
-     * @param startTime time when auction will start. can be zero, then auction will start immediately
-     * @param endTime time when auction will end. can be zero, then auction will never expire
-     * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
-     */
-    //function createAndSaleAuction(
-    function createAndListForAuction(
-        string memory URI,
-        CommissionParams memory commissionParams,
-        uint256 consumeAmount,
-        address consumeToken,
-        uint256 startTime,
-        uint256 endTime,
-        uint256 minIncrement
-    ) 
-        public 
-        virtual  
-    {
-        uint256 tokenId = _create(URI, commissionParams);
-        
-        _listForAuction(tokenId, consumeAmount, consumeToken, startTime, endTime, minIncrement);
-    }
+ 
     
     /** 
      * returned commission that will be paid to token's author while transferring NFT
@@ -237,22 +283,22 @@ contract NFT is INFT, NFTAuthorship {
      * @param endTime time when auction will end. can be zero, then auction will never expire
      * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
      */
-    function listForAuction(
-        uint256 tokenId,
-        uint256 amount,
-        address consumeToken,
-        uint256 startTime,
-        uint256 endTime,
-        uint256 minIncrement
-    )
-        public
-        // onlyIfTokenExists(tokenId)
-        // onlyNFTOwner(tokenId)
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateOnlyNFTOwner(tokenId);
-        _listForAuction(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
-    }
+    // function listForAuction(
+    //     uint256 tokenId,
+    //     uint256 amount,
+    //     address consumeToken,
+    //     uint256 startTime,
+    //     uint256 endTime,
+    //     uint256 minIncrement
+    // )
+    //     public
+    //     // onlyIfTokenExists(tokenId)
+    //     // onlyNFTOwner(tokenId)
+    // {
+    //     _validateOnlyIfTokenExists(tokenId);
+    //     _validateOnlyNFTOwner(tokenId);
+    //     _listForAuction(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
+    // }
 
     /**
      * remove NFT from list for sale.
@@ -330,9 +376,9 @@ contract NFT is INFT, NFTAuthorship {
         require(funds >= tokenData[tokenId].salesData.amount, "NFT: The coins sent are not enough");
         
         
-        if (_isInAuction(tokenId) == 1) {
-            putInToAuctionList(tokenId, _msgSender(), funds, 0);
-        } else {
+        // if (_isInAuction(tokenId) == 1) {
+        //     putInToAuctionList(tokenId, _msgSender(), funds, 0);
+        // } else {
             // Refund
             uint256 refund = (funds).sub(tokenData[tokenId].salesData.amount);
             if (refund > 0) {
@@ -341,7 +387,7 @@ contract NFT is INFT, NFTAuthorship {
             }
             
             _executeTransfer(tokenId, _msgSender(), tokenData[tokenId].salesData.amount, 0);
-        }
+        // }
        
     }
     
@@ -374,12 +420,12 @@ contract NFT is INFT, NFTAuthorship {
         success = saleToken.transferFrom(_msgSender(), address(this), needToObtain);
         require(success, MSG_TRANSFERFROM_FAILED);
         
-        if (_isInAuction(tokenId) == 1) {
-            putInToAuctionList(tokenId, _msgSender(), needToObtain, 1);
+        // if (_isInAuction(tokenId) == 1) {
+        //     putInToAuctionList(tokenId, _msgSender(), needToObtain, 1);
             
-        } else {
+        // } else {
             _executeTransfer(tokenId, _msgSender(), needToObtain, 1);
-        }
+        // }
         
     }
     
@@ -587,45 +633,45 @@ contract NFT is INFT, NFTAuthorship {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     // internal section ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    function putInToAuctionList(
-        uint256 tokenId, 
-        address sender, 
-        uint256 amount,
-        uint256 typeTransfer
-    ) 
-        internal 
-    {
-        uint256 len = tokenData[tokenId].salesData.bids.length;
+    // function putInToAuctionList(
+    //     uint256 tokenId, 
+    //     address sender, 
+    //     uint256 amount,
+    //     uint256 typeTransfer
+    // ) 
+    //     internal 
+    // {
+    //     uint256 len = tokenData[tokenId].salesData.bids.length;
         
-        uint256 prevBid = (len > 0) ? tokenData[tokenId].salesData.bids[len-1].bid : tokenData[tokenId].salesData.amount;
+    //     uint256 prevBid = (len > 0) ? tokenData[tokenId].salesData.bids[len-1].bid : tokenData[tokenId].salesData.amount;
         
-        require((prevBid).add(tokenData[tokenId].salesData.minIncrement) <= amount, "bid should be more");
+    //     require((prevBid).add(tokenData[tokenId].salesData.minIncrement) <= amount, "bid should be more");
         
-        // tokenData[tokenId].salesData.bids[len].bidder = sender;
-        // tokenData[tokenId].salesData.bids[len].bid = amount;
-        tokenData[tokenId].salesData.bids.push(Bid({bidder: sender, bid: amount}));
+    //     // tokenData[tokenId].salesData.bids[len].bidder = sender;
+    //     // tokenData[tokenId].salesData.bids[len].bid = amount;
+    //     tokenData[tokenId].salesData.bids.push(Bid({bidder: sender, bid: amount}));
         
-        if (len > 0) {
-            bool success;
-            address prevBidder = tokenData[tokenId].salesData.bids[len-1].bidder;
-            //uint256 prevBid = tokenData[tokenId].salesData.bids[len-1].bid;
+    //     if (len > 0) {
+    //         bool success;
+    //         address prevBidder = tokenData[tokenId].salesData.bids[len-1].bidder;
+    //         //uint256 prevBid = tokenData[tokenId].salesData.bids[len-1].bid;
             
-            // refund previous
-            if (typeTransfer == 0) {
-                (success, ) = (prevBidder).call{value: prevBid}("");    
-                require(success, "Failed when send coins");
-            } else {
+    //         // refund previous
+    //         if (typeTransfer == 0) {
+    //             (success, ) = (prevBidder).call{value: prevBid}("");    
+    //             require(success, "Failed when send coins");
+    //         } else {
                 
-                success = IERC20Upgradeable(tokenData[tokenId].salesData.erc20Address).transfer(prevBidder, prevBid);
-                // require(success, "Failed when 'transfer' funds to co-author");
-                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-                require(success);
-            }
+    //             success = IERC20Upgradeable(tokenData[tokenId].salesData.erc20Address).transfer(prevBidder, prevBid);
+    //             // require(success, "Failed when 'transfer' funds to co-author");
+    //             // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+    //             require(success);
+    //         }
             
-            emit OutBid(tokenId, amount);
-        }
+    //         emit OutBid(tokenId, amount);
+    //     }
         
-    }
+    // }
     
     function _claim(
         uint256 tokenId
@@ -689,6 +735,7 @@ contract NFT is INFT, NFTAuthorship {
    
     function _create(
         string memory URI,
+        address author,
         CommissionParams memory commissionParams
     ) 
         internal 
@@ -701,7 +748,7 @@ contract NFT is INFT, NFTAuthorship {
         require(commissionParams.intervalSeconds > 0, "wrong IntervalSeconds");
         _validateReduceCommission(commissionParams.reduceCommission);
         
-        tokenId = _createNFT(URI);
+        tokenId = _createNFT(URI, author);
         
         tokenData[tokenId].commissions.token = commissionParams.token;
         tokenData[tokenId].commissions.amount = commissionParams.amount;
@@ -726,32 +773,32 @@ contract NFT is INFT, NFTAuthorship {
         emit TokenAddedToSale(tokenId, amount, consumeToken);
     }
 
-    function _listForAuction(
-        uint256 tokenId,
-        uint256 amount,
-        address consumeToken,
-        uint256 startTime,
-        uint256 endTime,
-        uint256 minIncrement
-    )
-        internal
-    {
-        require(startTime == 0 || startTime >= block.timestamp, 'wrong startTime' );
-        startTime = (startTime == 0) ? block.timestamp : startTime;
+    // function _listForAuction(
+    //     uint256 tokenId,
+    //     uint256 amount,
+    //     address consumeToken,
+    //     uint256 startTime,
+    //     uint256 endTime,
+    //     uint256 minIncrement
+    // )
+    //     internal
+    // {
+    //     require(startTime == 0 || startTime >= block.timestamp, 'wrong startTime' );
+    //     startTime = (startTime == 0) ? block.timestamp : startTime;
         
-        require(startTime < endTime || endTime == 0, 'wrong endTime' );
+    //     require(startTime < endTime || endTime == 0, 'wrong endTime' );
         
-        __listForSale(tokenId, amount, consumeToken);
+    //     __listForSale(tokenId, amount, consumeToken);
         
-        emit TokenAddedToSale(tokenId, amount, consumeToken);
+    //     emit TokenAddedToSale(tokenId, amount, consumeToken);
         
-        tokenData[tokenId].salesData.startTime = startTime;
-        tokenData[tokenId].salesData.endTime = endTime;
-        tokenData[tokenId].salesData.minIncrement = minIncrement;
-        tokenData[tokenId].salesData.isAuction = true;
+    //     tokenData[tokenId].salesData.startTime = startTime;
+    //     tokenData[tokenId].salesData.endTime = endTime;
+    //     tokenData[tokenId].salesData.minIncrement = minIncrement;
+    //     tokenData[tokenId].salesData.isAuction = true;
         
-        emit TokenAddedToAuctionSale(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
-    }
+    //     emit TokenAddedToAuctionSale(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
+    // }
 
     
     /**
@@ -839,13 +886,9 @@ contract NFT is INFT, NFTAuthorship {
     }
     /**
      * method realized collect commission logic
-     * @param from from
-     * @param to to
      * @param tokenId token ID
      */
     function _transferHook(
-        address from, 
-        address to, 
         uint256 tokenId
     ) 
         internal 
@@ -896,15 +939,15 @@ contract NFT is INFT, NFTAuthorship {
         
     }
     
-    function _isInAuction(
-        uint256 tokenId
-    ) 
-        internal 
-        view 
-        returns(uint256)
-    {
-        return tokenData[tokenId].salesData.isAuction == true ? 1 : 0;
-    }
+    // function _isInAuction(
+    //     uint256 tokenId
+    // ) 
+    //     internal 
+    //     view 
+    //     returns(uint256)
+    // {
+    //     return tokenData[tokenId].salesData.isAuction == true ? 1 : 0;
+    // }
     
     function _validateReduceCommission(
         uint256 _reduceCommission

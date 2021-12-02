@@ -57,5 +57,10 @@ interface INFT {
         address commissionToken; // may be WBNB
     }
     
+    struct SaleParams {
+        address token;
+        uint256 amount;
+        address payable seller;
+    }
     function initialize(string memory, string memory, CommunitySettings memory) external;
 }
