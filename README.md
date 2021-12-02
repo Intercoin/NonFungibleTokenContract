@@ -3,17 +3,26 @@ NFT contracts that support a new ERC token standard for paying commissions to au
 NFTSeries contract do the same but have ability to create several NFT in one transaction. The rest of the interface are the same
 
 # Latest contract instances in test networks
-Binance SmartChain TestNet<br>
 
-20211103 <br>
-<a href="https://testnet.bscscan.com/address/0xf5d34ddcf1c89de8d107d8877417d54582b4c33c#contracts">NFTFactory</a><br>
-<a href="https://testnet.bscscan.com/address/0x583875e2b1b2a40433d01acf509f0229823c5cd3#code">Created instance NFT</a><br>
-<a href="https://ipfs.io/ipfs/QmWomwLZES1BwM4XWnYoei3H42cyH41NaaGNp1eS7fBMEU">https://ipfs.io/ipfs/QmWomwLZES1BwM4XWnYoei3H42cyH41NaaGNp1eS7fBMEU</a>
+20211202 <br>
+Ethereum Rinkeby Testnet<br>
+<a href="https://rinkeby.etherscan.io/address/0x555994e9D5C3731Ab3240F3FEC4BcC9a2803484e#code">Created instance NFT</a><br>
+<a href="https://ipfs.io/ipfs/QmR9LjNjVsra7pXj2wLddm4tPjT8RPNMxQYtXjpFrbKmgp">https://ipfs.io/ipfs/QmR9LjNjVsra7pXj2wLddm4tPjT8RPNMxQYtXjpFrbKmgp</a>
+<br>
+Binance SmartChain TestNet<br>
+TBD
 
 <details>
 <summary>
 # Old versions
 </summary>
+Binance SmartChain TestNet<br>
+<p>
+20211103 <br>
+<a href="https://testnet.bscscan.com/address/0xf5d34ddcf1c89de8d107d8877417d54582b4c33c#contracts">NFTFactory</a><br>
+<a href="https://testnet.bscscan.com/address/0x583875e2b1b2a40433d01acf509f0229823c5cd3#code">Created instance NFT</a><br>
+<a href="https://ipfs.io/ipfs/QmWomwLZES1BwM4XWnYoei3H42cyH41NaaGNp1eS7fBMEU">https://ipfs.io/ipfs/QmWomwLZES1BwM4XWnYoei3H42cyH41NaaGNp1eS7fBMEU</a>
+</p>
 <p>
 <a href="https://testnet.bscscan.com/address/0xF331051D1Ae614d2554a3121a02fEf3a56882C35#contracts">NFTFactory</a><br>
 <a href="https://testnet.bscscan.com/address/0x4a948d22a1d8c9f64c68a5db503aa982f5682f68#code">Created instance NFT</a><br>
