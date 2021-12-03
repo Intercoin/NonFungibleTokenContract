@@ -218,7 +218,11 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
 
-        if (owner == address(0)) {
+        if (owner != address(0)) {
+            
+        } else if (tokenInfo[tokenId].owner == address(0)) {
+            owner = tokenInfo[tokenId].owner;
+        } else if (seriesInfo[tokenId>>24].owner == address(0)) {
             owner = seriesInfo[tokenId>>24].owner;
         }
 
@@ -244,10 +248,26 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
      * @dev See {IERC721Metadata-tokenURI}.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
 
-        string memory _tokenURI = _tokenURIs[tokenId];
-        string memory base = _baseURI();
+        string memory _tokenURI;
+        string memory base;
+
+        // check native ->  check tokenInfo -> check serieInfo -> default(series(0))
+        address owner = _ownerOf(tokenId);
+        
+        if (owner != address(0)) {
+            _tokenURI = _tokenURIs[tokenId];
+        } else if (tokenInfo[tokenId].owner == address(0)) {
+            _tokenURI = tokenId.toString();
+            base = tokenInfo[tokenId].baseURI;
+        } else if (seriesInfo[tokenId>>24].owner == address(0)) {
+            _tokenURI = tokenId.toString();
+            base = seriesInfo[tokenId>>24].baseURI;
+        }
+
+        // ???
+        // require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
+
 
         // If there is no base URI, return the token URI.
         if (bytes(base).length == 0) {
@@ -260,15 +280,6 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
 
         return "";
 
-    }
-
-    /**
-     * @dev Base URI for computing {tokenURI}. If set, the resulting URI for each
-     * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
-     * by default, can be overriden in child contracts.
-     */
-    function _baseURI() internal view virtual returns (string memory) {
-        return "";
     }
 
     /**
@@ -290,7 +301,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
      * @dev See {IERC721-getApproved}.
      */
     function getApproved(uint256 tokenId) public view virtual override returns (address) {
-        require(_exists(tokenId), "ERC721: approved query for nonexistent token");
+        require(ownerOf(tokenId) != address(0), "ERC721: approved query for nonexistent token");
 
         return _tokenApprovals[tokenId];
     }
