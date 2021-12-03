@@ -11,14 +11,14 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable {
+contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
 
@@ -55,13 +55,80 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     // Mapping from token id to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
 
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-/**
-     * @dev See {IERC165-supportsInterface}.
-     */
-    
+////  
+
+    //     tokenId
+    mapping (uint256  => TokenInfo) public tokenInfo;
+    //Implement struct TokenInfo { address payable owner, address currency, uint256 amount, bool isForSale, string BaseURI, uint256 limit } (where currency = 0 means native coin). The limit is the current maximum that can be minted, and it's the only part of TokenInfo that really applies only to series. See #4 and #9.
+    struct TokenInfo { 
+        address payable owner;
+        address currency;
+        uint256 amount;
+        bool isForSale; 
+        string baseURI; 
+        uint256 limit;
+    }
+
+
+    //      seriesId
+    mapping (uint256 => TokenInfo) public seriesInfo;
+           
+    modifier onlyTokenOwner(uint256 tokenId) {
+        require(ownerOf(tokenId) == _msgSender(), "can call only by owner");
+        _;
+    }
+
+     
+    function setTokenInfo(
+        uint256 tokenId, 
+        TokenInfo memory info 
+    ) 
+        onlyTokenOwner(tokenId)
+        public
+    {
+        //tokenInfo[tokenId] = info;
+
+        tokenInfo[tokenId].owner = info.owner;
+        tokenInfo[tokenId].currency = info.currency;
+        tokenInfo[tokenId].amount = info.amount;
+        tokenInfo[tokenId].isForSale = info.isForSale;
+        // However, do not allow changing of baseURI of individual tokens from existing value, this can only be set on series or global defaults. 
+        // tokenInfo[tokenId].baseURI = info.baseURI;
+        // --
+        tokenInfo[tokenId].limit = info.limit;
+
+        // Copy the emit Transfer(...) line to this setTokenInfo method from _transfer,
+        emit Transfer(_msgSender(), info.owner, tokenId);
+
+    }
+
+    function setSeriesInfo(
+        uint256 seriesId, 
+        TokenInfo memory info 
+    ) 
+        onlyOwner
+        public
+    {
+        seriesInfo[seriesId] = info;
+
+        // emit Transfer(from, to, tokenId);
+    }
+
+    function getTokenInfo(uint256 tokenId) public view returns(TokenInfo memory) {
+        return tokenInfo[tokenId];
+    }
+    function getSeriesInfo(uint256 seriesId) public view returns(TokenInfo memory) {
+        return seriesInfo[seriesId];
+    }
+    //Implement function setSeriesInfo( uint16 seriesId, TokenInfo info ) ownerOnly to store 
+    //in mapping (uint16 seriesId => TokenInfo) public seriesInfo and check out why mapping to structs is cheaper in gas . 
+    // Calling setSeriesInfo with seriesId = 0 will modify the global defaults instead of changing it for a specific series. 
+    // Also implement a getter, seriesInfo(seriesId) view returns TokenInfo
+
+
+//// 
+
+
 
     /**
      * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
@@ -86,112 +153,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         return _allTokens[index];
     }
 
-    /**
-     * @dev Hook that is called before any token transfer. This includes minting
-     * and burning.
-     *
-     * Calling conditions:
-     *
-     * - When `from` and `to` are both non-zero, ``from``'s `tokenId` will be
-     * transferred to `to`.
-     * - When `from` is zero, `tokenId` will be minted for `to`.
-     * - When `to` is zero, ``from``'s `tokenId` will be burned.
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual {
-
-        if (from == address(0)) {
-            _addTokenToAllTokensEnumeration(tokenId);
-        } else if (from != to) {
-            _removeTokenFromOwnerEnumeration(from, tokenId);
-        }
-        if (to == address(0)) {
-            _removeTokenFromAllTokensEnumeration(tokenId);
-        } else if (to != from) {
-            _addTokenToOwnerEnumeration(to, tokenId);
-        }
-    }
-
-    /**
-     * @dev Private function to add a token to this extension's ownership-tracking data structures.
-     * @param to address representing the new owner of the given token ID
-     * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
-     */
-    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
-        uint256 length = balanceOf(to);
-        _ownedTokens[to][length] = tokenId;
-        _ownedTokensIndex[tokenId] = length;
-    }
-
-    /**
-     * @dev Private function to add a token to this extension's token tracking data structures.
-     * @param tokenId uint256 ID of the token to be added to the tokens list
-     */
-    function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
-        _allTokensIndex[tokenId] = _allTokens.length;
-        _allTokens.push(tokenId);
-    }
-
-    /**
-     * @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
-     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
-     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
-     * This has O(1) time complexity, but alters the order of the _ownedTokens array.
-     * @param from address representing the previous owner of the given token ID
-     * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
-     */
-    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
-        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
-        // then delete the last slot (swap and pop).
-
-        uint256 lastTokenIndex = balanceOf(from) - 1;
-        uint256 tokenIndex = _ownedTokensIndex[tokenId];
-
-        // When the token to delete is the last token, the swap operation is unnecessary
-        if (tokenIndex != lastTokenIndex) {
-            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
-
-            _ownedTokens[from][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
-            _ownedTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
-        }
-
-        // This also deletes the contents at the last position of the array
-        delete _ownedTokensIndex[tokenId];
-        delete _ownedTokens[from][lastTokenIndex];
-    }
-
-    /**
-     * @dev Private function to remove a token from this extension's token tracking data structures.
-     * This has O(1) time complexity, but alters the order of the _allTokens array.
-     * @param tokenId uint256 ID of the token to be removed from the tokens list
-     */
-    function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
-        // To prevent a gap in the tokens array, we store the last token in the index of the token to delete, and
-        // then delete the last slot (swap and pop).
-
-        uint256 lastTokenIndex = _allTokens.length - 1;
-        uint256 tokenIndex = _allTokensIndex[tokenId];
-
-        // When the token to delete is the last token, the swap operation is unnecessary. However, since this occurs so
-        // rarely (when the last minted token is burnt) that we still do the swap here to avoid the gas cost of adding
-        // an 'if' statement (like in _removeTokenFromOwnerEnumeration)
-        uint256 lastTokenId = _allTokens[lastTokenIndex];
-
-        _allTokens[tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
-        _allTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
-
-        // This also deletes the contents at the last position of the array
-        delete _allTokensIndex[tokenId];
-        _allTokens.pop();
-    }
-
+    
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
@@ -217,6 +179,8 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         __Context_init_unchained();
         __ERC165_init_unchained();
         __ERC721_init_unchained(name_, symbol_);
+        
+        __Ownable_init();
     }
 
     function __ERC721_init_unchained(string memory name_, string memory symbol_) internal initializer {
@@ -246,8 +210,18 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     /**
      * @dev See {IERC721-ownerOf}.
      */
+    // Change OpenZeppelin's implementation of ownerOf(tokenId), 
+    // to fallback token->series->global defaults, by simply checking mapping ownerOf[token] and you see 0, you try seriesInfo(token >> 24).owner, 
+    // and if still 0then you use seriesInfo(0).owner(which may still be0if setSeriesInfo was never called yet). ReimplementbaseURI(tokenId)andgetApproved` this same way.
+
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
-        address owner = _owners[tokenId];
+        // simply checking mapping ownerOf[token]
+        address owner = _ownerOf(tokenId);
+
+        if (owner == address(0)) {
+            owner = seriesInfo[tokenId>>24].owner;
+        }
+
         require(owner != address(0), "ERC721: owner query for nonexistent token");
         return owner;
     }
@@ -416,6 +390,10 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         return _owners[tokenId] != address(0);
     }
 
+    function _ownerOf(uint256 tokenId) internal view virtual returns (address) {
+        return _owners[tokenId];
+    }
+
     /**
      * @dev Returns whether `spender` is allowed to manage `tokenId`.
      *
@@ -539,6 +517,9 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         _balances[to] += 1;
         _owners[tokenId] = to;
 
+        // and change implementation of _transfer() to simply replace tokenInfo[tokenId].owner without calling setTokenInfo. 
+        tokenInfo[tokenId].owner = payable(to);
+
         emit Transfer(from, to, tokenId);
     }
 
@@ -583,6 +564,114 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         } else {
             return true;
         }
+    }
+
+
+    /**
+     * @dev Hook that is called before any token transfer. This includes minting
+     * and burning.
+     *
+     * Calling conditions:
+     *
+     * - When `from` and `to` are both non-zero, ``from``'s `tokenId` will be
+     * transferred to `to`.
+     * - When `from` is zero, `tokenId` will be minted for `to`.
+     * - When `to` is zero, ``from``'s `tokenId` will be burned.
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual {
+
+        if (from == address(0)) {
+            _addTokenToAllTokensEnumeration(tokenId);
+        } else if (from != to) {
+            _removeTokenFromOwnerEnumeration(from, tokenId);
+        }
+        if (to == address(0)) {
+            _removeTokenFromAllTokensEnumeration(tokenId);
+        } else if (to != from) {
+            _addTokenToOwnerEnumeration(to, tokenId);
+        }
+    }
+
+
+    /**
+     * @dev Private function to add a token to this extension's ownership-tracking data structures.
+     * @param to address representing the new owner of the given token ID
+     * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
+     */
+    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
+        uint256 length = balanceOf(to);
+        _ownedTokens[to][length] = tokenId;
+        _ownedTokensIndex[tokenId] = length;
+    }
+
+    /**
+     * @dev Private function to add a token to this extension's token tracking data structures.
+     * @param tokenId uint256 ID of the token to be added to the tokens list
+     */
+    function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
+        _allTokensIndex[tokenId] = _allTokens.length;
+        _allTokens.push(tokenId);
+    }
+
+    /**
+     * @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
+     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
+     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
+     * This has O(1) time complexity, but alters the order of the _ownedTokens array.
+     * @param from address representing the previous owner of the given token ID
+     * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
+     */
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
+        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
+        // then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = balanceOf(from) - 1;
+        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+
+            _ownedTokens[from][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+            _ownedTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
+        }
+
+        // This also deletes the contents at the last position of the array
+        delete _ownedTokensIndex[tokenId];
+        delete _ownedTokens[from][lastTokenIndex];
+    }
+
+    /**
+     * @dev Private function to remove a token from this extension's token tracking data structures.
+     * This has O(1) time complexity, but alters the order of the _allTokens array.
+     * @param tokenId uint256 ID of the token to be removed from the tokens list
+     */
+    function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
+        // To prevent a gap in the tokens array, we store the last token in the index of the token to delete, and
+        // then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = _allTokens.length - 1;
+        uint256 tokenIndex = _allTokensIndex[tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary. However, since this occurs so
+        // rarely (when the last minted token is burnt) that we still do the swap here to avoid the gas cost of adding
+        // an 'if' statement (like in _removeTokenFromOwnerEnumeration)
+        uint256 lastTokenId = _allTokens[lastTokenIndex];
+
+        _allTokens[tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+        _allTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
+
+        // This also deletes the contents at the last position of the array
+        delete _allTokensIndex[tokenId];
+        _allTokens.pop();
     }
 
     uint256[44] private __gap;
