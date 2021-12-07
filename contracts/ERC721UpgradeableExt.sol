@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeabl
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
@@ -101,10 +101,10 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
 // And similarly buyWithToken(tokenId) function which will do IERC20(seriesInfo.currency).transferFrom(msg.sender, seriesInfo.owner) ... transferring ERC20 token 
 // directly to owner, test that both of these work. Please set onSaleUntil to 0, in both "buy" functions after success. Anyone can find out if a token is still for sale, 
 // simply by doing tokenInfo(tokenId).onSaleUntil > block.timestamp. Token can be placed for sale by owner with setTokenInfo or listForSale later.
-    function isOnSale(uint256 tokenId) internal view returns(bool success, bool isExists, TokenInfo memory data) {
+    function isOnSale(uint256 tokenId) internal view returns(bool success, bool exists, TokenInfo memory data) {
         success = false;
         data = tokensInfo[tokenId];
-        isExists = _exists(tokenId);
+        exists = _exists(tokenId);
 
         if (data.owner != (DEAD_ADDRESS)) {
 
@@ -138,11 +138,11 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     // }
     function buy(uint256 tokenId) public payable {
         //validateTokenId(tokenId);
-        (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
+        (bool success, bool exists, TokenInfo memory data) = isOnSale(tokenId);
         require(msg.value >= data.amount, "insufficient ETH");
         // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
         if (success) {
-            (isExists) 
+            (exists) 
             ? 
             _transfer(data.owner, _msgSender(), tokenId)
             : 
@@ -596,6 +596,8 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         address to,
         uint256 tokenId
     ) internal virtual {
+        console.log("ownerOf(tokenId) = ", ownerOf(tokenId));
+        console.log("from = ", from);
         require(ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
         require(to != address(0), "ERC721: transfer to the zero address");
 

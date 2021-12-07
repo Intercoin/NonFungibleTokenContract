@@ -17,6 +17,7 @@ const SERIES_BITS = 192;
 chai.use(require('chai-bignumber')());
 
 
+
 describe("ERC721UpgradeableExt test", function () {
     const accounts = waffle.provider.getWallets();
     const owner = accounts[0];                     
@@ -37,16 +38,15 @@ describe("ERC721UpgradeableExt test", function () {
         await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
     })
 
-
-  it("should correct mint NFT with ETH if ID doesn't exist", async() => {
+  it("should correct put series on sale for Alice", async() => {
     const seriesId = BigNumber.from('1000');
     const tokenId = ONE;
     const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
     const price = ethers.utils.parseEther('1');
     const now = Math.round(Date.now() / 1000);   
-    const baseURI = "";
+    const baseURI = "someURI";
     const params = [
-      owner.address, 
+      alice.address, 
       ZERO_ADDRESS, 
       price, 
       now + 100000, 
@@ -54,20 +54,98 @@ describe("ERC721UpgradeableExt test", function () {
       10000
     ];
     await this.nft.connect(owner).setSeriesInfo(seriesId, params);
-    await this.nft.connect(alice)["buy(uint256)"](id, {value: price});
-    const newOwner = await this.nft.ownerOf(id);
-    expect(newOwner).to.be.equal(alice.address);
-  });
+    const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+    expect(seriesInfo.owner).to.be.equal(alice.address);
+    expect(seriesInfo.currency).to.be.equal(ZERO_ADDRESS);
+    expect(seriesInfo.amount).to.be.equal(price);
+    expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+    expect(seriesInfo.baseURI).to.be.equal(baseURI);
+    expect(seriesInfo.limit).to.be.equal(10000);
 
-  // xit("should correct mint NFT with token if ID doesn't exist", async() => {
-  //   const seriesId = BigNumber.from('1000');
-  //   const tokenId = ONE;
-  //   const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);  // id = seriesId << 192 + tokenId
-  //   const price = ethers.utils.parseEther('1');
-  //   await this.erc20.connect(alice).approve(this.nft.address, price);
-  //   await this.nft.connect(alice)["buy(uint256,address,uint256)"](id, this.erc20.address, price);
+    expect(await this.nft.ownerOf(id)).to.be.equal(alice.address);
+
+  })
+
+  it("should correct put token on sale", async() => {
+    const seriesId = BigNumber.from('1000');
+    const tokenId = ONE;
+    const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+    const price = ethers.utils.parseEther('1');
+    const now = Math.round(Date.now() / 1000);   
+    const baseURI = "someURI";
     
-  // });
+    const tokenParams = [
+      alice.address, 
+      ZERO_ADDRESS, 
+      price, 
+      now + 100000,
+
+    ];
+    const seriesParams = tokenParams.concat([baseURI, 10000]);
+
+    await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+    await this.nft.connect(alice).setTokenInfo(id, tokenParams);
+    const tokenInfo = await this.nft.getTokenInfo(id);
+    expect(tokenInfo.owner).to.be.equal(alice.address);
+    expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
+    expect(tokenInfo.amount).to.be.equal(price);
+    expect(tokenInfo.onSaleUntil).to.be.equal(now + 100000);
+
+    expect(await this.nft.ownerOf(id)).to.be.equal(alice.address);
+
+
+  })
+
+  describe("buy tests", async() => {
+    const seriesId = BigNumber.from('1000');
+    const tokenId = ONE;
+    const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+    const price = ethers.utils.parseEther('1');
+    const now = Math.round(Date.now() / 1000);   
+    const baseURI = "";
+    const seriesParams = [
+      owner.address, 
+      ZERO_ADDRESS, 
+      price, 
+      now + 100000, 
+      baseURI,
+      10000
+    ];
+    beforeEach("listing series on sale", async() => {
+      await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+    })
+    it("should correct mint NFT with ETH if ID doesn't exist", async() => {
+      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
+      const newOwner = await this.nft.ownerOf(id);
+      expect(newOwner).to.be.equal(bob.address);
+      //TODO check if onSaleUntil is zero
+    });
+  
+    xit("should correct mint NFT with token if ID doesn't exist", async() => {
+      await this.erc20.connect(bob).approve(this.nft.address, price);
+      await this.nft.connect(bob)["buy(uint256,address,uint256)"](id, this.erc20.address, price);
+      const newOwner = await this.nft.ownerOf(id);
+      expect(newOwner).to.be.equal(bob.address);
+      //TODO check if onSaleUntil is zero
+
+    });
+
+    it("should correct buy minted NFT", async() => {
+      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
+      //TODO bob lists on sale
+      console.log("owner = ", owner.address);
+      console.log("alice = ", alice.address);
+      console.log("bob = ", bob.address);
+      console.log("charlie = ", charlie.address);
+      await this.nft.connect(charlie)["buy(uint256)"](id, {value: price});
+
+      const newOwner = await this.nft.ownerOf(id);
+      expect(newOwner).to.be.equal(charlie.address);
+      //TODO check if onSaleUntil is zero
+    });
+
+  })
+  
 
 
 });
