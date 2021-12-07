@@ -59,8 +59,10 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 internal constant SERIES_BITS = 192;
+    uint256 internal constant DEFAULT_SERIE_ID = 0;
+    
     //     tokenId
-    mapping (uint256  => TokenInfo) public tokenInfo;
+    mapping (uint256  => TokenInfo) public tokensInfo;
     
     struct TokenInfo { 
         address payable owner;
@@ -91,21 +93,68 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
 // And similarly buyWithToken(tokenId) function which will do IERC20(seriesInfo.currency).transferFrom(msg.sender, seriesInfo.owner) ... transferring ERC20 token 
 // directly to owner, test that both of these work. Please set onSaleUntil to 0, in both "buy" functions after success. Anyone can find out if a token is still for sale, 
 // simply by doing tokenInfo(tokenId).onSaleUntil > block.timestamp. Token can be placed for sale by owner with setTokenInfo or listForSale later.
-    function getTokenData(uint256 tokenId) internal view {
-       // if 
+    function isOnSale(uint256 tokenId) internal view returns(bool success, bool isExists, TokenInfo memory data) {
+        success = false;
+        data = tokensInfo[tokenId];
+        isExists = _exists(tokenId);
+
+        if (data.owner != (DEAD_ADDRESS)) {
+
+            if (data.onSaleUntil > block.timestamp) {
+                success = true;
+            } else {
+                uint256 serieId = tokenId>>SERIES_BITS;
+                
+                SerieInfo memory serieData = seriesInfo[serieId];
+
+                if (serieData.owner != (DEAD_ADDRESS)) {
+
+                    // todo 0: should we  care about series(0) ??
+                    if (serieData.onSaleUntil > block.timestamp) {
+                        success = true;
+                        (data.owner, data.currency, data.amount, data.onSaleUntil) = (serieData.owner, serieData.currency, serieData.amount, serieData.onSaleUntil);
+                    }
+                }
+                
+            }
+
+        }
+       
     }
-    function validateTokenId(uint256 tokenId) internal view {
-        uint256 serieId = tokenId>>SERIES_BITS;
-        // serie id == 0 used as default(global) settings
-        require (serieId>0, "wrong tokenId");
+
+    // function validateTokenId(uint256 tokenId) internal pure {
+    //     uint256 serieId = tokenId>>SERIES_BITS;
+    //     // serie id == 0 used as default(global) settings
+    //     require (serieId>0, "wrong tokenId");
+        
+    // }
+    function buy(uint256 tokenId) public payable {
+        //validateTokenId(tokenId);
+        (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
+        require(msg.value >= data.amount, "insufficient ETH");
+
+        // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
+        if (success) {
+            (isExists) 
+            ? 
+            _transfer(data.owner, _msgSender(), tokenId)
+            : 
+            _mint(_msgSender(), tokenId);
+        }
+        
         
     }
-    function buy(uint256 tokenId) public payable {
-        validateTokenId(tokenId);
-
-    }
     function buy(uint256 tokenId, address token, uint256 amount) public {
-        validateTokenId(tokenId);
+        //validateTokenId(tokenId);
+        (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
+
+        if (data.owner == address(0)) {
+            _mint(_msgSender(), tokenId);
+        }
+    }
+
+    function afterBuy(uint256 tokenId) internal {
+        
     }
 
      
@@ -118,10 +167,10 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     {
         //tokenInfo[tokenId] = info;
 
-        tokenInfo[tokenId].owner = info.owner;
-        tokenInfo[tokenId].currency = info.currency;
-        tokenInfo[tokenId].amount = info.amount;
-        tokenInfo[tokenId].onSaleUntil = info.onSaleUntil;
+        tokensInfo[tokenId].owner = info.owner;
+        tokensInfo[tokenId].currency = info.currency;
+        tokensInfo[tokenId].amount = info.amount;
+        tokensInfo[tokenId].onSaleUntil = info.onSaleUntil;
         // However, do not allow changing of baseURI of individual tokens from existing value, this can only be set on series or global defaults. 
         // tokenInfo[tokenId].baseURI = info.baseURI;
         // --
@@ -155,7 +204,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     }
 
     function getTokenInfo(uint256 tokenId) public view returns(TokenInfo memory) {
-        return tokenInfo[tokenId];
+        return tokensInfo[tokenId];
     }
     function getSeriesInfo(uint256 seriesId) public view returns(SerieInfo memory) {
 
@@ -246,8 +295,8 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
-        if (tokenInfo[tokenId].owner != address(0)) {
-            owner = tokenInfo[tokenId].owner;
+        if (tokensInfo[tokenId].owner != address(0)) {
+            owner = tokensInfo[tokenId].owner;
         } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
             owner = seriesInfo[tokenId>>SERIES_BITS].owner;
         }
@@ -484,7 +533,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         _balances[to] += 1;
         _owners[tokenId] = to;
 
-        tokenInfo[tokenId].owner = payable(to);
+        tokensInfo[tokenId].owner = payable(to);
 
         emit Transfer(address(0), to, tokenId);
     }
@@ -512,7 +561,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         //delete _owners[tokenId];
         _balances[DEAD_ADDRESS] += 1;
         _owners[tokenId] = DEAD_ADDRESS;
-        tokenInfo[tokenId].owner = payable(DEAD_ADDRESS);
+        tokensInfo[tokenId].owner = payable(DEAD_ADDRESS);
         ///----
         
 
@@ -552,7 +601,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         _owners[tokenId] = to;
 
         // and change implementation of _transfer() to simply replace tokenInfo[tokenId].owner without calling setTokenInfo. 
-        tokenInfo[tokenId].owner = payable(to);
+        tokensInfo[tokenId].owner = payable(to);
 
         emit Transfer(from, to, tokenId);
     }
