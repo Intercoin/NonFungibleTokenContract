@@ -3,7 +3,9 @@ const { BigNumber } = require('ethers');
 const { expect } = require('chai');
 const chai = require('chai');
 
-const TOTALSUPPLY = ethers.utils.parseEther('1000000000');          
+const TOTALSUPPLY = ethers.utils.parseEther('1000000000');    
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 
 const ONE = BigNumber.from('1');
 const TWO = BigNumber.from('2');
@@ -27,6 +29,7 @@ describe("ERC721UpgradeableExt test", function () {
         const NFTFactory = await ethers.getContractFactory("ERC721UpgradeableExt");
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.nft = await NFTFactory.deploy();
+        await this.nft.connect(owner).initialize();
 
         await this.erc20.mint(owner.address, TOTALSUPPLY);
 
@@ -39,21 +42,34 @@ describe("ERC721UpgradeableExt test", function () {
     const seriesId = BigNumber.from('1000');
     const tokenId = ONE;
     const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
-    await this.nft.connect(alice)["buy(uint256)"](id, {value: ethers.utils.parseEther('1')});
-    
-  });
-
-  it("should correct mint NFT with token if ID doesn't exist", async() => {
-    const seriesId = BigNumber.from('1000');
-    const tokenId = ONE;
-    const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);  // id = seriesId << 192 + tokenId
     const price = ethers.utils.parseEther('1');
-    await this.erc20.connect(alice).approve(this.nft.address, price);
-    await this.nft.connect(alice)["buy(uint256,address,uint256)"](id, this.erc20.address, price);
-    
+    const now = Math.round(Date.now() / 1000);   
+    const baseURI = "";
+    const params = [
+      owner.address, 
+      ZERO_ADDRESS, 
+      price, 
+      now + 100000, 
+      baseURI,
+      10000
+    ];
+    await this.nft.connect(owner).setSeriesInfo(seriesId, params);
+    await this.nft.connect(alice)["buy(uint256)"](id, {value: price});
+    const newOwner = await this.nft.ownerOf(id);
+    expect(newOwner).to.be.equal(alice.address);
   });
 
-  
+  // xit("should correct mint NFT with token if ID doesn't exist", async() => {
+  //   const seriesId = BigNumber.from('1000');
+  //   const tokenId = ONE;
+  //   const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);  // id = seriesId << 192 + tokenId
+  //   const price = ethers.utils.parseEther('1');
+  //   await this.erc20.connect(alice).approve(this.nft.address, price);
+  //   await this.nft.connect(alice)["buy(uint256,address,uint256)"](id, this.erc20.address, price);
+    
+  // });
+
+
 });
 
 // UNIT TESTS:

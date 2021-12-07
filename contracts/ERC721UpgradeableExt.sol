@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
+pragma abicoder v2;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
@@ -14,6 +15,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
+
+// import "hardhat/console.sol";
 
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
@@ -89,6 +92,12 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         _;
     }
 
+    function initialize(string memory name_, string memory symbol_) public initializer {
+        __Ownable_init();
+        __ReentrancyGuard_init();
+        __ERC721_init(name_, symbol_);
+    }
+
 // Implement buyWithETH(tokenId) payable function which will call _mint internally during the first sale, otherwise it will transfer the existing token. 
 // The function will get info = tokenInfo(tokenId) which as a fallback internally calls seriesInfo(tokenId>>192) which as a fallback internally calls seriesInfo(0). 
 // Then it simply check that info.currency==0. It will then do info.owner.transfer(info.amount). 
@@ -136,7 +145,6 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
         require(msg.value >= data.amount, "insufficient ETH");
 
-
         bool transferSuccess;
 
         (transferSuccess, ) = (data.owner).call{value: data.amount}(new bytes(0));
@@ -170,6 +178,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     }
 
     function _buy(uint256 tokenId, bool success, bool isExists, TokenInfo memory data) internal {
+
         // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
         if (success) {
             (isExists) 
@@ -289,8 +298,6 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         __ERC165_init_unchained();
         __ERC721_init_unchained(name_, symbol_);
         
-        __Ownable_init();
-        __ReentrancyGuard_init();
     }
 
     function __ERC721_init_unchained(string memory name_, string memory symbol_) internal initializer {
@@ -327,6 +334,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
+        // console.log("owner = ", owner);
         if (tokensInfo[tokenId].owner != address(0)) {
             owner = tokensInfo[tokenId].owner;
         } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
