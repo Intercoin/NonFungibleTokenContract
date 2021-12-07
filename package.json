@@ -1,0 +1,27 @@
+{
+  "name": "nonfungibletokencontract",
+  "version": "1.0.0",
+  "description": "NFT contracts that support a new ERC token standard for paying commissions to authors",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Intercoin/NonFungibleTokenContract.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Intercoin/NonFungibleTokenContract/issues"
+  },
+  "homepage": "https://github.com/Intercoin/NonFungibleTokenContract#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.1.0",
+    "@openzeppelin/contracts-upgradeable": "^4.1.0",
+    "@uniswap/lib": "^4.0.1-alpha"
+
+  }
+}
+
+  
