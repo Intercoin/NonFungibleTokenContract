@@ -1,6 +1,7 @@
 /ipfs
 /build
 /node_modules
+/cache
 artifacts
 .env
 .deps

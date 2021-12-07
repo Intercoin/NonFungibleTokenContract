@@ -108,22 +108,6 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         validateTokenId(tokenId);
     }
 
-    function buyWithETH(
-        uint256 tokenId
-    )
-        public 
-        payable
-    {
-        // uint256 serieId = tokenId>>SERIES_BITS;
-        // // serie id == 0 used as default(global) settings
-        // require (serieId>0, "wrong tokenId");
-
-        // TokenInfo memory info = tokenInfo[tokenId];
-        // if info
-
-
-    }
-
      
     function setTokenInfo(
         uint256 tokenId, 

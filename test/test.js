@@ -6,13 +6,16 @@ const chai = require('chai');
 const TOTALSUPPLY = ethers.utils.parseEther('1000000000');          
 
 const ONE = BigNumber.from('1');
+const TWO = BigNumber.from('2');
 const TEN = BigNumber.from('10');
 const HUN = BigNumber.from('100');
+
+const SERIES_BITS = 192;
 
 chai.use(require('chai-bignumber')());
 
 
-describe("ERC20Example test", function () {
+describe("ERC721UpgradeableExt test", function () {
     const accounts = waffle.provider.getWallets();
     const owner = accounts[0];                     
     const alice = accounts[1];
@@ -20,8 +23,10 @@ describe("ERC20Example test", function () {
     const charlie = accounts[3];
 
     beforeEach("deploying", async() => {
-        const ERC20Factory = await ethers.getContractFactory("ERC20Example");
+        const ERC20Factory = await ethers.getContractFactory("MockERC20");
+        const NFTFactory = await ethers.getContractFactory("ERC721UpgradeableExt");
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
+        this.nft = await NFTFactory.deploy();
 
         await this.erc20.mint(owner.address, TOTALSUPPLY);
 
@@ -30,27 +35,25 @@ describe("ERC20Example test", function () {
     })
 
 
-  it("should correct transfer tokens", async() => {
-    
-    const aliceBalanceBefore = await this.erc20.balanceOf(alice.address);
-    const bobBalanceBefore = await this.erc20.balanceOf(bob.address);
-
-    const aliceAmount = ethers.utils.parseEther('10');
-    await this.erc20.connect(alice).transfer(bob.address, aliceAmount);
-
-    const aliceBalanceAfter = await this.erc20.balanceOf(alice.address);
-    const bobBalanceAfter = await this.erc20.balanceOf(bob.address);
-
-    expect(bobBalanceAfter).to.be.equal(
-        bobBalanceBefore.add(
-            aliceBalanceBefore.sub(aliceBalanceAfter)
-        )
-    );
-
-    console.log("Alice's balance is:", ethers.utils.formatEther(aliceBalanceAfter));
-    console.log("Bob's balance is:", ethers.utils.formatEther(bobBalanceAfter));
+  it("should correct mint NFT with ETH if ID doesn't exist", async() => {
+    const seriesId = BigNumber.from('1000');
+    const tokenId = ONE;
+    const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+    await this.nft.connect(alice)["buy(uint256)"](id, {value: ethers.utils.parseEther('1')});
     
   });
+
+  it("should correct mint NFT with token if ID doesn't exist", async() => {
+    const seriesId = BigNumber.from('1000');
+    const tokenId = ONE;
+    const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);  // id = seriesId << 192 + tokenId
+    const price = ethers.utils.parseEther('1');
+    await this.erc20.connect(alice).approve(this.nft.address, price);
+    await this.nft.connect(alice)["buy(uint256,address,uint256)"](id, this.erc20.address, price);
+    
+  });
+
+  
 });
 
 // UNIT TESTS:
