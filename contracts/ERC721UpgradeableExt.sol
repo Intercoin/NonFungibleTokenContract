@@ -2,8 +2,7 @@
 
 pragma solidity ^0.8.0;
 pragma abicoder v2;
-
-//import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
@@ -14,6 +13,8 @@ import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
 
 import "hardhat/console.sol";
 
@@ -22,7 +23,7 @@ import "hardhat/console.sol";
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable {
+contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
 
@@ -91,8 +92,10 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         _;
     }
 
-    function initialize() public initializer {
+    function initialize(string memory name_, string memory symbol_) public initializer {
         __Ownable_init();
+        __ReentrancyGuard_init();
+        __ERC721_init(name_, symbol_);
     }
 
 // Implement buyWithETH(tokenId) payable function which will call _mint internally during the first sale, otherwise it will transfer the existing token. 
@@ -101,10 +104,11 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
 // And similarly buyWithToken(tokenId) function which will do IERC20(seriesInfo.currency).transferFrom(msg.sender, seriesInfo.owner) ... transferring ERC20 token 
 // directly to owner, test that both of these work. Please set onSaleUntil to 0, in both "buy" functions after success. Anyone can find out if a token is still for sale, 
 // simply by doing tokenInfo(tokenId).onSaleUntil > block.timestamp. Token can be placed for sale by owner with setTokenInfo or listForSale later.
-    function isOnSale(uint256 tokenId) internal view returns(bool success, bool exists, TokenInfo memory data) {
+
+    function isOnSale(uint256 tokenId) internal view returns(bool success, bool isExists, TokenInfo memory data) {
         success = false;
         data = tokensInfo[tokenId];
-        exists = _exists(tokenId);
+        isExists = _exists(tokenId);
 
         if (data.owner != (DEAD_ADDRESS)) {
 
@@ -136,31 +140,60 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     //     require (serieId>0, "wrong tokenId");
         
     // }
-    function buy(uint256 tokenId) public payable {
+    function buy(uint256 tokenId) public payable nonReentrant() {
         //validateTokenId(tokenId);
-        (bool success, bool exists, TokenInfo memory data) = isOnSale(tokenId);
+        (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
         require(msg.value >= data.amount, "insufficient ETH");
-        // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
-        if (success) {
-            (exists) 
-            ? 
-            _transfer(data.owner, _msgSender(), tokenId)
-            : 
-            _mint(_msgSender(), tokenId);
+
+        bool transferSuccess;
+
+        (transferSuccess, ) = (data.owner).call{value: data.amount}(new bytes(0));
+        require(transferSuccess, "refund ETH failed");
+
+        uint256 refund = msg.value - data.amount;
+        if (refund > 0) {
+            (transferSuccess, ) = msg.sender.call{value: refund}(new bytes(0));
+            require(transferSuccess, "refund ETH failed");
         }
-        
-        
+
+        _buy(tokenId, success, isExists, data);
     }
-    function buy(uint256 tokenId, address token, uint256 amount) public {
+
+    function buy(uint256 tokenId, address token, uint256 amount) public nonReentrant() {
         //validateTokenId(tokenId);
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
 
-        if (data.owner == address(0)) {
-            _mint(_msgSender(), tokenId);
-        }
+        require(token == data.currency, "uknown currency for sale");
+        uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
+        require(allowance >= data.amount && amount >= data.amount, "insufficient amount");
+
+
+        IERC20Upgradeable(data.currency).transferFrom(_msgSender(), data.owner, data.amount);
+        // note that here we emit one transfer event: msg.sender => data.owner.
+        // instead of msg.sender => address(this) and address(this) => data.owner. 
+
+
+        _buy(tokenId, success, isExists, data);
+        
     }
 
-    function afterBuy(uint256 tokenId) internal {
+    function _buy(uint256 tokenId, bool success, bool isExists, TokenInfo memory data) internal {
+
+        // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
+        if (success) {
+            (isExists) 
+            ?  
+            _transfer(data.owner, _msgSender(), tokenId)
+            : 
+            _mint(_msgSender(), tokenId);
+
+
+            tokensInfo[tokenId].onSaleUntil = 0;
+        } else {
+            //revert?
+        }
+        
+
         
     }
 
@@ -265,7 +298,6 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         __ERC165_init_unchained();
         __ERC721_init_unchained(name_, symbol_);
         
-        __Ownable_init();
     }
 
     function __ERC721_init_unchained(string memory name_, string memory symbol_) internal initializer {
