@@ -8,7 +8,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721Metad
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -21,7 +20,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
-    using SafeMathUpgradeable for uint256;
     
     // Token name
     string private _name;
@@ -88,8 +86,9 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
 
     event Bought(uint256 indexed tokenId, address currency, uint256 amount);
 
-    function validateOnlyTokenOwner(uint256 tokenId) view internal {
+    modifier validateOnlyTokenOwner(uint256 tokenId) {
         require(ownerOf(tokenId) == _msgSender(), "can call only by owner");
+        _;
     }
 
     function initialize(string memory name_, string memory symbol_) public initializer {
@@ -136,6 +135,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function buy(uint256 tokenId) public payable nonReentrant() {
         //validateTokenId(tokenId);
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
+        require(success, "token is not on sale");
         require(msg.value >= data.amount, "insufficient ETH");
 
         bool transferSuccess;
@@ -155,17 +155,13 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function buy(uint256 tokenId, address token, uint256 amount) public nonReentrant() {
         //validateTokenId(tokenId);
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
-
+        require(success, "token is not on sale");
         require(token == data.currency, "unknown currency for sale");
         uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
         require(allowance >= data.amount && amount >= data.amount, "insufficient amount");
-
-
         IERC20Upgradeable(data.currency).transferFrom(_msgSender(), data.owner, data.amount);
         // note that here we emit one transfer event: msg.sender => data.owner.
         // instead of msg.sender => address(this) and address(this) => data.owner. 
-
-
         _buy(tokenId, success, isExists, data);
         
     }
@@ -173,21 +169,17 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function _buy(uint256 tokenId, bool success, bool isExists, TokenInfo memory data) internal {
 
         // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
-        if (success) {
-            if (isExists) {
-                _transfer(data.owner, _msgSender(), tokenId);
-                tokensInfo[tokenId].onSaleUntil = 0;
-            } else {
-                //_mint(_msgSender(), tokenId);
-                _safeMintAndSkipEvent(_msgSender(), tokenId);
-                emit Transfer(data.owner, _msgSender(), tokenId);
-
-            }
-            emit Bought(tokenId, data.currency, data.amount);
+        if (isExists) {
+            _transfer(data.owner, _msgSender(), tokenId);
+            tokensInfo[tokenId].onSaleUntil = 0;
         } else {
-            //revert?
+            //_mint(_msgSender(), tokenId);
+            _safeMintAndSkipEvent(_msgSender(), tokenId);
+            emit Transfer(data.owner, _msgSender(), tokenId);
+
         }
-        
+        emit Bought(tokenId, data.currency, data.amount);
+
     }
 
      
@@ -196,9 +188,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         TokenInfo memory info 
     ) 
 
-        public
+        public validateOnlyTokenOwner(tokenId)
     {
-        validateOnlyTokenOwner(tokenId);
         _setTokenInfo(tokenId, info);
 
         // Copy the emit Transfer(...) line to this setTokenInfo method from _transfer,
@@ -265,17 +256,20 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     */
     function listForSale(
         uint256 tokenId,
+        uint256 price,
+        address currency,
         uint256 duration
     )
         public 
     {
         (bool success, /*bool isExists*/, TokenInfo memory data) = isOnSale(tokenId);
-        require(success == false, "already in sale");
+        require(!success, "already in sale");
         require(data.owner == _msgSender(), "invalid token owner");
         require(duration > 0, "invalid duration");
 
-        data.onSaleUntil = block.timestamp.add(duration);
-
+        data.onSaleUntil = block.timestamp + duration;
+        data.amount = price;
+        data.currency = currency;
         _setTokenInfo(tokenId, data);
 
         emit TokenAddedToSale(tokenId, data.amount, data.currency);
