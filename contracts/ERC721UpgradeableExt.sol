@@ -15,15 +15,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-
-import "hardhat/console.sol";
-
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
 
@@ -105,32 +102,25 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
 // directly to owner, test that both of these work. Please set onSaleUntil to 0, in both "buy" functions after success. Anyone can find out if a token is still for sale, 
 // simply by doing tokenInfo(tokenId).onSaleUntil > block.timestamp. Token can be placed for sale by owner with setTokenInfo or listForSale later.
 
-    function isOnSale(uint256 tokenId) internal view returns(bool success, bool isExists, TokenInfo memory data) {
+    function isOnSale(uint256 tokenId) internal view returns(bool success, bool exist, TokenInfo memory data) {
         success = false;
         data = tokensInfo[tokenId];
-        isExists = _exists(tokenId);
+        exist = _exists(tokenId);
 
         if (data.owner != (DEAD_ADDRESS)) {
-
-            if (data.onSaleUntil > block.timestamp) {
-                success = true;
-            } else {
-                uint256 serieId = tokenId>>SERIES_BITS;
-                
-                SerieInfo memory serieData = seriesInfo[serieId];
-
-                if (serieData.owner != (DEAD_ADDRESS)) {
-
-                    // todo 0: should we  care about series(0) ??
-                    if (serieData.onSaleUntil > block.timestamp) {
-                        success = true;
-                        (data.owner, data.currency, data.amount, data.onSaleUntil) = (serieData.owner, serieData.currency, serieData.amount, serieData.onSaleUntil);
-                    }
+            if (data.owner != address(0)) { 
+                if (data.onSaleUntil > block.timestamp) {
+                    success = true;
+                } 
+            } else {   
+                uint256 seriesId = tokenId >> SERIES_BITS;
+                SerieInfo memory seriesData = seriesInfo[seriesId];
+                if (seriesData.onSaleUntil > block.timestamp) {
+                    success = true;
+                    (data.owner, data.currency, data.amount, data.onSaleUntil) = (seriesData.owner, seriesData.currency, seriesData.amount, seriesData.onSaleUntil);
                 }
-                
             }
-
-        }
+        } 
        
     }
 
@@ -163,7 +153,7 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         //validateTokenId(tokenId);
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
 
-        require(token == data.currency, "uknown currency for sale");
+        require(token == data.currency, "unknown currency for sale");
         uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
         require(allowance >= data.amount && amount >= data.amount, "insufficient amount");
 
@@ -181,14 +171,13 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
 
         // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
         if (success) {
-            (isExists) 
-            ?  
-            _transfer(data.owner, _msgSender(), tokenId)
-            : 
-            _mint(_msgSender(), tokenId);
+            if (isExists) {
+                _transfer(data.owner, _msgSender(), tokenId);
+                tokensInfo[tokenId].onSaleUntil = 0;
+            } else {
+                _mint(_msgSender(), tokenId);
+            }
 
-
-            tokensInfo[tokenId].onSaleUntil = 0;
         } else {
             //revert?
         }
@@ -334,7 +323,6 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
-        // console.log("owner = ", owner);
         if (tokensInfo[tokenId].owner != address(0)) {
             owner = tokensInfo[tokenId].owner;
         } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
@@ -502,7 +490,9 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
      * and stop existing when they are burned (`_burn`).
      */
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return _owners[tokenId] != address(0);
+        return 
+            _owners[tokenId] != address(0) && // was minted
+            _owners[tokenId] != DEAD_ADDRESS; // wasn't burned
     }
 
     function _ownerOf(uint256 tokenId) internal view virtual returns (address) {
@@ -628,8 +618,6 @@ contract ERC721UpgradeableExt is Initializable, ContextUpgradeable, ERC165Upgrad
         address to,
         uint256 tokenId
     ) internal virtual {
-        console.log("ownerOf(tokenId) = ", ownerOf(tokenId));
-        console.log("from = ", from);
         require(ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
         require(to != address(0), "ERC721: transfer to the zero address");
 
