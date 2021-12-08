@@ -238,10 +238,12 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
 
         //uint256 seriesId = tokenIdinSerie >> SERIES_BITS;
         //Subtract balance[oldOwner] -= oldLimit, and add balance[newOwner] += newLimit
-        if (seriesInfo[seriesId].owner != address(0)) {
-            _balances[seriesInfo[seriesId].owner] -= seriesInfo[seriesId].limit;
-        }
-        _balances[info.owner] += info.limit;
+
+        // 2021-12-08 remove virtual tokens from total balance 
+        // if (seriesInfo[seriesId].owner != address(0)) {
+        //     _balances[seriesInfo[seriesId].owner] -= seriesInfo[seriesId].limit;
+        // }
+        // _balances[info.owner] += info.limit;
 
         seriesInfo[seriesId] = info;
 
@@ -359,16 +361,18 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
     // Change OpenZeppelin's implementation of ownerOf(tokenId), 
     // to fallback token->series->global defaults, by simply checking mapping ownerOf[token] and you see 0, you try seriesInfo(token >> 192).owner, 
     // and if still 0then you use seriesInfo(0).owner(which may still be0if setSeriesInfo was never called yet). ReimplementbaseURI(tokenId)andgetApproved` this same way.
+    // 2021-12-08 changes in ownerOf.  now it should be the same as original erc721
 
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
-        if (tokensInfo[tokenId].owner != address(0)) {
-            owner = tokensInfo[tokenId].owner;
-        } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
-            owner = seriesInfo[tokenId>>SERIES_BITS].owner;
-        }
 
+        // left for potentially further use )
+        // if (tokensInfo[tokenId].owner != address(0)) {
+        //     owner = tokensInfo[tokenId].owner;
+        // } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
+        //     owner = seriesInfo[tokenId>>SERIES_BITS].owner;
+        // }
 
         require(owner != address(0), "ERC721: owner query for nonexistent token");
         return owner;
