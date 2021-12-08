@@ -67,38 +67,35 @@ describe("ERC721UpgradeableExt test", function () {
     expect(seriesInfo.baseURI).to.be.equal(baseURI);
     expect(seriesInfo.limit).to.be.equal(10000);
 
-    expect(await this.nft.ownerOf(id)).to.be.equal(alice.address);
-
   })
 
-  it("should correct put token on sale", async() => {
-    const seriesId = BigNumber.from('1000');
-    const tokenId = ONE;
-    const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
-    const price = ethers.utils.parseEther('1');
-    const now = Math.round(Date.now() / 1000);   
-    const baseURI = "someURI";
+  // it("should correct put token on sale", async() => {
+  //   const seriesId = BigNumber.from('1000');
+  //   const tokenId = ONE;
+  //   const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+  //   const price = ethers.utils.parseEther('1');
+  //   const now = Math.round(Date.now() / 1000);   
+  //   const baseURI = "someURI";
     
-    const tokenParams = [
-      alice.address, 
-      ZERO_ADDRESS, 
-      price, 
-      now + 100000,
-    ];
-    const seriesParams = tokenParams.concat([baseURI, 10000]);
+  //   const tokenParams = [
+  //     alice.address, 
+  //     ZERO_ADDRESS, 
+  //     price, 
+  //     now + 100000,
+  //   ];
+  //   const seriesParams = tokenParams.concat([baseURI, 10000]);
 
-    await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
-    await this.nft.connect(alice).setTokenInfo(id, tokenParams);
-    const tokenInfo = await this.nft.getTokenInfo(id);
-    expect(tokenInfo.owner).to.be.equal(alice.address);
-    expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
-    expect(tokenInfo.amount).to.be.equal(price);
-    expect(tokenInfo.onSaleUntil).to.be.equal(now + 100000);
+  //   await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
 
-    expect(await this.nft.ownerOf(id)).to.be.equal(alice.address);
+  //   await this.nft.connect(alice).listForSale(id, price, ZERO_ADDRESS, 100000);
+  //   const tokenInfo = await this.nft.getTokenInfo(id);
+  //   expect(tokenInfo.owner).to.be.equal(alice.address);
+  //   expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
+  //   expect(tokenInfo.amount).to.be.equal(price);
+  //   expect(tokenInfo.onSaleUntil).to.be.equal(now + 100000);
 
 
-  })
+  // })
 
   describe("buy tests", async() => {
     const seriesId = BigNumber.from('1000');
@@ -128,8 +125,6 @@ describe("ERC721UpgradeableExt test", function () {
       expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price);
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
-      const seriesOwner = await this.nft.ownerOf(id.add(ONE));
-      expect(seriesOwner).to.be.equal(alice.address);   // series owner is the same
 
       const tokenInfo = await this.nft.getTokenInfo(id);
       expect(tokenInfo.owner).to.be.equal(bob.address);
@@ -168,9 +163,6 @@ describe("ERC721UpgradeableExt test", function () {
       expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price);
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
-      const seriesOwner = await this.nft.ownerOf(id.add(ONE));
-      expect(seriesOwner).to.be.equal(alice.address);   // series owner is the same
-
       
       const tokenInfo = await this.nft.getTokenInfo(id);
       expect(tokenInfo.owner).to.be.equal(bob.address);
@@ -365,7 +357,7 @@ describe("ERC721UpgradeableExt test", function () {
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await this.erc20.connect(charlie).approve(this.nft.address, price);
       const wrongAddress = bob.address;
-      await expect(this.nft.connect(charlie)["buy(uint256,address,uint256)"](id, wrongAddress, price)).to.be.revertedWith("unknown currency for sale");
+      await expect(this.nft.connect(charlie)["buy(uint256,address,uint256)"](id, wrongAddress, price)).to.be.revertedWith("wrong currency for sale");
     })
 
     it("should correct list on sale via listForSale", async() => {

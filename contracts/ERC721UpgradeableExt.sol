@@ -89,7 +89,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     event Bought(uint256 indexed tokenId, address currency, uint256 amount);
 
     modifier validateOnlyTokenOwner(uint256 tokenId) {
-        require(ownerOf(tokenId) == _msgSender(), "can call only by owner");
+
+        require(_ownerOf(tokenId) == _msgSender(), "can call only by owner");
         _;
     }
 
