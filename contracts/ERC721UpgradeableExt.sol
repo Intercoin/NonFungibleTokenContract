@@ -287,6 +287,23 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
         emit TokenAddedToSale(tokenId, data.amount, data.currency);
     }
 
+    function tokensByOwner(
+        address addr
+    ) 
+        public
+        view
+        returns (uint256[] memory ret)
+    {
+        uint256 len = balanceOf(addr);
+        if (len>0) {
+            ret =  new uint256[](len);
+            for (uint256 i=0; i<len; i++) {
+                ret[i] = _ownedTokens[addr][i];
+            }
+        }
+
+    }
+
 //// 
 
 
