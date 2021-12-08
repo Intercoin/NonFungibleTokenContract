@@ -77,10 +77,12 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         uint256 onSaleUntil; 
         string baseURI; 
         uint256 limit;
+        bool sequential;
     }
     //      seriesId
     mapping (uint256 => SerieInfo) public seriesInfo;
-           
+
+    event SerieAddedToSale(uint256 indexed serieId, uint256 amount, address currency);
     event TokenAddedToSale(uint256 indexed tokenId, uint256 amount, address currency);
     event TokenRemovedFromSale(uint256 indexed tokenId);
 
@@ -138,6 +140,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         require(success, "token is not on sale");
         require(msg.value >= data.amount, "insufficient ETH");
 
+        require(address(0) == data.currency, "wrong currency for sale");
+
         bool transferSuccess;
 
         (transferSuccess, ) = (data.owner).call{value: data.amount}(new bytes(0));
@@ -156,7 +160,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         //validateTokenId(tokenId);
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
         require(success, "token is not on sale");
-        require(token == data.currency, "unknown currency for sale");
+        require(token == data.currency, "wrong currency for sale");
         uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
         require(allowance >= data.amount && amount >= data.amount, "insufficient amount");
         IERC20Upgradeable(data.currency).transferFrom(_msgSender(), data.owner, data.amount);
@@ -173,13 +177,12 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
             _transfer(data.owner, _msgSender(), tokenId);
             tokensInfo[tokenId].onSaleUntil = 0;
         } else {
-            //_mint(_msgSender(), tokenId);
-            _safeMintAndSkipEvent(_msgSender(), tokenId);
+            _mint(_msgSender(), tokenId);
             emit Transfer(data.owner, _msgSender(), tokenId);
 
         }
         emit Bought(tokenId, data.currency, data.amount);
-
+        
     }
 
      
@@ -225,10 +228,12 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
 
         //uint256 seriesId = tokenIdinSerie >> SERIES_BITS;
         //Subtract balance[oldOwner] -= oldLimit, and add balance[newOwner] += newLimit
-        if (seriesInfo[seriesId].owner != address(0)) {
-            _balances[seriesInfo[seriesId].owner] -= seriesInfo[seriesId].limit;
-        }
-        _balances[info.owner] += info.limit;
+
+        // 2021-12-08 remove virtual tokens from total balance 
+        // if (seriesInfo[seriesId].owner != address(0)) {
+        //     _balances[seriesInfo[seriesId].owner] -= seriesInfo[seriesId].limit;
+        // }
+        // _balances[info.owner] += info.limit;
 
         seriesInfo[seriesId] = info;
 
@@ -273,6 +278,23 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         _setTokenInfo(tokenId, data);
 
         emit TokenAddedToSale(tokenId, data.amount, data.currency);
+    }
+
+    function tokensByOwner(
+        address addr
+    ) 
+        public
+        view
+        returns (uint256[] memory ret)
+    {
+        uint256 len = balanceOf(addr);
+        if (len>0) {
+            ret =  new uint256[](len);
+            for (uint256 i=0; i<len; i++) {
+                ret[i] = _ownedTokens[addr][i];
+            }
+        }
+
     }
 
 //// 
@@ -349,16 +371,18 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     // Change OpenZeppelin's implementation of ownerOf(tokenId), 
     // to fallback token->series->global defaults, by simply checking mapping ownerOf[token] and you see 0, you try seriesInfo(token >> 192).owner, 
     // and if still 0then you use seriesInfo(0).owner(which may still be0if setSeriesInfo was never called yet). ReimplementbaseURI(tokenId)andgetApproved` this same way.
+    // 2021-12-08 changes in ownerOf.  now it should be the same as original erc721
 
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
-        if (tokensInfo[tokenId].owner != address(0)) {
-            owner = tokensInfo[tokenId].owner;
-        } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
-            owner = seriesInfo[tokenId>>SERIES_BITS].owner;
-        }
 
+        // left for potentially further use )
+        // if (tokensInfo[tokenId].owner != address(0)) {
+        //     owner = tokensInfo[tokenId].owner;
+        // } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
+        //     owner = seriesInfo[tokenId>>SERIES_BITS].owner;
+        // }
 
         require(owner != address(0), "ERC721: owner query for nonexistent token");
         return owner;
@@ -553,20 +577,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
      * Emits a {Transfer} event.
      */
     function _safeMint(address to, uint256 tokenId) internal virtual {
-        _safeMint(to, tokenId, "", false);
-    }
-
-    /**
-     * @dev Safely mints `tokenId` without transfer event
-     *
-     * Requirements:
-     *
-     * - `tokenId` must not exist.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     */
-    function _safeMintAndSkipEvent(address to, uint256 tokenId) internal virtual {
-        _safeMint(to, tokenId, "", true);
+        _safeMint(to, tokenId, "");
     }
 
     /**
@@ -576,10 +587,9 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function _safeMint(
         address to,
         uint256 tokenId,
-        bytes memory _data, 
-        bool skipEvent
+        bytes memory _data
     ) internal virtual {
-        _mint(to, tokenId, skipEvent);
+        _mint(to, tokenId);
         require(
             _checkOnERC721Received(address(0), to, tokenId, _data),
             "ERC721: transfer to non ERC721Receiver implementer"
@@ -600,8 +610,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
      */
     function _mint(
         address to, 
-        uint256 tokenId, 
-        bool skipEvent
+        uint256 tokenId
     ) 
         internal 
         virtual 
@@ -616,9 +625,9 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
 
         tokensInfo[tokenId].owner = payable(to);
 
-        if (!skipEvent) {
-            emit Transfer(address(0), to, tokenId);
-        }
+        
+        emit Transfer(address(0), to, tokenId);
+        
     }
 
     /**
