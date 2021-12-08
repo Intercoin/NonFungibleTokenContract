@@ -87,6 +87,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
     event TokenAddedToSale(uint256 indexed tokenId, uint256 amount, address currency);
     event TokenRemovedFromSale(uint256 indexed tokenId);
 
+    event Bought(uint256 indexed tokenId, address currency, uint256 amount);
+
     function validateOnlyTokenOwner(uint256 tokenId) view internal {
         require(ownerOf(tokenId) == _msgSender(), "can call only by owner");
     }
@@ -182,7 +184,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
                 emit Transfer(data.owner, _msgSender(), tokenId);
 
             }
-
+            emit Bought(tokenId, data.currency, data.amount);
         } else {
             //revert?
         }
