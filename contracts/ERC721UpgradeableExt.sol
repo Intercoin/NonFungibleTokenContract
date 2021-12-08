@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721Metad
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -22,7 +21,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
-    using SafeMathUpgradeable for uint256;
     
     // Token name
     string private _name;
@@ -280,7 +278,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
         require(data.owner == _msgSender(), "invalid token owner");
         require(duration > 0, "invalid duration");
 
-        data.onSaleUntil = block.timestamp.add(duration);
+        data.onSaleUntil = block.timestamp+duration;
 
         _setTokenInfo(tokenId, data);
 
