@@ -83,7 +83,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
     }
     //      seriesId
     mapping (uint256 => SerieInfo) public seriesInfo;
-           
+
+    event SerieAddedToSale(uint256 indexed serieId, uint256 amount, address currency);
     event TokenAddedToSale(uint256 indexed tokenId, uint256 amount, address currency);
     event TokenRemovedFromSale(uint256 indexed tokenId);
 
@@ -139,6 +140,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
         require(msg.value >= data.amount, "insufficient ETH");
 
+        require(address(0) == data.currency, "wrong currency for sale");
+
         bool transferSuccess;
 
         (transferSuccess, ) = (data.owner).call{value: data.amount}(new bytes(0));
@@ -157,7 +160,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
         //validateTokenId(tokenId);
         (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
 
-        require(token == data.currency, "unknown currency for sale");
+        require(token == data.currency, "wrong currency for sale");
         uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
         require(allowance >= data.amount && amount >= data.amount, "insufficient amount");
 
