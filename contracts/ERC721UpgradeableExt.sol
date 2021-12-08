@@ -79,6 +79,9 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         uint256 limit;
         bool sequential;
     }
+
+    mapping(uint256 => uint256) mintedCountBySeries;
+
     //      seriesId
     mapping (uint256 => SeriesInfo) public seriesInfo;
 
@@ -298,6 +301,32 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
 
     }
 
+    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addrs) public onlyOwner {
+        uint256 len = addrs.length;
+        require(tokenIds.length == len, "length shoud be the same");
+        for(uint256 i=0; i<len; i++) {
+            //require(seriesInfo[tokenIds[i] >> SERIES_BITS].sequential == false, "tokenId should be in none-sequential series")
+            _mint(addrs[i], tokenIds[i]);
+        }
+        
+    }
+    function mintAndDistributeSequential(uint256 seriesId, address[] memory addrs) public onlyOwner {
+        require(seriesInfo[seriesId].sequential == true, "series must be sequential");
+
+        
+        uint256 tokenId = (seriesId<<SERIES_BITS)+mintedCountBySeries[seriesId];
+        uint256 len = addrs.length;
+        require(
+            (tokenId+addrs.length) < ((seriesId+1)<<SERIES_BITS),
+            "too much tokens in single series"
+        );
+   
+        for(uint256 i=0; i<len; i++) {
+            _mint(addrs[i], tokenId);
+            tokenId+=1;
+            //emit Transfer(seriesInfo[seriesId], addrs[i], tokenId);
+        }
+    }
 //// 
 
 
@@ -625,7 +654,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         _owners[tokenId] = to;
 
         tokensInfo[tokenId].owner = payable(to);
-
+        mintedCountBySeries[tokenId>>SERIES_BITS] += 1;
         
         emit Transfer(address(0), to, tokenId);
         
