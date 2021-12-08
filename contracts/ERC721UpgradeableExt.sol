@@ -70,7 +70,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         uint256 onSaleUntil; 
     }
 
-    struct SerieInfo { 
+    struct SeriesInfo { 
         address payable owner;
         address currency;
         uint256 amount;
@@ -80,7 +80,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         bool sequential;
     }
     //      seriesId
-    mapping (uint256 => SerieInfo) public seriesInfo;
+    mapping (uint256 => SeriesInfo) public seriesInfo;
 
     event SerieAddedToSale(uint256 indexed serieId, uint256 amount, address currency);
     event TokenAddedToSale(uint256 indexed tokenId, uint256 amount, address currency);
@@ -119,7 +119,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
                 } 
             } else {   
                 uint256 seriesId = tokenId >> SERIES_BITS;
-                SerieInfo memory seriesData = seriesInfo[seriesId];
+                SeriesInfo memory seriesData = seriesInfo[seriesId];
                 if (seriesData.onSaleUntil > block.timestamp) {
                     success = true;
                     (data.owner, data.currency, data.amount, data.onSaleUntil) = (seriesData.owner, seriesData.currency, seriesData.amount, seriesData.onSaleUntil);
@@ -221,7 +221,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
 
     function setSeriesInfo(
         uint256 seriesId, 
-        SerieInfo memory info 
+        SeriesInfo memory info 
     ) 
         onlyOwner
         public
@@ -246,7 +246,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function getTokenInfo(uint256 tokenId) public view returns(TokenInfo memory) {
         return tokensInfo[tokenId];
     }
-    function getSeriesInfo(uint256 seriesId) public view returns(SerieInfo memory) {
+    function getSeriesInfo(uint256 seriesId) public view returns(SeriesInfo memory) {
 
         return seriesInfo[seriesId];
     }
