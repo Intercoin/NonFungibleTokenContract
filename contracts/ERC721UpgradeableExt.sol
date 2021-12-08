@@ -78,6 +78,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
         uint256 onSaleUntil; 
         string baseURI; 
         uint256 limit;
+        bool sequential;
     }
     //      seriesId
     mapping (uint256 => SerieInfo) public seriesInfo;
@@ -180,8 +181,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
                 _transfer(data.owner, _msgSender(), tokenId);
                 tokensInfo[tokenId].onSaleUntil = 0;
             } else {
-                //_mint(_msgSender(), tokenId);
-                _safeMintAndSkipEvent(_msgSender(), tokenId);
+                _mint(_msgSender(), tokenId);
                 emit Transfer(data.owner, _msgSender(), tokenId);
 
             }
@@ -582,20 +582,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
      * Emits a {Transfer} event.
      */
     function _safeMint(address to, uint256 tokenId) internal virtual {
-        _safeMint(to, tokenId, "", false);
-    }
-
-    /**
-     * @dev Safely mints `tokenId` without transfer event
-     *
-     * Requirements:
-     *
-     * - `tokenId` must not exist.
-     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
-     *
-     */
-    function _safeMintAndSkipEvent(address to, uint256 tokenId) internal virtual {
-        _safeMint(to, tokenId, "", true);
+        _safeMint(to, tokenId, "");
     }
 
     /**
@@ -605,10 +592,9 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
     function _safeMint(
         address to,
         uint256 tokenId,
-        bytes memory _data, 
-        bool skipEvent
+        bytes memory _data
     ) internal virtual {
-        _mint(to, tokenId, skipEvent);
+        _mint(to, tokenId);
         require(
             _checkOnERC721Received(address(0), to, tokenId, _data),
             "ERC721: transfer to non ERC721Receiver implementer"
@@ -629,8 +615,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
      */
     function _mint(
         address to, 
-        uint256 tokenId, 
-        bool skipEvent
+        uint256 tokenId
     ) 
         internal 
         virtual 
@@ -645,9 +630,9 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721Upgradeable, IERC721M
 
         tokensInfo[tokenId].owner = payable(to);
 
-        if (!skipEvent) {
-            emit Transfer(address(0), to, tokenId);
-        }
+        
+        emit Transfer(address(0), to, tokenId);
+        
     }
 
     /**
