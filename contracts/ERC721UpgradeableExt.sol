@@ -71,13 +71,13 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     }
 
     struct SeriesInfo { 
+        bool sequential;
         address payable owner;
         address currency;
         uint256 amount;
         uint256 onSaleUntil; 
-        string baseURI; 
         uint256 limit;
-        bool sequential;
+        string baseURI; 
     }
 
     mapping(uint256 => uint256) mintedCountBySeries;
@@ -157,7 +157,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
             require(transferSuccess, "refund ETH failed");
         }
 
-        _buy(tokenId, success, isExists, data);
+        _buy(tokenId, isExists, data);
     }
 
     function buy(uint256 tokenId, address token, uint256 amount) public nonReentrant() {
@@ -170,11 +170,11 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         IERC20Upgradeable(data.currency).transferFrom(_msgSender(), data.owner, data.amount);
         // note that here we emit one transfer event: msg.sender => data.owner.
         // instead of msg.sender => address(this) and address(this) => data.owner. 
-        _buy(tokenId, success, isExists, data);
+        _buy(tokenId, isExists, data);
         
     }
 
-    function _buy(uint256 tokenId, bool success, bool isExists, TokenInfo memory data) internal {
+    function _buy(uint256 tokenId, bool isExists, TokenInfo memory data) internal {
 
         // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
         if (isExists) {
@@ -211,7 +211,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         internal
     {
         //tokenInfo[tokenId] = info;
-
+        
         tokensInfo[tokenId].owner = info.owner;
         tokensInfo[tokenId].currency = info.currency;
         tokensInfo[tokenId].amount = info.amount;
@@ -292,9 +292,9 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         returns (uint256[] memory ret)
     {
         uint256 len = balanceOf(addr);
-        if (len>0) {
+        if (len > 0) {
             ret =  new uint256[](len);
-            for (uint256 i=0; i<len; i++) {
+            for (uint256 i = 0; i < len; i++) {
                 ret[i] = _ownedTokens[addr][i];
             }
         }
@@ -303,27 +303,27 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
 
     function mintAndDistribute(uint256[] memory tokenIds, address[] memory addrs) public onlyOwner {
         uint256 len = addrs.length;
-        require(tokenIds.length == len, "length shoud be the same");
-        for(uint256 i=0; i<len; i++) {
+        require(tokenIds.length == len, "lengths should be the same");
+        for(uint256 i = 0; i < len; i++) {
             //require(seriesInfo[tokenIds[i] >> SERIES_BITS].sequential == false, "tokenId should be in none-sequential series")
             _mint(addrs[i], tokenIds[i]);
         }
         
     }
     function mintAndDistributeSequential(uint256 seriesId, address[] memory addrs) public onlyOwner {
-        require(seriesInfo[seriesId].sequential == true, "series must be sequential");
+        require(seriesInfo[seriesId].sequential, "series must be sequential");
 
         
-        uint256 tokenId = (seriesId<<SERIES_BITS)+mintedCountBySeries[seriesId];
+        uint256 tokenId = (seriesId << SERIES_BITS) + mintedCountBySeries[seriesId];
         uint256 len = addrs.length;
         require(
-            (tokenId+addrs.length) < ((seriesId+1)<<SERIES_BITS),
-            "too much tokens in single series"
+            (tokenId + addrs.length) < ( (seriesId + 1) << SERIES_BITS),
+            "too many tokens in single series"
         );
    
-        for(uint256 i=0; i<len; i++) {
+        for(uint256 i = 0; i < len; i++) {
             _mint(addrs[i], tokenId);
-            tokenId+=1;
+            tokenId += 1;
             //emit Transfer(seriesInfo[seriesId], addrs[i], tokenId);
         }
     }
@@ -353,11 +353,6 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         require(index < totalSupply(), "ERC721Enumerable: global index out of bounds");
         return _allTokens[index];
     }
-
-    
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
       
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -438,7 +433,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
         string memory _tokenURI = tokenId.toString();
-        string memory base = seriesInfo[tokenId>>SERIES_BITS].baseURI;
+        string memory base = seriesInfo[tokenId >> SERIES_BITS].baseURI;
         
         
         // ???
@@ -535,6 +530,19 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     ) public virtual override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         _safeTransfer(from, to, tokenId, _data);
+    }
+
+    /**
+     * @dev Burns `tokenId`. See {ERC721-_burn}.
+     *
+     * Requirements:
+     *
+     * - The caller must own `tokenId` or be an approved operator.
+     */
+    function burn(uint256 tokenId) public virtual {
+        //solhint-disable-next-line max-line-length
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721Burnable: caller is not owner nor approved");
+        _burn(tokenId);
     }
 
     /**

@@ -5,6 +5,8 @@ const chai = require('chai');
 
 const TOTALSUPPLY = ethers.utils.parseEther('1000000000');    
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD';
+
 
 
 const ZERO = BigNumber.from('0');
@@ -35,12 +37,13 @@ describe("ERC721UpgradeableExt test", function () {
     const baseURI = "someURI";
     const limit = BigNumber.from('10000');
     const seriesParams = [
+      false,
       owner.address,  
       ZERO_ADDRESS, 
       price, 
       now + 100000, 
-      baseURI,
-      limit
+      limit,
+      baseURI
     ];
 
     beforeEach("deploying", async() => {
@@ -115,11 +118,21 @@ describe("ERC721UpgradeableExt test", function () {
 
         })
 
+        it('should correct burn token', async() => {
+            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ZERO);
+            await this.nft.connect(alice).burn(id);
+            expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ONE);
+            expect(await this.nft.ownerOf(id)).to.be.equal(DEAD_ADDRESS);
+            const tokenInfo = await this.nft.getTokenInfo(id);
+            expect(tokenInfo.owner).to.be.equal(DEAD_ADDRESS);
+        })
+
         it('shouldnt transfer token if not owner', async() => {
             await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
             await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
         })
-        it('shouldnt transfer token if not owner', async() => {
+        it('shouldnt transfer token on zero address', async() => {
             await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
             await expect(this.nft.connect(alice).transferFrom(alice.address, ZERO_ADDRESS, id)).to.be.revertedWith("ERC721: transfer to the zero address");
         })

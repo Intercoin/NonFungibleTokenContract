@@ -51,12 +51,13 @@ describe("ERC721UpgradeableExt test", function () {
     const now = Math.round(Date.now() / 1000);   
     const baseURI = "someURI";
     const params = [
+      false,
       alice.address, 
       ZERO_ADDRESS, 
       price, 
       now + 100000, 
-      baseURI,
-      10000
+      10000,
+      baseURI
     ];
     await this.nft.connect(owner).setSeriesInfo(seriesId, params);
     const seriesInfo = await this.nft.getSeriesInfo(seriesId);
@@ -105,12 +106,13 @@ describe("ERC721UpgradeableExt test", function () {
     const now = Math.round(Date.now() / 1000);   
     const baseURI = "";
     const seriesParams = [
+      false,
       alice.address,  
       ZERO_ADDRESS, 
       price, 
       now + 100000, 
-      baseURI,
-      10000
+      10000,
+      baseURI
     ];
     beforeEach("listing series on sale", async() => {
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
@@ -145,12 +147,13 @@ describe("ERC721UpgradeableExt test", function () {
   
     it("should correct mint NFT with token if ID doesn't exist", async() => {
       const seriesParams = [
+        false,
         alice.address, 
         this.erc20.address, 
         price, 
         now + 100000, 
-        baseURI,
-        10000
+        10000,
+        baseURI
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await this.erc20.connect(bob).approve(this.nft.address, price);
@@ -260,12 +263,13 @@ describe("ERC721UpgradeableExt test", function () {
 
     it("should correct mint NFT from own series", async() => {
       const seriesParams = [
+        false,
         alice.address, 
         this.erc20.address, 
         price, 
-        now + 100000, 
-        baseURI,
-        10000
+        now + 100000,
+        10000,
+        baseURI
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await this.erc20.connect(alice).approve(this.nft.address, price);
@@ -292,12 +296,13 @@ describe("ERC721UpgradeableExt test", function () {
 
     it("shouldnt mint if series was unlisted from sale", async() => {
       const seriesParams = [
+        false,
         alice.address, 
         this.erc20.address, 
         price, 
-        ZERO, 
-        baseURI,
-        10000
+        ZERO,
+        10000,
+        baseURI
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await expect(this.nft.connect(bob)["buy(uint256)"](id, {value: price})).to.be.revertedWith("token is not on sale");
@@ -319,12 +324,13 @@ describe("ERC721UpgradeableExt test", function () {
 
     it("shouldnt buy if user approved unsufficient token amount", async() => {
       const seriesParams = [
+        false,
         alice.address, 
         this.erc20.address, 
         price, 
         now + 100000, 
-        baseURI,
-        10000
+        10000,
+        baseURI
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await this.erc20.connect(charlie).approve(this.nft.address, price.sub(ONE));
@@ -333,12 +339,13 @@ describe("ERC721UpgradeableExt test", function () {
 
     it("shouldnt buy if user passed unsufficient token amount", async() => {
       const seriesParams = [
+        false,
         alice.address, 
         this.erc20.address, 
         price, 
         now + 100000, 
-        baseURI,
-        10000
+        10000,
+        baseURI
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await this.erc20.connect(charlie).approve(this.nft.address, price);
@@ -347,12 +354,13 @@ describe("ERC721UpgradeableExt test", function () {
 
     it("shouldnt buy if token is invalid", async() => {
       const seriesParams = [
+        false,
         alice.address, 
         this.erc20.address, 
         price, 
         now + 100000, 
-        baseURI,
-        10000
+        10000,
+        baseURI
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await this.erc20.connect(charlie).approve(this.nft.address, price);
@@ -372,10 +380,9 @@ describe("ERC721UpgradeableExt test", function () {
       expect(tokenInfo.amount).to.be.equal(newPrice);
       const lastTs = await time.latest();
       expect(tokenInfo.onSaleUntil).to.be.equal(+lastTs.toString() + duration);
-  
 
-      
     })
+
     
     
     // TODO mint and list on sale for someBody
