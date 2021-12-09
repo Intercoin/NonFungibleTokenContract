@@ -17,7 +17,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
     
@@ -96,12 +96,12 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         require(_ownerOf(tokenId) == _msgSender(), "can call only by owner");
         _;
     }
-
-    function initialize(string memory name_, string memory symbol_) public initializer {
-        __Ownable_init();
-        __ReentrancyGuard_init();
-        __ERC721_init(name_, symbol_);
-    }
+    // moved initialize to presets
+    // function initialize(string memory name_, string memory symbol_) public initializer {
+    //     __Ownable_init();
+    //     __ReentrancyGuard_init();
+    //     __ERC721_init(name_, symbol_);
+    // }
 
 // Implement buyWithETH(tokenId) payable function which will call _mint internally during the first sale, otherwise it will transfer the existing token. 
 // The function will get info = tokenInfo(tokenId) which as a fallback internally calls seriesInfo(tokenId>>192) which as a fallback internally calls seriesInfo(0). 
@@ -362,6 +362,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function __ERC721_init(string memory name_, string memory symbol_) internal initializer {
         __Context_init_unchained();
         __ERC165_init_unchained();
+        __Ownable_init();
+        __ReentrancyGuard_init();
         __ERC721_init_unchained(name_, symbol_);
         
     }

@@ -9,8 +9,8 @@ async function main() {
 
 	console.log("Account balance:", (await deployer.getBalance()).toString());
 
-	const ERC721UpgradeableExt = await ethers.getContractFactory("ERC721UpgradeableExt");
-	const contract = await ERC721UpgradeableExt.deploy();
+	const NFT = await ethers.getContractFactory("NFT");
+	const contract = await NFT.deploy();
 
 	console.log("Contract deployed at:", contract.address);
 }

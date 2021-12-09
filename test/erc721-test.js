@@ -48,7 +48,7 @@ describe("ERC721UpgradeableExt test", function () {
 
     beforeEach("deploying", async() => {
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
-        const NFTFactory = await ethers.getContractFactory("ERC721UpgradeableExt");
+        const NFTFactory = await ethers.getContractFactory("NFT");
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.nft = await NFTFactory.deploy();
         await this.nft.connect(owner).initialize("NFT Edition", "NFT");
