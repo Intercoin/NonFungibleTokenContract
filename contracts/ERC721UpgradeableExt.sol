@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
     
@@ -97,12 +97,12 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         );
         _;
     }
-
-    function initialize(string memory name_, string memory symbol_) public initializer {
-        __Ownable_init();
-        __ReentrancyGuard_init();
-        __ERC721_init(name_, symbol_);
-    }
+    // moved initialize to presets
+    // function initialize(string memory name_, string memory symbol_) public initializer {
+    //     __Ownable_init();
+    //     __ReentrancyGuard_init();
+    //     __ERC721_init(name_, symbol_);
+    // }
 
     function buy(uint256 tokenId) external payable nonReentrant() {
         //validateTokenId(tokenId);
@@ -260,6 +260,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         require(index < totalSupply(), "ERC721Enumerable: global index out of bounds");
         return _allTokens[index];
     }
+      
+ 
 
     /**
      * @dev See {IERC165-supportsInterface}.
@@ -501,6 +503,8 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     function __ERC721_init(string memory name_, string memory symbol_) internal initializer {
         __Context_init_unchained();
         __ERC165_init_unchained();
+        __Ownable_init();
+        __ReentrancyGuard_init();
         __ERC721_init_unchained(name_, symbol_);
     }
 
@@ -508,6 +512,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         _name = name_;
         _symbol = symbol_;
     }
+
 
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
