@@ -383,6 +383,11 @@ describe("ERC721UpgradeableExt test", function () {
 
     })
 
+    it("shouldnt buy burned token", async() => {
+      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
+      await this.nft.connect(bob).burn(id);
+      await expect(this.nft.connect(charlie)["buy(uint256)"](id, {value: price})).to.be.revertedWith('token is not on sale');
+    })
     
     
     // TODO mint and list on sale for someBody

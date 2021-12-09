@@ -110,10 +110,10 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
 // directly to owner, test that both of these work. Please set onSaleUntil to 0, in both "buy" functions after success. Anyone can find out if a token is still for sale, 
 // simply by doing tokenInfo(tokenId).onSaleUntil > block.timestamp. Token can be placed for sale by owner with setTokenInfo or listForSale later.
 
-    function isOnSale(uint256 tokenId) internal view returns(bool success, bool exist, TokenInfo memory data) {
+    function isOnSale(uint256 tokenId) internal view returns(bool success, bool exists, TokenInfo memory data) {
         success = false;
         data = tokensInfo[tokenId];
-        exist = _exists(tokenId);
+        exists = _exists(tokenId);
 
         if (data.owner != (DEAD_ADDRESS)) {
             if (data.owner != address(0)) { 
@@ -140,7 +140,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
     // }
     function buy(uint256 tokenId) public payable nonReentrant() {
         //validateTokenId(tokenId);
-        (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
+        (bool success, bool exists, TokenInfo memory data) = isOnSale(tokenId);
         require(success, "token is not on sale");
         require(msg.value >= data.amount, "insufficient ETH");
 
@@ -157,12 +157,12 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
             require(transferSuccess, "refund ETH failed");
         }
 
-        _buy(tokenId, isExists, data);
+        _buy(tokenId, exists, data);
     }
 
     function buy(uint256 tokenId, address token, uint256 amount) public nonReentrant() {
         //validateTokenId(tokenId);
-        (bool success, bool isExists, TokenInfo memory data) = isOnSale(tokenId);
+        (bool success, bool exists, TokenInfo memory data) = isOnSale(tokenId);
         require(success, "token is not on sale");
         require(token == data.currency, "wrong currency for sale");
         uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
@@ -170,14 +170,14 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         IERC20Upgradeable(data.currency).transferFrom(_msgSender(), data.owner, data.amount);
         // note that here we emit one transfer event: msg.sender => data.owner.
         // instead of msg.sender => address(this) and address(this) => data.owner. 
-        _buy(tokenId, isExists, data);
+        _buy(tokenId, exists, data);
         
     }
 
-    function _buy(uint256 tokenId, bool isExists, TokenInfo memory data) internal {
+    function _buy(uint256 tokenId, bool exists, TokenInfo memory data) internal {
 
         // token can be exists, but belong to address(0) or dead address.  we must look at untilSale>blocktimestamp,  that will reset in afterBuy
-        if (isExists) {
+        if (exists) {
             _transfer(data.owner, _msgSender(), tokenId);
             tokensInfo[tokenId].onSaleUntil = 0;
         } else {
@@ -582,9 +582,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
      * and stop existing when they are burned (`_burn`).
      */
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return 
-            _owners[tokenId] != address(0) && // was minted
-            _owners[tokenId] != DEAD_ADDRESS; // wasn't burned
+        return _owners[tokenId] != address(0);
     }
 
     function _ownerOf(uint256 tokenId) internal view virtual returns (address) {
@@ -662,7 +660,7 @@ contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, 
         _owners[tokenId] = to;
 
         tokensInfo[tokenId].owner = payable(to);
-        mintedCountBySeries[tokenId>>SERIES_BITS] += 1;
+        mintedCountBySeries[tokenId >> SERIES_BITS] += 1;
         
         emit Transfer(address(0), to, tokenId);
         
