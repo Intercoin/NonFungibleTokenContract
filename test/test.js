@@ -383,10 +383,137 @@ describe("ERC721UpgradeableExt test", function () {
 
     })
 
-    it("shouldnt buy burned token", async() => {
+    it("shouldnt list on sale via listForSale if already listed", async() => {
+      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
+      const duration = 1000;
+      const newPrice = price.mul(TWO);
+      const newCurrency = this.erc20.address;
+      await this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration);
+      await expect(this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('already in sale');
+
+    })
+
+    it("shouldnt list on sale via listForSale if not owner", async() => {
+      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
+      const duration = 1000;
+      const newPrice = price.mul(TWO);
+      const newCurrency = this.erc20.address;
+      await expect(this.nft.connect(alice).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('invalid token owner');
+
+    })
+
+    it("shouldnt list on sale via listForSale if duration is invalid", async() => {
+      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
+      const duration = 0;
+      const newPrice = price.mul(TWO);
+      const newCurrency = this.erc20.address;
+      await expect(this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('invalid duration');
+
+    })
+
+    it("shouldnt buy burnt token", async() => {
       await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
       await this.nft.connect(bob).burn(id);
       await expect(this.nft.connect(charlie)["buy(uint256)"](id, {value: price})).to.be.revertedWith('token is not on sale');
+    })
+
+    it("should mint tokens for several users via mintAndDistribute", async() => {
+      const series1Id = BigNumber.from('1000');
+      const series2Id = BigNumber.from('1005');
+      const tokenId1 = ONE;
+      const tokenId2 = TEN;
+      const tokenId3 = HUN;
+      const id1 = series1Id.mul(TWO.pow(BigNumber.from('192'))).add(tokenId1);
+      const id2 = series2Id.mul(TWO.pow(BigNumber.from('192'))).add(tokenId2);
+      const id3 = series2Id.mul(TWO.pow(BigNumber.from('192'))).add(tokenId3);
+  
+      const ids = [id1, id2, id3];
+      const users = [
+        alice.address,
+        bob.address,
+        charlie.address
+      ]
+      await this.nft.connect(owner).mintAndDistribute(ids, users);
+      expect(await this.nft.balanceOf(alice.address)).to.be.equal(ONE);
+      expect(await this.nft.balanceOf(bob.address)).to.be.equal(ONE);
+      expect(await this.nft.balanceOf(charlie.address)).to.be.equal(ONE);
+
+      expect(await this.nft.ownerOf(id1)).to.be.equal(alice.address);
+      expect(await this.nft.ownerOf(id2)).to.be.equal(bob.address);
+      expect(await this.nft.ownerOf(id3)).to.be.equal(charlie.address);
+      
+      const tokenInfo1 = await this.nft.getTokenInfo(id1);
+      const tokenInfo2 = await this.nft.getTokenInfo(id2);
+      const tokenInfo3 = await this.nft.getTokenInfo(id3);
+
+      expect(tokenInfo1.owner).to.be.equal(alice.address);
+      expect(tokenInfo2.owner).to.be.equal(bob.address);
+      expect(tokenInfo3.owner).to.be.equal(charlie.address);
+       
+    })
+
+    it("shouldnt mint tokens via mintAndDistribute if lengths are not the same ", async() => {
+      const ids = [1, 2, 3];
+      const wrongLengthAddresses = [
+        alice.address,
+        bob.address
+      ]
+
+      await expect(this.nft.connect(owner).mintAndDistribute(ids, wrongLengthAddresses)).to.be.revertedWith('lengths should be the same');
+
+    })
+
+    it("should correct call setTokenInfo as an owner of series", async() => {
+      const newLimit = 11000;
+      const newParams = [
+        false,
+        alice.address, 
+        ZERO_ADDRESS, 
+        price, 
+        now + 100000, 
+        newLimit,
+        baseURI
+      ];
+      await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
+      const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+      expect(seriesInfo.owner).to.be.equal(alice.address);
+      expect(seriesInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(seriesInfo.amount).to.be.equal(price);
+      expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+      expect(seriesInfo.baseURI).to.be.equal(baseURI);
+      expect(seriesInfo.limit).to.be.equal(newLimit);
+  
+    })
+
+    it("shouldnt call setTokenInfo as an owner of series", async() => {
+      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyContractOrSeriesOwner');
+
+    })
+
+    it("shouldnt let buy for ETH if token currency specified", async() => {
+      const seriesParams = [
+        false,
+        alice.address, 
+        this.erc20.address, 
+        price, 
+        now + 100000, 
+        10000,
+        baseURI
+      ];
+      await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+      await expect(this.nft.connect(bob)["buy(uint256)"](id, {value: price})).to.be.revertedWith('wrong currency for sale');
+
+    })
+
+    it("shouldn correct list all tokens of user", async() => {
+      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
+      await this.nft.connect(bob)["buy(uint256)"](id.add(ONE), {value: price});
+      await this.nft.connect(bob)["buy(uint256)"](id.add(TWO), {value: price});
+      const bobTokens = await this.nft.tokensByOwner(bob.address);
+      expect(bobTokens[0]).to.be.equal(id);
+      expect(bobTokens[1]).to.be.equal(id.add(ONE));
+      expect(bobTokens[2]).to.be.equal(id.add(TWO));
+
     })
     
     

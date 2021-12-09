@@ -13,6 +13,8 @@ const ZERO = BigNumber.from('0');
 const ONE = BigNumber.from('1');
 const TWO = BigNumber.from('2');
 const THREE = BigNumber.from('3');
+const FOUR = BigNumber.from('4');
+const FIVE = BigNumber.from('5');
 const TEN = BigNumber.from('10');
 const HUN = BigNumber.from('100');
 
@@ -135,6 +137,38 @@ describe("ERC721UpgradeableExt test", function () {
         it('shouldnt transfer token on zero address', async() => {
             await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
             await expect(this.nft.connect(alice).transferFrom(alice.address, ZERO_ADDRESS, id)).to.be.revertedWith("ERC721: transfer to the zero address");
+        })
+
+        it('should correct get token of owner by index', async() => {
+            await this.nft.connect(bob)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256)"](id.add(TEN), {value: price}); 
+            await this.nft.connect(bob)["buy(uint256)"](id.add(HUN), {value: price}); 
+            const token1 = await this.nft.tokenOfOwnerByIndex(bob.address, ZERO);
+            const token2 = await this.nft.tokenOfOwnerByIndex(bob.address, ONE);
+            const token3 = await this.nft.tokenOfOwnerByIndex(bob.address, TWO);
+            expect(token1).to.be.equal(id);
+            expect(token2).to.be.equal(id.add(TEN));
+            expect(token3).to.be.equal(id.add(HUN));
+        })
+        it('should correct get totalSupply', async() => {
+            await this.nft.connect(bob)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256)"](id.add(TEN), {value: price}); 
+            await this.nft.connect(bob)["buy(uint256)"](id.add(HUN), {value: price}); 
+            await this.nft.connect(alice)["buy(uint256)"](id.add(TWO), {value: price}); 
+            await this.nft.connect(charlie)["buy(uint256)"](id.add(HUN.add(TEN)), {value: price}); 
+            const totalSupply = await this.nft.totalSupply();
+            expect(totalSupply).to.be.equal(FIVE);
+        })
+        it('should correct get tokan by index', async() => {
+            await this.nft.connect(bob)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256)"](id.add(ONE), {value: price}); 
+            await this.nft.connect(charlie)["buy(uint256)"](id.add(TWO), {value: price}); 
+            const token1 = await this.nft.tokenByIndex(ZERO);
+            const token2 = await this.nft.tokenByIndex(ONE);
+            const token3 = await this.nft.tokenByIndex(TWO);
+            expect(token1).to.be.equal(id);
+            expect(token2).to.be.equal(id.add(ONE));
+            expect(token3).to.be.equal(id.add(TWO));
         })
     })
 
