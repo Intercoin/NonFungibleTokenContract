@@ -53,31 +53,28 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     // Mapping from token id to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
 
+    // Constants
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 internal constant SERIES_BITS = 192;
     uint256 internal constant DEFAULT_SERIES_ID = 0;
     
-    mapping (uint256  => TokenInfo) public tokensInfo;  // tokenId => tokenInfo
-    mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => seriesInfo
-
-    mapping(uint256 => uint256) mintedCountBySeries;
-    
-    struct TokenInfo { 
-        address payable owner;
+    struct SaleInfo {
         address currency;
         uint256 amount;
         uint256 onSaleUntil; 
     }
-
+    
     struct SeriesInfo { 
-        bool sequential;
         address payable owner;
-        address currency;
-        uint256 amount;
-        uint256 onSaleUntil; 
+        SaleInfo saleInfo;
         uint256 limit;
         string baseURI; 
     }
+    
+    mapping (uint256  => SaleInfo) public saleInfo;  // tokenId => SaleInfo
+    mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
+
+    mapping(uint256 => uint256) mintedCountBySeries;
 
     event SeriesAddedToSale(uint256 indexed seriesId, uint256 amount, address currency);
     event TokenAddedToSale(uint256 indexed tokenId, uint256 amount, address currency);
@@ -106,44 +103,42 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     function buy(uint256 tokenId) external payable nonReentrant() {
         //validateTokenId(tokenId);
-        (bool success, bool exists, TokenInfo memory data) = _isOnSale(tokenId);
+        (bool success, bool exists, address payable tokenOwner, SaleInfo memory saleInfo) = _isOnSale(tokenId);
         require(success, "token is not on sale");
-        require(msg.value >= data.amount, "insufficient ETH");
-        require(address(0) == data.currency, "wrong currency for sale");
+        require(msg.value >= saleInfo.amount, "insufficient ETH");
+        require(address(0) == saleInfo.currency, "wrong currency for sale");
 
         bool transferSuccess;
-        (transferSuccess, ) = (data.owner).call{gas: 4000, value: data.amount}(new bytes(0));
-        require(transferSuccess, "refund ETH failed");
+        (transferSuccess, ) = (tokenOwner).call{gas: 4000, value: saleInfo.amount}(new bytes(0));
+        require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
 
-        uint256 refund = msg.value - data.amount;
+        uint256 refund = msg.value - saleInfo.amount;
         if (refund > 0) {
             (transferSuccess, ) = msg.sender.call{gas: 4000, value: refund}(new bytes(0));
-            require(transferSuccess, "refund ETH failed");
+            require(transferSuccess, "REFUND_FAILED");
         }
 
-        _buy(tokenId, exists, data);
+        _buy(tokenId, exists, tokenOwner, saleInfo);
     }
 
-    function buy(uint256 tokenId, address token, uint256 amount) external nonReentrant() {
-        //validateTokenId(tokenId);
-        (bool success, bool exists, TokenInfo memory data) = _isOnSale(tokenId);
+    function buy(uint256 tokenId, address currency, uint256 amount) external nonReentrant() {
+        (bool success, bool exists, address payable tokenOwner, SaleInfo memory saleInfo) = _isOnSale(tokenId);
         require(success, "token is not on sale");
-        require(token == data.currency, "wrong currency for sale");
-        uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
-        require(allowance >= data.amount && amount >= data.amount, "insufficient amount");
-        IERC20Upgradeable(data.currency).transferFrom(_msgSender(), data.owner, data.amount);
+        require(currency == saleInfo.currency, "wrong currency for sale");
+        uint256 allowance = IERC20Upgradeable(saleInfo.currency).allowance(_msgSender(), address(this));
+        require(allowance >= saleInfo.amount && amount >= saleInfo.amount, "insufficient amount");
+        IERC20Upgradeable(saleInfo.currency).transferFrom(_msgSender(), tokenOwner, saleInfo.amount);
 
-        _buy(tokenId, exists, data);
+        _buy(tokenId, exists, saleInfo);
     }
 
-    function setTokenInfo(
+    function setSaleInfo(
         uint256 tokenId, 
-        TokenInfo memory info 
+        SaleInfo memory info 
     ) 
         external onlyTokenOwner(tokenId)
     {
-        _setTokenInfo(tokenId, info);
-        emit Transfer(_msgSender(), info.owner, tokenId);
+        _saleInfo[tokenId] = info;
     }
 
      function setSeriesInfo(
@@ -165,8 +160,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         // emit Transfer(from, to, tokenId);
     }
 
-    function getTokenInfo(uint256 tokenId) external view returns(TokenInfo memory) {
-        return tokensInfo[tokenId];
+    function getSaleInfo(uint256 tokenId) external view returns(SaleInfo memory) {
+        return saleInfo[tokenId];
     }
     function getSeriesInfo(uint256 seriesId) external view returns(SeriesInfo memory) {
         return seriesInfo[seriesId];
@@ -185,27 +180,31 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     )
         external 
     {
-        (bool success, /*bool isExists*/, TokenInfo memory data) = _isOnSale(tokenId);
+        (bool success, /*bool isExists*/, /* address payable tokenOwner */, SaleInfo memory saleInfo) = _isOnSale(tokenId);
         require(!success, "already in sale");
         require(data.owner == _msgSender(), "invalid token owner");
         require(duration > 0, "invalid duration");
 
-        data.onSaleUntil = block.timestamp + duration;
-        data.amount = price;
-        data.currency = currency;
-        _setTokenInfo(tokenId, data);
+        saleInfo.onSaleUntil = block.timestamp + duration;
+        saleInfo.amount = price;
+        saleInfo.currency = currency;
+        saleInfo[tokenId] = saleInfo;
 
-        emit TokenAddedToSale(tokenId, data.amount, data.currency);
+        emit TokenAddedToSale(tokenId, saleInfo.amount, saleInfo.currency);
     }
 
     function tokensByOwner(
-        address account
+        address account,
+        uint256 limit
     ) 
         external
         view
         returns (uint256[] memory ret)
     {
         uint256 len = balanceOf(account);
+        if (len > limit) {
+            len = limit;
+        }
         if (len > 0) {
             ret =  new uint256[](len);
             for (uint256 i = 0; i < len; i++) {
@@ -218,23 +217,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 len = addrs.length;
         require(tokenIds.length == len, "lengths should be the same");
         for(uint256 i = 0; i < len; i++) {
-            //require(seriesInfo[tokenIds[i] >> SERIES_BITS].sequential == false, "tokenId should be in none-sequential series")
             _mint(addrs[i], tokenIds[i]);
-        }
-    }
-    function mintAndDistributeSequential(uint256 seriesId, address[] memory addrs) external onlyOwner {
-        require(seriesInfo[seriesId].sequential, "series must be sequential");
-        uint256 tokenId = (seriesId << SERIES_BITS) + mintedCountBySeries[seriesId];
-        uint256 len = addrs.length;
-        require(
-            (tokenId + addrs.length) < ( (seriesId + 1) << SERIES_BITS),
-            "too many tokens in single series"
-        );
-   
-        for(uint256 i = 0; i < len; i++) {
-            _mint(addrs[i], tokenId);
-            tokenId += 1;
-            //emit Transfer(seriesInfo[seriesId], addrs[i], tokenId);
         }
     }
 
@@ -289,14 +272,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
         // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
-
-        // left for potentially further use )
-        // if (tokensInfo[tokenId].owner != address(0)) {
-        //     owner = tokensInfo[tokenId].owner;
-        // } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
-        //     owner = seriesInfo[tokenId>>SERIES_BITS].owner;
-        // }
-
         require(owner != address(0), "ERC721: owner query for nonexistent token");
         return owner;
     }
@@ -429,15 +404,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _burn(tokenId);
     }
 
-    function _buy(uint256 tokenId, bool exists, TokenInfo memory data) internal {
+    function _buy(uint256 tokenId, bool exists, address tokenOwner, SaleInfo memory saleInfo) internal {
         if (exists) {
-            _transfer(data.owner, _msgSender(), tokenId);
+            _transfer(tokenOwner, _msgSender(), tokenId);
             tokensInfo[tokenId].onSaleUntil = 0;
         } else {
             _mint(_msgSender(), tokenId);
-            emit Transfer(data.owner, _msgSender(), tokenId);
+            emit Transfer(tokenOwner, _msgSender(), tokenId);
         }
-        emit Bought(tokenId, data.currency, data.amount);
+        emit Bought(tokenId, saleInfo.currency, saleInfo.amount);
     }
 
     // function validateTokenId(uint256 tokenId) internal pure {
@@ -453,48 +428,29 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         (
             bool success,
             bool exists, 
-            TokenInfo memory data
+            address payable tokenOwner,
+            SaleInfo memory saleInfo
         ) {
+        tokenOwner = address payable(_owners[tokenId]);
         success = false;
-        data = tokensInfo[tokenId];
         exists = _exists(tokenId);
 
-        if (data.owner != (DEAD_ADDRESS)) {
-            if (data.owner != address(0)) { 
-                if (data.onSaleUntil > block.timestamp) {
-                    success = true;
-                } 
-            } else {   
-                uint256 seriesId = tokenId >> SERIES_BITS;
-                SeriesInfo memory seriesData = seriesInfo[seriesId];
-                if (seriesData.onSaleUntil > block.timestamp) {
-                    success = true;
-                    (
-                        data.owner, 
-                        data.currency, 
-                        data.amount, 
-                        data.onSaleUntil
-                    ) = (
-                        seriesData.owner, 
-                        seriesData.currency, 
-                        seriesData.amount, 
-                        seriesData.onSaleUntil
-                    );
-                }
+        if (tokenOwner == (DEAD_ADDRESS)) {
+            return;
+        }
+        if (tokenOwner != address(0)) { 
+            if (.onSaleUntil > block.timestamp) {
+                success = true;
             }
-        } 
-    }
-
-    function _setTokenInfo(
-        uint256 tokenId, 
-        TokenInfo memory info 
-    ) 
-        internal
-    {
-        tokensInfo[tokenId].owner = info.owner;
-        tokensInfo[tokenId].currency = info.currency;
-        tokensInfo[tokenId].amount = info.amount;
-        tokensInfo[tokenId].onSaleUntil = info.onSaleUntil;
+            return;
+        }
+        uint256 seriesId = tokenId >> SERIES_BITS;
+        SeriesInfo memory seriesData = seriesInfo[seriesId];
+        if (seriesData.onSaleUntil > block.timestamp) {
+            success = true;
+            tokenOwner = seriesData.owner;
+            saleInfo = seriesData.saleInfo;
+        }
     }
       
     /**
@@ -696,9 +652,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _balances[from] -= 1;
         _balances[to] += 1;
         _owners[tokenId] = to;
-
-        // and change implementation of _transfer() to simply replace tokenInfo[tokenId].owner without calling setTokenInfo. 
-        tokensInfo[tokenId].owner = payable(to);
 
         emit Transfer(from, to, tokenId);
     }
