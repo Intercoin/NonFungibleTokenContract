@@ -213,11 +213,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         }
     }
 
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addrs) external onlyOwner {
-        uint256 len = addrs.length;
+    function mintAndDistribute(uint256[] memory tokenIds, address[] memory recipients, bool safe) external onlyOwner {
+        uint256 len = recipients.length;
         require(tokenIds.length == len, "lengths should be the same");
         for(uint256 i = 0; i < len; i++) {
-            _mint(addrs[i], tokenIds[i]);
+            if (safe) {
+                _safeMint(recipients[i], tokenIds[i]);
+            } else {
+                _mint(recipients[i], tokenIds[i]);
+            }
         }
     }
 
