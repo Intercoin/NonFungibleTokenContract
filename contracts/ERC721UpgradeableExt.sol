@@ -69,7 +69,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     struct SeriesInfo { 
-        address payable owner;
+        address payable author;
         SaleInfo saleInfo;
         uint256 limit;
         string baseURI; 
@@ -85,9 +85,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _;
     }
 
-    modifier onlyContractOrSeriesOwner(uint256 seriesId) {
+    modifier onlyOwnerOrAuthor(uint256 seriesId) {
         require(
-            seriesInfo[seriesId].owner == _msgSender() || 
+            seriesInfo[seriesId].author == _msgSender() || 
             owner() == _msgSender(), 
             "!onlyContractOrSeriesOwner"
         );
@@ -137,7 +137,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 seriesId, 
         SeriesInfo memory info 
     ) 
-        onlyContractOrSeriesOwner(seriesId)
+        onlyOwnerOrAuthor(seriesId)
         external
     {
         seriesInfo[seriesId] = info;
@@ -451,7 +451,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
                         seriesData.saleInfo.amount, 
                         seriesData.saleInfo.onSaleUntil
                     );
-                    owner = seriesData.owner;
+                    owner = seriesData.author;
                 }
             }
         } 

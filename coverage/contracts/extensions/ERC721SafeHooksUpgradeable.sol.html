@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/extensions/ERC721SafeHooksUpgradeable.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">contracts/extensions/</a> ERC721SafeHooksUpgradeable.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/17</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/4</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/6</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/17</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.0 (token/ERC721/extensions/ERC721Pausable.sol)
+&nbsp;
+pragma solidity ^0.8.0;
+&nbsp;
+import "../ERC721UpgradeableExt.sol";
+import "../interfaces/ISafeHook.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+&nbsp;
+/**
+* hold count of series hooks while token mint
+* if in further we would to remove hooks from the list, keep in mind that EnumerableSet does not keep order of items after removing
+*/
+abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721UpgradeableExt {
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+&nbsp;
+    // hooks 
+    //      SERIESID =&gt; address SET
+    mapping(uint256 =&gt; EnumerableSetUpgradeable.AddressSet) hooks;
+&nbsp;
+    // stored hookscount
+    //      tokenId     count
+    mapping (uint256  =&gt; uint256) public hooksCountByToken;
+&nbsp;
+    /**
+    * link safeHook contract to certain Series
+    * reverted if contract does not ISAfeHook interface
+    * @param seriesId series ID
+    * @param contractAddress address of SafeHook contract
+    */
+<span class="fstat-no" title="function not covered" >    function pushTokenTransferHook(</span>
+        uint256 seriesId, 
+        address contractAddress
+    )
+        public 
+        onlyOwner
+    {
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        try ISafeHook(contractAddress).supportsInterface(type(ISafeHook).interfaceId) returns (bool success) {</span>
+<span class="cstat-no" title="statement not covered" >            if (success) {</span>
+<span class="cstat-no" title="statement not covered" >                hooks[seriesId].add(contractAddress)</span>;
+            } else {
+<span class="cstat-no" title="statement not covered" >                revert("wrong interface")</span>;
+            }
+        } catch {
+<span class="cstat-no" title="statement not covered" >            revert("wrong interface")</span>;
+        }
+&nbsp;
+        
+    }
+&nbsp;
+    /**
+    * getting count of hooks for series with `seriesId`
+    * @param seriesId series ID
+    */
+<span class="fstat-no" title="function not covered" >    function hooksCount(</span>
+        uint256 seriesId
+    ) 
+        internal 
+        view 
+        returns(uint256) 
+    {
+<span class="cstat-no" title="statement not covered" >        return hooks[seriesId].length();</span>
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __ERC721SafeHook_init(string memory name_, string memory symbol_) internal initializer {</span>
+        //__Context_init_unchained();
+        // __ERC165_init_unchained();
+        // __Ownable_init();
+<span class="cstat-no" title="statement not covered" >        __ERC721_init_unchained(name_, symbol_)</span>;
+<span class="cstat-no" title="statement not covered" >        __ERC721SafeHook_init_unchained()</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function __ERC721SafeHook_init_unchained() internal initializer {</span>
+    }
+    /**
+     * @dev See {ERC721-_beforeTokenTransfer}.
+     *
+     * Requirements:
+     *
+     * - the contract must not be paused.
+     */
+<span class="fstat-no" title="function not covered" >    function _beforeTokenTransfer(</span>
+        address from,
+        address to,
+        uint256 tokenId
+    ) 
+        internal 
+        virtual 
+        override 
+    {
+<span class="cstat-no" title="statement not covered" >        uint256 seriesId = tokenId &gt;&gt; SERIES_BITS;</span>
+<span class="cstat-no" title="statement not covered" >        for (uint256 i = 0; i &lt; hooksCountByToken[tokenId]; i++) {</span>
+            //ISafeHooks(hooks[seriesId].at(i)).transferHook(from, to, tokenId);
+<span class="cstat-no" title="statement not covered" >            try ISafeHook(hooks[seriesId].at(i)).transferHook(from, to, tokenId) returns (bool success) {</span>
+<span class="cstat-no" title="statement not covered" >                if (!success) {</span>
+<span class="cstat-no" title="statement not covered" >                    revert("Transfer Not Authorized")</span>;
+                }
+            } catch {
+<span class="cstat-no" title="statement not covered" >                revert("Transfer Not Authorized")</span>;
+            }
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        super._beforeTokenTransfer(from, to, tokenId)</span>;
+&nbsp;
+        //require(!paused(), "ERC721Pausable: token transfer while paused");
+    }
+    /**
+    * overrode _mint.
+    * here we will remember count of series hooks in this moment. so further hooks will not apply for this token
+    */
+<span class="fstat-no" title="function not covered" >    function _mint(</span>
+        address to, 
+        uint256 tokenId
+    ) 
+        internal 
+        virtual 
+        override
+    {
+<span class="cstat-no" title="statement not covered" >        super._mint(to, tokenId)</span>;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        hooksCountByToken[tokenId] = hooks[tokenId &gt;&gt; SERIES_BITS].length()</span>;
+    }
+&nbsp;
+    uint256[50] private __gap;
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Fri Dec 10 2021 13:09:25 GMT+0300 (Moscow Standard Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>
