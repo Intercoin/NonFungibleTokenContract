@@ -20,7 +20,9 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 
     // stored hookscount
     //      tokenId     count
-    mapping (uint256  => uint256) public hooksCountByToken;
+    mapping (uint256 => uint256) public hooksCountByToken;
+
+    event NewHook(uint256 seriesId, address contractAddress);
 
     /**
     * link safeHook contract to certain Series
@@ -46,7 +48,23 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
             revert("wrong interface");
         }
 
-        
+        emit NewHook(seriesId, contractAddress);
+
+    }
+
+    function getHookList(
+        uint256 seriesId
+    ) 
+        external 
+        view 
+        returns(address[] memory) 
+    {
+        uint256 len = hooksCount(seriesId);
+        address[] memory allHooks = new address[](len);
+        for (uint256 i = 0; i < hooksCount(seriesId); i++) {
+            allHooks[i] = hooks[seriesId].at(i);
+        }
+        return allHooks;
     }
 
     /**
@@ -62,6 +80,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     {
         return hooks[seriesId].length();
     }
+
 
     function __ERC721SafeHook_init(string memory name_, string memory symbol_) internal initializer {
         //__Context_init_unchained();
@@ -91,7 +110,6 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     {
         uint256 seriesId = tokenId >> SERIES_BITS;
         for (uint256 i = 0; i < hooksCountByToken[tokenId]; i++) {
-            //ISafeHooks(hooks[seriesId].at(i)).transferHook(from, to, tokenId);
             try ISafeHook(hooks[seriesId].at(i)).transferHook(from, to, tokenId) returns (bool success) {
                 if (!success) {
                     revert("Transfer Not Authorized");
@@ -103,7 +121,6 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 
         super._beforeTokenTransfer(from, to, tokenId);
 
-        //require(!paused(), "ERC721Pausable: token transfer while paused");
     }
     /**
     * overrode _mint.
@@ -117,9 +134,8 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         virtual 
         override
     {
-        super._mint(to, tokenId);
-
         hooksCountByToken[tokenId] = hooks[tokenId >> SERIES_BITS].length();
+        super._mint(to, tokenId);
     }
 
     uint256[50] private __gap;
