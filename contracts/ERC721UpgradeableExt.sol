@@ -103,12 +103,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         bool transferSuccess;
         (transferSuccess, ) = owner.call{gas: 4000, value: data.amount}(new bytes(0));
-        require(transferSuccess, "refund ETH failed");
+        require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
 
         uint256 refund = msg.value - data.amount;
         if (refund > 0) {
             (transferSuccess, ) = msg.sender.call{gas: 4000, value: refund}(new bytes(0));
-            require(transferSuccess, "refund ETH failed");
+            require(transferSuccess, "REFUND_FAILED");
         }
 
         _buy(tokenId, exists, data, owner, safe);
