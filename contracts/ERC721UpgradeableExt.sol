@@ -183,13 +183,18 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         view
         returns (uint256[] memory ret)
     {
-        uint256 len = balanceOf(account);
-        if (len > 0) {
-            ret =  new uint256[](len);
-            for (uint256 i = 0; i < len; i++) {
-                ret[i] = _ownedTokens[account][i];
-            }
-        }
+        return _tokensByOwner(account, 0);
+    }
+
+    function tokensByOwner(
+        address account,
+        uint256 limit
+    ) 
+        external
+        view
+        returns (uint256[] memory ret)
+    {
+        return _tokensByOwner(account, limit);
     }
 
     function mintAndDistribute(uint256[] memory tokenIds, address[] memory addrs) external onlyOwner {
@@ -669,6 +674,25 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _tokenApprovals[tokenId] = to;
         emit Approval(ownerOf(tokenId), to, tokenId);
     }
+    
+    function _tokensByOwner(
+        address account,
+        uint256 limit
+    ) 
+        internal
+        view
+        returns (uint256[] memory ret)
+    {
+        uint256 len = balanceOf(account);
+        if (len > 0) {
+            len = (limit != 0 && limit < len) ? limit : len;
+            ret =  new uint256[](len);
+            for (uint256 i = 0; i < len; i++) {
+                ret[i] = _ownedTokens[account][i];
+            }
+        }
+    }
+
 
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
