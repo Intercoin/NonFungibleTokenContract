@@ -50,21 +50,23 @@ describe("NFT test", function () {
     const price = ethers.utils.parseEther('1');
     const now = Math.round(Date.now() / 1000);   
     const baseURI = "someURI";
-    const params = [
-      false,
-      alice.address, 
+    const saleParams = [
       ZERO_ADDRESS, 
       price, 
       now + 100000, 
+    ]
+    const params = [
+      alice.address, 
+      saleParams,
       10000,
       baseURI
     ];
     await this.nft.connect(owner).setSeriesInfo(seriesId, params);
     const seriesInfo = await this.nft.getSeriesInfo(seriesId);
     expect(seriesInfo.owner).to.be.equal(alice.address);
-    expect(seriesInfo.currency).to.be.equal(ZERO_ADDRESS);
-    expect(seriesInfo.amount).to.be.equal(price);
-    expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+    expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+    expect(seriesInfo.saleInfo.amount).to.be.equal(price);
+    expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
     expect(seriesInfo.baseURI).to.be.equal(baseURI);
     expect(seriesInfo.limit).to.be.equal(10000);
 
@@ -89,7 +91,7 @@ describe("NFT test", function () {
   //   await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
 
   //   await this.nft.connect(alice).listForSale(id, price, ZERO_ADDRESS, 100000);
-  //   const tokenInfo = await this.nft.getTokenInfo(id);
+  //   const tokenInfo = await this.nft.getSaleInfo(id);
   //   expect(tokenInfo.owner).to.be.equal(alice.address);
   //   expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
   //   expect(tokenInfo.amount).to.be.equal(price);
@@ -105,12 +107,14 @@ describe("NFT test", function () {
     const price = ethers.utils.parseEther('1');
     const now = Math.round(Date.now() / 1000);   
     const baseURI = "";
-    const seriesParams = [
-      false,
-      alice.address,  
+    const saleParams = [
       ZERO_ADDRESS, 
       price, 
       now + 100000, 
+    ]
+    const seriesParams = [
+      alice.address,  
+      saleParams,
       10000,
       baseURI
     ];
@@ -128,17 +132,16 @@ describe("NFT test", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
 
-      const tokenInfo = await this.nft.getTokenInfo(id);
-      expect(tokenInfo.owner).to.be.equal(bob.address);
-      expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(tokenInfo.amount).to.be.equal(ZERO);
-      expect(tokenInfo.onSaleUntil).to.be.equal(ZERO);
+      const saleInfo = await this.nft.getSaleInfo(id);
+      expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(saleInfo.amount).to.be.equal(ZERO);
+      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.getSeriesInfo(seriesId);
       expect(seriesInfo.owner).to.be.equal(alice.address);
-      expect(seriesInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(seriesInfo.amount).to.be.equal(price);
-      expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+      expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(seriesInfo.saleInfo.amount).to.be.equal(price);
+      expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
       expect(seriesInfo.baseURI).to.be.equal(baseURI);
       expect(seriesInfo.limit).to.be.equal(10000);
 
@@ -146,12 +149,14 @@ describe("NFT test", function () {
     });
   
     it("should correct mint NFT with token if ID doesn't exist", async() => {
-      const seriesParams = [
-        false,
-        alice.address, 
+      const saleParams = [
         this.erc20.address, 
         price, 
         now + 100000, 
+      ]
+      const seriesParams = [
+        alice.address, 
+        saleParams, 
         10000,
         baseURI
       ];
@@ -167,17 +172,16 @@ describe("NFT test", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
       
-      const tokenInfo = await this.nft.getTokenInfo(id);
-      expect(tokenInfo.owner).to.be.equal(bob.address);
-      expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(tokenInfo.amount).to.be.equal(ZERO);
-      expect(tokenInfo.onSaleUntil).to.be.equal(ZERO);
+      const saleInfo = await this.nft.getSaleInfo(id);
+      expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(saleInfo.amount).to.be.equal(ZERO);
+      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.getSeriesInfo(seriesId);
       expect(seriesInfo.owner).to.be.equal(alice.address);
-      expect(seriesInfo.currency).to.be.equal(this.erc20.address);
-      expect(seriesInfo.amount).to.be.equal(price);
-      expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+      expect(seriesInfo.saleInfo.currency).to.be.equal(this.erc20.address);
+      expect(seriesInfo.saleInfo.amount).to.be.equal(price);
+      expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
       expect(seriesInfo.baseURI).to.be.equal(baseURI);
       expect(seriesInfo.limit).to.be.equal(10000);
 
@@ -186,14 +190,13 @@ describe("NFT test", function () {
 
     it("should correct buy minted NFT for ETH", async() => {
       await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
-      const tokenParams = [
-        bob.address, 
+      const saleParams = [
         ZERO_ADDRESS, 
         price.mul(TWO), 
         now + 100000,
       ];      
 
-      await this.nft.connect(bob).setTokenInfo(id, tokenParams);
+      await this.nft.connect(bob).setSaleInfo(id, saleParams);
 
       const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
       const balanceBeforeCharlie = await ethers.provider.getBalance(charlie.address);
@@ -206,17 +209,16 @@ describe("NFT test", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(charlie.address);
 
-      const tokenInfo = await this.nft.getTokenInfo(id);
-      expect(tokenInfo.owner).to.be.equal(charlie.address);
-      expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(tokenInfo.amount).to.be.equal(price.mul(TWO));
-      expect(tokenInfo.onSaleUntil).to.be.equal(ZERO);
+      const saleInfo = await this.nft.getSaleInfo(id);
+      expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(saleInfo.amount).to.be.equal(price.mul(TWO));
+      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.getSeriesInfo(seriesId);
       expect(seriesInfo.owner).to.be.equal(alice.address);
-      expect(seriesInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(seriesInfo.amount).to.be.equal(price);
-      expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+      expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(seriesInfo.saleInfo.amount).to.be.equal(price);
+      expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
       expect(seriesInfo.baseURI).to.be.equal(baseURI);
       expect(seriesInfo.limit).to.be.equal(10000);
 
@@ -224,14 +226,13 @@ describe("NFT test", function () {
 
     it("should correct buy minted NFT for token", async() => {
       await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
-      const tokenParams = [
-        bob.address, 
+      const saleParams = [
         this.erc20.address, 
         price.mul(TWO), 
         now + 100000,
       ];      
 
-      await this.nft.connect(bob).setTokenInfo(id, tokenParams);
+      await this.nft.connect(bob).setSaleInfo(id, saleParams);
 
       const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
       const balanceBeforeCharlie = await this.erc20.balanceOf(charlie.address);
@@ -245,29 +246,30 @@ describe("NFT test", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(charlie.address);
 
-      const tokenInfo = await this.nft.getTokenInfo(id);
-      expect(tokenInfo.owner).to.be.equal(charlie.address);
-      expect(tokenInfo.currency).to.be.equal(this.erc20.address);
-      expect(tokenInfo.amount).to.be.equal(price.mul(TWO));
-      expect(tokenInfo.onSaleUntil).to.be.equal(ZERO);
+      const saleInfo = await this.nft.getSaleInfo(id);
+      expect(saleInfo.currency).to.be.equal(this.erc20.address);
+      expect(saleInfo.amount).to.be.equal(price.mul(TWO));
+      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.getSeriesInfo(seriesId);
       expect(seriesInfo.owner).to.be.equal(alice.address);
-      expect(seriesInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(seriesInfo.amount).to.be.equal(price);
-      expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+      expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(seriesInfo.saleInfo.amount).to.be.equal(price);
+      expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
       expect(seriesInfo.baseURI).to.be.equal(baseURI);
       expect(seriesInfo.limit).to.be.equal(10000);
 
     });
 
     it("should correct mint NFT from own series", async() => {
-      const seriesParams = [
-        false,
-        alice.address, 
+      const saleParams = [
         this.erc20.address, 
         price, 
-        now + 100000,
+        now + 100000, 
+      ]
+      const seriesParams = [
+        alice.address,  
+        saleParams,
         10000,
         baseURI
       ];
@@ -295,12 +297,14 @@ describe("NFT test", function () {
     })
 
     it("shouldnt mint if series was unlisted from sale", async() => {
-      const seriesParams = [
-        false,
-        alice.address, 
+      const saleParams = [
         this.erc20.address, 
         price, 
-        ZERO,
+        ZERO, 
+      ]
+      const seriesParams = [
+        alice.address,  
+        saleParams,
         10000,
         baseURI
       ];
@@ -313,37 +317,42 @@ describe("NFT test", function () {
     })
 
     it("shouldnt set token info if not owner", async() => {   
-      const tokenParams = [
-        bob.address, 
+      const saleParams = [
         ZERO_ADDRESS, 
         price.mul(TWO), 
         now + 100000,
       ];   
-      await expect(this.nft.connect(charlie).setTokenInfo(id, tokenParams)).to.be.revertedWith("can call only by owner");
+      await expect(this.nft.connect(charlie).setSaleInfo(id, saleParams)).to.be.revertedWith("can call only by owner");
     })
 
     it("shouldnt buy if user approved unsufficient token amount", async() => {
-      const seriesParams = [
-        false,
-        alice.address, 
+      const saleParams = [
         this.erc20.address, 
         price, 
         now + 100000, 
+      ]
+      const seriesParams = [
+        alice.address,  
+        saleParams,
         10000,
         baseURI
       ];
+
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
       await this.erc20.connect(charlie).approve(this.nft.address, price.sub(ONE));
       await expect(this.nft.connect(charlie)["buy(uint256,address,uint256)"](id, this.erc20.address, price)).to.be.revertedWith("insufficient amount");
     })
 
     it("shouldnt buy if user passed unsufficient token amount", async() => {
-      const seriesParams = [
-        false,
-        alice.address, 
+
+      const saleParams = [
         this.erc20.address, 
         price, 
         now + 100000, 
+      ]
+      const seriesParams = [
+        alice.address,  
+        saleParams,
         10000,
         baseURI
       ];
@@ -353,12 +362,14 @@ describe("NFT test", function () {
     })
 
     it("shouldnt buy if token is invalid", async() => {
-      const seriesParams = [
-        false,
-        alice.address, 
+      const saleParams = [
         this.erc20.address, 
         price, 
         now + 100000, 
+      ]
+      const seriesParams = [
+        alice.address,  
+        saleParams,
         10000,
         baseURI
       ];
@@ -374,12 +385,11 @@ describe("NFT test", function () {
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
       await this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration);
-      const tokenInfo = await this.nft.getTokenInfo(id);
-      expect(tokenInfo.owner).to.be.equal(bob.address);
-      expect(tokenInfo.currency).to.be.equal(newCurrency);
-      expect(tokenInfo.amount).to.be.equal(newPrice);
+      const saleInfo = await this.nft.getSaleInfo(id);
+      expect(saleInfo.currency).to.be.equal(newCurrency);
+      expect(saleInfo.amount).to.be.equal(newPrice);
       const lastTs = await time.latest();
-      expect(tokenInfo.onSaleUntil).to.be.equal(+lastTs.toString() + duration);
+      expect(saleInfo.onSaleUntil).to.be.equal(+lastTs.toString() + duration);
 
     })
 
@@ -441,15 +451,7 @@ describe("NFT test", function () {
       expect(await this.nft.ownerOf(id1)).to.be.equal(alice.address);
       expect(await this.nft.ownerOf(id2)).to.be.equal(bob.address);
       expect(await this.nft.ownerOf(id3)).to.be.equal(charlie.address);
-      
-      const tokenInfo1 = await this.nft.getTokenInfo(id1);
-      const tokenInfo2 = await this.nft.getTokenInfo(id2);
-      const tokenInfo3 = await this.nft.getTokenInfo(id3);
-
-      expect(tokenInfo1.owner).to.be.equal(alice.address);
-      expect(tokenInfo2.owner).to.be.equal(bob.address);
-      expect(tokenInfo3.owner).to.be.equal(charlie.address);
-       
+             
     })
 
     it("shouldnt mint tokens via mintAndDistribute if lengths are not the same ", async() => {
@@ -463,40 +465,44 @@ describe("NFT test", function () {
 
     })
 
-    it("should correct call setTokenInfo as an owner of series", async() => {
+    it("should correct call setSaleInfo as an owner of series", async() => {
       const newLimit = 11000;
-      const newParams = [
-        false,
-        alice.address, 
+      const saleParams = [
         ZERO_ADDRESS, 
         price, 
         now + 100000, 
+      ]
+      const newParams = [
+        alice.address,  
+        saleParams,
         newLimit,
         baseURI
       ];
       await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
       const seriesInfo = await this.nft.getSeriesInfo(seriesId);
       expect(seriesInfo.owner).to.be.equal(alice.address);
-      expect(seriesInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(seriesInfo.amount).to.be.equal(price);
-      expect(seriesInfo.onSaleUntil).to.be.equal(now + 100000);
+      expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(seriesInfo.saleInfo.amount).to.be.equal(price);
+      expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
       expect(seriesInfo.baseURI).to.be.equal(baseURI);
       expect(seriesInfo.limit).to.be.equal(newLimit);
   
     })
 
-    it("shouldnt call setTokenInfo as an owner of series", async() => {
+    it("shouldnt call setSaleInfo as an owner of series", async() => {
       await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyContractOrSeriesOwner');
 
     })
 
     it("shouldnt let buy for ETH if token currency specified", async() => {
-      const seriesParams = [
-        false,
-        alice.address, 
+      const saleParams = [
         this.erc20.address, 
         price, 
         now + 100000, 
+      ]
+      const seriesParams = [
+        alice.address,  
+        saleParams,
         10000,
         baseURI
       ];
@@ -528,7 +534,7 @@ describe("NFT test", function () {
 // UNIT TESTS:
 // balanceOf()
 // ownerOf()
-// setTokenInfo()
+// setSaleInfo()
 // setSeriesInfo()
 // listOnSale
 

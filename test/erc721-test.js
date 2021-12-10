@@ -38,15 +38,17 @@ describe("ERC721UpgradeableExt test", function () {
     const now = Math.round(Date.now() / 1000);   
     const baseURI = "someURI";
     const limit = BigNumber.from('10000');
-    const seriesParams = [
-      false,
-      owner.address,  
-      ZERO_ADDRESS, 
-      price, 
-      now + 100000, 
-      limit,
-      baseURI
-    ];
+    const saleParams = [
+        ZERO_ADDRESS, 
+        price, 
+        now + 100000, 
+      ]
+      const seriesParams = [
+        alice.address,  
+        saleParams,
+        10000,
+        baseURI
+      ];
 
     beforeEach("deploying", async() => {
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
@@ -79,8 +81,6 @@ describe("ERC721UpgradeableExt test", function () {
             expect(nftBalanceAfterAlice).to.be.equal(ZERO);
             expect(nftBalanceAfterBob).to.be.equal(ONE);
             expect(await this.nft.ownerOf(id)).to.be.equal(bob.address);
-            const tokenInfo = await this.nft.getTokenInfo(id);
-            expect(tokenInfo.owner).to.be.equal(bob.address);
 
         })
 
@@ -97,8 +97,6 @@ describe("ERC721UpgradeableExt test", function () {
             expect(nftBalanceAfterAlice).to.be.equal(ZERO);
             expect(nftBalanceAfterBob).to.be.equal(ONE);
             expect(await this.nft.ownerOf(id)).to.be.equal(bob.address);
-            const tokenInfo = await this.nft.getTokenInfo(id);
-            expect(tokenInfo.owner).to.be.equal(bob.address);
 
         })
 
@@ -115,8 +113,6 @@ describe("ERC721UpgradeableExt test", function () {
             expect(nftBalanceAfterAlice).to.be.equal(ZERO);
             expect(nftBalanceAfterBob).to.be.equal(ONE);
             expect(await this.nft.ownerOf(id)).to.be.equal(bob.address);
-            const tokenInfo = await this.nft.getTokenInfo(id);
-            expect(tokenInfo.owner).to.be.equal(bob.address);
 
         })
 
@@ -126,8 +122,6 @@ describe("ERC721UpgradeableExt test", function () {
             await this.nft.connect(alice).burn(id);
             expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ONE);
             expect(await this.nft.ownerOf(id)).to.be.equal(DEAD_ADDRESS);
-            const tokenInfo = await this.nft.getTokenInfo(id);
-            expect(tokenInfo.owner).to.be.equal(DEAD_ADDRESS);
         })
 
         it('shouldnt transfer token if not owner', async() => {
