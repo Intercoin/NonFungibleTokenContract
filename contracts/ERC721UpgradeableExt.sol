@@ -94,7 +94,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _;
     }
 
-    function buy(uint256 tokenId, bool safe) external payable nonReentrant() {
+    function buy(uint256 tokenId, bool safe) public payable nonReentrant() {
         //validateTokenId(tokenId);
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
@@ -114,7 +114,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _buy(tokenId, exists, data, owner, safe);
     }
 
-    function buy(uint256 tokenId, address token, uint256 amount, bool safe) external nonReentrant() {
+    function buy(uint256 tokenId, address token, uint256 amount, bool safe) public nonReentrant() {
         //validateTokenId(tokenId);
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");

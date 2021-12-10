@@ -24,12 +24,26 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 
     event NewHook(uint256 seriesId, address contractAddress);
 
+    function buy(uint256 tokenId, bool safe, uint256 hookNumber) external payable {
+        uint256 seriesId = tokenId >> SERIES_BITS;
+        require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
+        super.buy(tokenId, safe);
+    }
+
+    function buy(uint256 tokenId, address token, uint256 amount, bool safe, uint256 hookNumber) external payable {
+        uint256 seriesId = tokenId >> SERIES_BITS;
+        require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
+        super.buy(tokenId, token, amount, safe);
+    }
+
+
     /**
     * link safeHook contract to certain Series
     * reverted if contract does not ISAfeHook interface
     * @param seriesId series ID
     * @param contractAddress address of SafeHook contract
     */
+    
     function pushTokenTransferHook(
         uint256 seriesId, 
         address contractAddress
