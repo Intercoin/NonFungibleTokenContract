@@ -38,8 +38,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     // Mapping from owner to operator approvals
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
-    // Optional mapping for token URIs
-    //mapping(uint256 => string) private _tokenURIs;
+    // suffix tokenURI
+    string private _suffixURIs;
 
     // Mapping from owner to list of owned token IDs
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
@@ -296,11 +296,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         // If there is no base URI, return the token URI.
         if (bytes(base).length == 0) {
-            return _tokenURI;
+            return  string(abi.encodePacked(_tokenURI));
         }
         // If both are set, concatenate the baseURI and tokenURI (via abi.encodePacked).
         if (bytes(_tokenURI).length > 0) {
-            return string(abi.encodePacked(base, _tokenURI));
+            return string(abi.encodePacked(base, _tokenURI, _suffixURIs));
         }
         return "";
 
@@ -478,6 +478,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function __ERC721_init_unchained(string memory name_, string memory symbol_) internal initializer {
         _name = name_;
         _symbol = symbol_;
+        _suffixURIs = ".json";
     }
 
 

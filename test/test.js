@@ -524,9 +524,9 @@ describe("NFT test", function () {
     })
 
     it("should correct list tokens of user with output limit", async() => {
-      await this.nft.connect(bob)["buy(uint256)"](id, {value: price});
-      await this.nft.connect(bob)["buy(uint256)"](id.add(ONE), {value: price});
-      await this.nft.connect(bob)["buy(uint256)"](id.add(TWO), {value: price});
+      await this.nft.connect(bob)["buy(uint256,bool)"](id, false, {value: price});
+      await this.nft.connect(bob)["buy(uint256,bool)"](id.add(ONE), false, {value: price});
+      await this.nft.connect(bob)["buy(uint256,bool)"](id.add(TWO), false, {value: price});
       const limit = ONE;
       const bobTokens = await this.nft.connect(bob)["tokensByOwner(address,uint256)"](bob.address,limit);
       expect(bobTokens[0]).to.be.equal(id);
