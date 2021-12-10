@@ -71,7 +71,7 @@ describe("ERC721UpgradeableExt test", function () {
     describe('transfer tests', async() => {
         it('check name, symbol and tokenURI', async() => {
             await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
-            expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toString()));
+            expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toString()).concat(".json"));
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");
         })
