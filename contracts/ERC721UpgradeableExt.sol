@@ -93,14 +93,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         );
         _;
     }
-    // moved initialize to presets
-    // function initialize(string memory name_, string memory symbol_) public initializer {
-    //     __Ownable_init();
-    //     __ReentrancyGuard_init();
-    //     __ERC721_init(name_, symbol_);
-    // }
 
-    function buy(uint256 tokenId) external payable nonReentrant() {
+    function buy(uint256 tokenId, bool safe) external payable nonReentrant() {
         //validateTokenId(tokenId);
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
@@ -117,10 +111,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             require(transferSuccess, "refund ETH failed");
         }
 
-        _buy(tokenId, exists, data, owner);
+        _buy(tokenId, exists, data, owner, safe);
     }
 
-    function buy(uint256 tokenId, address token, uint256 amount) external nonReentrant() {
+    function buy(uint256 tokenId, address token, uint256 amount, bool safe) external nonReentrant() {
         //validateTokenId(tokenId);
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
@@ -129,7 +123,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(allowance >= data.amount && amount >= data.amount, "insufficient amount");
         IERC20Upgradeable(data.currency).transferFrom(_msgSender(), owner, data.amount);
 
-        _buy(tokenId, exists, data, owner);
+        _buy(tokenId, exists, data, owner, safe);
     }
 
 
@@ -400,12 +394,20 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _burn(tokenId);
     }
 
-    function _buy(uint256 tokenId, bool exists, SaleInfo memory data, address owner) internal {
+    function _buy(uint256 tokenId, bool exists, SaleInfo memory data, address owner, bool safe) internal {
         if (exists) {
-            _transfer(owner, _msgSender(), tokenId);
+            if (safe) {
+                _safeTransfer(owner, _msgSender(), tokenId, new bytes(0));
+            } else {
+                _transfer(owner, _msgSender(), tokenId);
+            }
             salesInfo[tokenId].onSaleUntil = 0;
         } else {
-            _mint(_msgSender(), tokenId);
+            if (safe) {
+                _safeMint(_msgSender(), tokenId);
+            } else {
+                _mint(_msgSender(), tokenId);
+            }
             emit Transfer(owner, _msgSender(), tokenId);
         }
         emit Bought(tokenId, data.currency, data.amount);

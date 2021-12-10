@@ -64,13 +64,13 @@ describe("ERC721UpgradeableExt test", function () {
 
     describe('transfer tests', async() => {
         it('check name, symbol and tokenURI', async() => {
-            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id, false, {value: price}); 
             expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toString()));
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");
         })
         it('should transfer token to user', async() => {
-            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id, false, {value: price}); 
             const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
             const nftBalanceBeforeBob = await this.nft.balanceOf(bob.address);
             expect(nftBalanceBeforeAlice).to.be.equal(ONE);
@@ -85,7 +85,7 @@ describe("ERC721UpgradeableExt test", function () {
         })
 
         it('should transfer token to user via approve', async() => {
-            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id, false, {value: price}); 
             const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
             const nftBalanceBeforeBob = await this.nft.balanceOf(bob.address);
             expect(nftBalanceBeforeAlice).to.be.equal(ONE);
@@ -101,7 +101,7 @@ describe("ERC721UpgradeableExt test", function () {
         })
 
         it('should transfer token to user via operator', async() => {
-            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id, false, {value: price}); 
             const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
             const nftBalanceBeforeBob = await this.nft.balanceOf(bob.address);
             expect(nftBalanceBeforeAlice).to.be.equal(ONE);
@@ -117,7 +117,7 @@ describe("ERC721UpgradeableExt test", function () {
         })
 
         it('should correct burn token', async() => {
-            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id, false, {value: price}); 
             expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ZERO);
             await this.nft.connect(alice).burn(id);
             expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ONE);
@@ -125,18 +125,18 @@ describe("ERC721UpgradeableExt test", function () {
         })
 
         it('shouldnt transfer token if not owner', async() => {
-            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id, false, {value: price}); 
             await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
         })
         it('shouldnt transfer token on zero address', async() => {
-            await this.nft.connect(alice)["buy(uint256)"](id, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id, false, {value: price}); 
             await expect(this.nft.connect(alice).transferFrom(alice.address, ZERO_ADDRESS, id)).to.be.revertedWith("ERC721: transfer to the zero address");
         })
 
         it('should correct get token of owner by index', async() => {
-            await this.nft.connect(bob)["buy(uint256)"](id, {value: price}); 
-            await this.nft.connect(bob)["buy(uint256)"](id.add(TEN), {value: price}); 
-            await this.nft.connect(bob)["buy(uint256)"](id.add(HUN), {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,bool)"](id, false, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,bool)"](id.add(TEN), false, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,bool)"](id.add(HUN), false, {value: price}); 
             const token1 = await this.nft.tokenOfOwnerByIndex(bob.address, ZERO);
             const token2 = await this.nft.tokenOfOwnerByIndex(bob.address, ONE);
             const token3 = await this.nft.tokenOfOwnerByIndex(bob.address, TWO);
@@ -145,18 +145,18 @@ describe("ERC721UpgradeableExt test", function () {
             expect(token3).to.be.equal(id.add(HUN));
         })
         it('should correct get totalSupply', async() => {
-            await this.nft.connect(bob)["buy(uint256)"](id, {value: price}); 
-            await this.nft.connect(bob)["buy(uint256)"](id.add(TEN), {value: price}); 
-            await this.nft.connect(bob)["buy(uint256)"](id.add(HUN), {value: price}); 
-            await this.nft.connect(alice)["buy(uint256)"](id.add(TWO), {value: price}); 
-            await this.nft.connect(charlie)["buy(uint256)"](id.add(HUN.add(TEN)), {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,bool)"](id, false, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,bool)"](id.add(TEN), false, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,bool)"](id.add(HUN), false, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id.add(TWO), false, {value: price}); 
+            await this.nft.connect(charlie)["buy(uint256,bool)"](id.add(HUN.add(TEN)), false, {value: price}); 
             const totalSupply = await this.nft.totalSupply();
             expect(totalSupply).to.be.equal(FIVE);
         })
         it('should correct get tokan by index', async() => {
-            await this.nft.connect(bob)["buy(uint256)"](id, {value: price}); 
-            await this.nft.connect(alice)["buy(uint256)"](id.add(ONE), {value: price}); 
-            await this.nft.connect(charlie)["buy(uint256)"](id.add(TWO), {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,bool)"](id, false, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,bool)"](id.add(ONE), false, {value: price}); 
+            await this.nft.connect(charlie)["buy(uint256,bool)"](id.add(TWO), false, {value: price}); 
             const token1 = await this.nft.tokenByIndex(ZERO);
             const token2 = await this.nft.tokenByIndex(ONE);
             const token3 = await this.nft.tokenByIndex(TWO);
@@ -165,7 +165,6 @@ describe("ERC721UpgradeableExt test", function () {
             expect(token3).to.be.equal(id.add(TWO));
         })
     })
-
   
   
 
