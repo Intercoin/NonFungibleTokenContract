@@ -16,7 +16,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 
     // hooks 
     //      SERIESID => address SET
-    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) hooks;
+    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) internal hooks;
 
     // stored hookscount
     //      tokenId     count
@@ -30,12 +30,11 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         super.buy(tokenId, safe);
     }
 
-    function buy(uint256 tokenId, address token, uint256 amount, bool safe, uint256 hookNumber) external payable {
+    function buy(uint256 tokenId, address token, uint256 amount, bool safe, uint256 hookNumber) external {
         uint256 seriesId = tokenId >> SERIES_BITS;
         require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
         super.buy(tokenId, token, amount, safe);
     }
-
 
     /**
     * link safeHook contract to certain Series
@@ -43,7 +42,6 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * @param seriesId series ID
     * @param contractAddress address of SafeHook contract
     */
-    
     function pushTokenTransferHook(
         uint256 seriesId, 
         address contractAddress
@@ -66,6 +64,10 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 
     }
 
+    /**
+    * getting list of hooks for series with `seriesId`
+    * @param seriesId seriesId
+    */
     function getHookList(
         uint256 seriesId
     ) 
@@ -95,17 +97,14 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         return hooks[seriesId].length();
     }
 
-
+    /**
+    * @param name_ name 
+    * @param symbol_ symbol 
+    */
     function __ERC721SafeHook_init(string memory name_, string memory symbol_) internal initializer {
-        //__Context_init_unchained();
-        // __ERC165_init_unchained();
-        // __Ownable_init();
-        __ERC721_init_unchained(name_, symbol_);
-        __ERC721SafeHook_init_unchained();
+        __ERC721_init(name_, symbol_);
     }
 
-    function __ERC721SafeHook_init_unchained() internal initializer {
-    }
     /**
      * @dev See {ERC721-_beforeTokenTransfer}.
      *
@@ -124,7 +123,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     {
         uint256 seriesId = tokenId >> SERIES_BITS;
         for (uint256 i = 0; i < hooksCountByToken[tokenId]; i++) {
-            try ISafeHook(hooks[seriesId].at(i)).transferHook(from, to, tokenId) returns (bool success) {
+            try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId) returns (bool success) {
                 if (!success) {
                     revert("Transfer Not Authorized");
                 }
@@ -148,9 +147,31 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         virtual 
         override
     {
-        hooksCountByToken[tokenId] = hooks[tokenId >> SERIES_BITS].length();
+        _storeHookCount(tokenId);
         super._mint(to, tokenId);
     }
 
-    uint256[50] private __gap;
+    function _buy(
+        uint256 tokenId, 
+        bool exists, 
+        SaleInfo memory data, 
+        address owner, 
+        bool safe
+    ) 
+        internal 
+        override 
+    {
+        _storeHookCount(tokenId);
+        super._buy(tokenId, exists, data, owner, safe);
+        
+    }
+
+    function _storeHookCount(
+        uint256 tokenId
+    )
+        internal
+    {
+        hooksCountByToken[tokenId] = hooks[tokenId >> SERIES_BITS].length();
+    }
+
 }
