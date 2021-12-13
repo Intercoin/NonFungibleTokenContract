@@ -152,5 +152,4 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         super._mint(to, tokenId);
     }
 
-    uint256[50] private __gap;
 }
