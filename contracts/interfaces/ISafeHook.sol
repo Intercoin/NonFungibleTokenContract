@@ -4,5 +4,5 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
 
 interface ISafeHook is IERC165Upgradeable {
-    function transferHook(address from, address to, uint256 tokenId) external returns(bool success);
+    function executeHook(address from, address to, uint256 tokenId) external returns(bool success);
 }

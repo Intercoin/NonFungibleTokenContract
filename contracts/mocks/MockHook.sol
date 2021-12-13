@@ -8,7 +8,7 @@ contract MockHook is SafeHook {
 
     uint256 public numberOfCalls;
 
-    function transferHook(address from, address to, uint256 tokenId) external override returns(bool success) {
+    function executeHook(address from, address to, uint256 tokenId) external override returns(bool success) {
         numberOfCalls++;
         return true;
     }

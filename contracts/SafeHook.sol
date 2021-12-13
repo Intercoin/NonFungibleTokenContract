@@ -16,8 +16,6 @@ abstract contract SafeHook is ERC165Upgradeable, ISafeHook {
         return interfaceId == type(ISafeHook).interfaceId;
     }
 
-    // function transferHook(address from, address to, uint256 tokenId) external override returns(bool success) {
-    //     revert("need to overrode");
-    // }
+    function executeHook(address from, address to, uint256 tokenId) external virtual override returns(bool success);
 
 }
