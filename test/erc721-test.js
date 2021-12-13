@@ -245,6 +245,7 @@ describe("ERC721UpgradeableExt test", function () {
             await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
             await expect(this.nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, this.erc20.address, id)).to.be.revertedWith("ERC721: transfer to non ERC721Receiver implementer");
         })
+
         
     })
   

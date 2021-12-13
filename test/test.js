@@ -33,14 +33,24 @@ describe("NFT test", function () {
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
         const NFTFactory = await ethers.getContractFactory("NFTSafeHook");
         const HookFactory = await ethers.getContractFactory("MockHook");
+        const BadHookFactory = await ethers.getContractFactory("MockBadHook");
+        const FalseHookFactory = await ethers.getContractFactory("MockFalseHook");
+        const NotSupportingHookFactory = await ethers.getContractFactory("MockNotSupportingHook");
+        const WithoutFunctionHookFactory = await ethers.getContractFactory("MockWithoutFunctionHook");
         const BuyerFactory = await ethers.getContractFactory("Buyer");
+        const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.hook1 = await HookFactory.deploy();
         this.hook2 = await HookFactory.deploy();
         this.hook3 = await HookFactory.deploy();
+        this.badHook = await BadHookFactory.deploy();
+        this.falseHook = await FalseHookFactory.deploy();
+        this.notSupportingHook = await NotSupportingHookFactory.deploy();
+        this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
         const retval = '0x150b7a02';
         const error = ZERO;
         this.buyer = await BuyerFactory.deploy(retval, error);
+        this.badBuyer = await BadBuyerFactory.deploy();
         this.nft = await NFTFactory.deploy();
         await this.nft.connect(owner).initialize("NFT Edition", "NFT");
 
@@ -498,6 +508,26 @@ describe("NFT test", function () {
   
     })
 
+    it("shouldnt buy if limit exceeded", async() => {
+      const newLimit = TWO;
+      const saleParams = [
+        ZERO_ADDRESS, 
+        price, 
+        now + 100000, 
+      ]
+      const newParams = [
+        alice.address,  
+        saleParams,
+        newLimit,
+        baseURI
+      ];
+      await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
+      await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id.add(ONE), false, ZERO, {value: price});
+      await expect(this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price})).to.be.revertedWith("exceed series limit");
+  
+    })
+
     it("shouldnt call setSaleInfo as an owner of series", async() => {
       await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyContractOrSeriesOwner');
 
@@ -529,6 +559,21 @@ describe("NFT test", function () {
       expect(bobTokens[1]).to.be.equal(id.add(ONE));
       expect(bobTokens[2]).to.be.equal(id.add(TWO));
 
+    })
+
+    it("shouldn correct list null tokens if there is ", async() => {
+      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(ONE), false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price});
+      const bobTokens = await this.nft.connect(bob)["tokensByOwner(address)"](bob.address);
+      expect(bobTokens[0]).to.be.equal(id);
+      expect(bobTokens[1]).to.be.equal(id.add(ONE));
+      expect(bobTokens[2]).to.be.equal(id.add(TWO));
+    })
+
+    it("shouldn correct list null tokens if there is ", async() => {
+      const bobTokens = await this.nft.connect(bob)["tokensByOwner(address)"](bob.address);
+      expect(bobTokens.length).to.be.equal(0);
     })
 
     it("should correct list tokens of user with output limit", async() => {
@@ -586,6 +631,24 @@ describe("NFT test", function () {
         await expect(this.nft.connect(bob)["buy(uint256,address,uint256,bool,uint256)"](id, this.erc20.address, price, false, ONE)).to.be.revertedWith("wrong hookNumber");
       })
 
+      it("shouldn't buy if hook reverts", async() => {
+        await this.nft.pushTokenTransferHook(seriesId, this.badHook.address);
+        await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price})).to.be.revertedWith("Transfer Not Authorized");
+      })
+
+      it("shouldn't buy if hook returns false", async() => {
+        await this.nft.pushTokenTransferHook(seriesId, this.falseHook.address);
+        await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price})).to.be.revertedWith("Transfer Not Authorized");
+      })
+
+      it("shouldn't buy if hook doesn't supports interface", async() => {
+        await expect(this.nft.pushTokenTransferHook(seriesId, this.withoutFunctionHook.address)).to.be.revertedWith("wrong interface");
+      })
+
+      it("shouldn't buy if hook's supportInterface function returns false", async() => {
+        await expect(this.nft.pushTokenTransferHook(seriesId, this.notSupportingHook.address)).to.be.revertedWith("wrong interface");
+      })
+
       it("should correct set several hooks", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
         await this.nft.pushTokenTransferHook(seriesId, this.hook2.address);
@@ -622,7 +685,8 @@ describe("NFT test", function () {
 
       })
 
-    })
+    });
+
 
     describe("safe buy tests with contract ", async() => {
       it("should correct safe buy for contract", async() => {
@@ -637,6 +701,10 @@ describe("NFT test", function () {
         await this.buyer.buy(this.nft.address, id, true, ZERO, {value: price});
         expect(await this.nft.balanceOf(this.buyer.address)).to.be.equal(ONE);
         expect(await this.nft.ownerOf(id)).to.be.equal(this.buyer.address);
+      })
+
+      it("shouldnt safe buy for bad contract", async() => {
+        await expect(this.badBuyer.buy(this.nft.address, id, true, ZERO, {value: price})).to.be.revertedWith("ERC721: transfer to non ERC721Receiver implementer");
       })
 
     })
