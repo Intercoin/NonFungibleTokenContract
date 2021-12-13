@@ -75,6 +75,12 @@ describe("ERC721UpgradeableExt test", function () {
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");
         })
+        it('check name and symbol after owner set', async() => {
+            await expect(this.nft.connect(alice).setNameAndSymbol("NEW NFT Edition", "NEW NFT")).to.be.revertedWith("Ownable: caller is not the owner");
+            await this.nft.connect(owner).setNameAndSymbol("NEW NFT Edition", "NEW NFT"); 
+            expect(await this.nft.name()).to.be.equal("NEW NFT Edition");
+            expect(await this.nft.symbol()).to.be.equal("NEW NFT");
+        })
         it('should transfer token to user', async() => {
             await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
             const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
