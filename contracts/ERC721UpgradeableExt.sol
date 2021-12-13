@@ -316,6 +316,17 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         return _symbol;
     }
 
+    function setNameAndSymbol(
+        string memory newName, 
+        string memory newSymbol
+    ) 
+        public 
+        onlyOwner 
+    {
+        _name = newName;
+        _symbol = newSymbol;
+    }
+
     /**
      * @dev See {IERC721Metadata-tokenURI}.
      */
@@ -337,6 +348,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         // return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
     }
+
 
     /**
      * @dev See {IERC721-approve}.
