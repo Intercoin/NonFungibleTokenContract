@@ -51,9 +51,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 internal constant SERIES_BITS = 192;
     uint256 internal constant DEFAULT_SERIES_ID = 0;
+    uint256 internal constant FRACTION = 100000;
     
     mapping (uint256 => SaleInfo) public salesInfo;  // tokenId => saleInfo
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => seriesInfo
+    CommissionInfo internal commissionsInfo;  // seriesId => commissionsInfo
 
     mapping(uint256 => uint256) public mintedCountBySeries;
     
@@ -62,13 +64,24 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 price;
         uint256 onSaleUntil; 
     }
+    
+    struct CommissionInfo {
+        uint256 maxValue;
+        uint256 minValue;
+        CommissionData defaultValues;
+        mapping (uint256 => CommissionData) fractions;  // seriesId => CommissionData
+    }
+
+    struct CommissionData {
+        uint256 value;
+        address recipient;
+    }
 
     struct SeriesInfo { 
         address payable author;
         SaleInfo saleInfo;
         uint256 limit;
         string baseURI; 
-        
     }
 
     event SeriesPutOnSale(
@@ -127,7 +140,17 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(address(0) == data.currency, "wrong currency for sale");
 
         bool transferSuccess;
-        (transferSuccess, ) = owner.call{gas: 3000, value: data.price}(new bytes(0));
+        uint256 left = data.price;
+
+        // pay commissions (if exists)
+        (address[] memory addresses, uint256[] memory values) = calculateCommissions(tokenId, data.price);
+        for(uint256 i = 0; i < addresses.length; i++) {
+            (transferSuccess, ) = addresses[i].call{gas: 3000, value: values[i]}(new bytes(0));
+            require(transferSuccess, "TRANSFER_COMMISSION_FAILED");
+            left -= values[i];
+        }
+        // all left after commissions send to owner
+        (transferSuccess, ) = owner.call{gas: 3000, value: left}(new bytes(0));
         require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
 
         uint256 refund = msg.value - data.price;
@@ -138,7 +161,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         _buy(tokenId, exists, data, owner, safe);
     }
-
     /**
     * @dev buys NFT for specified currency with defined id. 
     * mint token if it doesn't exist and transfer token
@@ -154,12 +176,59 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(currency == data.currency, "wrong currency for sale");
         uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
         require(allowance >= data.price && price >= data.price, "insufficient amount");
-        IERC20Upgradeable(data.currency).transferFrom(_msgSender(), owner, data.price);
+
+        uint256 left = data.price;
+        // pay commissions (if exists)
+        (address[] memory addresses, uint256[] memory values) = calculateCommissions(tokenId, data.price);
+        for(uint256 i = 0; i < addresses.length; i++) {
+            IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
+            left -= values[i];
+        }
+        // all left after commissions send to owner
+        IERC20Upgradeable(data.currency).transferFrom(_msgSender(), owner, left);
 
         _buy(tokenId, exists, data, owner, safe);
     }
 
     /**
+    * @dev calculate commission for `tokenId`
+    * @param tokenId token ID to calculate commission
+    * @param price amount of specified token to pay 
+    */
+    function calculateCommissions(
+        uint256 tokenId,
+        uint256 price
+    ) 
+        internal 
+        view 
+        returns(address[] memory addresses, uint256[] memory values) 
+    {
+        uint256 seriesId = getSeriesId(tokenId);
+        uint256 i;
+
+        // contract owner commissions
+        if (
+            commissionsInfo.defaultValues.recipient != address(0) && 
+            commissionsInfo.defaultValues.value != 0
+        ) {
+            i = addresses.length;
+            addresses[i] = commissionsInfo.defaultValues.recipient;
+            values[i] = commissionsInfo.defaultValues.value * price / FRACTION;
+        }
+
+        // author commissions
+        if (
+            commissionsInfo.fractions[seriesId].recipient != address(0) && 
+            commissionsInfo.fractions[seriesId].value != 0
+        ) {
+            i = addresses.length;
+            addresses[i] = commissionsInfo.fractions[seriesId].recipient;
+            values[i] = commissionsInfo.fractions[seriesId].value * price / FRACTION;
+        }
+
+    }
+
+	/**
     * @dev sets information for series with 'seriesId'. 
     * @param seriesId series ID
     * @param info new info to set
@@ -196,6 +265,71 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function getSeriesInfo(uint256 seriesId) external view returns(SeriesInfo memory) {
         return seriesInfo[seriesId];
+    }
+
+
+    /**
+    * set default commission that used for contract owner
+    * @param recipient_ recipient
+    * @param default_ default commission value
+    * @param min_ mininimum commission value  that author's series can set
+    * @param max_ maximum commission value that author's series can set
+    */
+    function setDefaultCommission(
+        address recipient_, 
+        uint256 default_, 
+        uint256 min_, 
+        uint256 max_
+    ) 
+        external 
+        onlyOwner 
+    {
+        // validation?
+
+        commissionsInfo.defaultValues.recipient = recipient_;
+        commissionsInfo.defaultValues.value = default_;
+        commissionsInfo.maxValue = max_;
+        commissionsInfo.minValue = min_;
+
+    }
+
+    /**
+    * set commission for series
+    * @param seriesId seriesId
+    * @param commission commission
+    * @param recipient recipient
+    */
+    function setCommission(
+        uint256 seriesId, 
+        uint256 commission, 
+        address recipient
+    ) 
+        external 
+        onlyOwnerOrAuthor(seriesId)
+    {
+        require(
+            (
+                commission <= commissionsInfo.maxValue &&
+                commission >= commissionsInfo.minValue
+            ),
+            "COMMISSION_INVALID"
+        );
+        require(recipient!= address(0), "RECIPIENT_INVALID");
+
+        commissionsInfo.fractions[seriesId] = CommissionData(commission, recipient);
+    }
+
+    /**
+    * clear commission for series
+    * @param seriesId seriesId
+    */
+    function reduceCommission(
+        uint256 seriesId
+    ) 
+        external 
+        onlyOwnerOrAuthor(seriesId)
+    {
+        delete commissionsInfo.fractions[seriesId];
     }
 
     /**
@@ -265,7 +399,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 len = addrs.length;
         require(tokenIds.length == len, "lengths should be the same");
         for(uint256 i = 0; i < len; i++) {
-            //require(seriesInfo[tokenIds[i] >> SERIES_BITS].sequential == false, "tokenId should be in none-sequential series")
             _mint(addrs[i], tokenIds[i]);
         }
     }
@@ -380,7 +513,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
         string memory _tokenURI = tokenId.toString();
-        string memory base = seriesInfo[tokenId >> SERIES_BITS].baseURI;
+        string memory base = seriesInfo[getSeriesId(tokenId)].baseURI;
         require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
 
         // If there is no base URI, return the token URI.
@@ -561,7 +694,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
                 _mint(_msgSender(), tokenId);
             }
             emit Transfer(owner, _msgSender(), tokenId);
-            emit TokenBought(tokenId, seriesInfo[tokenId >> SERIES_BITS].author, _msgSender(), data.currency, data.price);
+            emit TokenBought(tokenId, seriesInfo[getSeriesId(tokenId)].author, _msgSender(), data.currency, data.price);
         }
 
     }
@@ -593,7 +726,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
                     success = true;
                 } 
             } else {   
-                uint256 seriesId = tokenId >> SERIES_BITS;
+                uint256 seriesId = getSeriesId(tokenId);
                 SeriesInfo memory seriesData = seriesInfo[seriesId];
                 if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
                     success = true;
@@ -734,7 +867,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _balances[to] += 1;
         _owners[tokenId] = to;
 
-        uint256 seriesId = tokenId >> SERIES_BITS;
+        uint256 seriesId = getSeriesId(tokenId);
         mintedCountBySeries[seriesId] += 1;
 
         if (seriesInfo[seriesId].limit != 0) {
@@ -844,6 +977,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         }
     }
 
+    function getSeriesId(
+        uint256 tokenId
+    )
+        internal
+        pure
+        returns(uint256)
+    {
+        return tokenId >> SERIES_BITS;
+    }
 
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
