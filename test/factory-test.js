@@ -34,14 +34,16 @@ describe("factory test", async() => {
         const NftFactory = await ethers.getContractFactory("NFTSafeHook");
 
         this.nft = await NftFactory.deploy();
-        // await this.nft.connect(owner).initialize("NFT Edition", "NFT");
 
-        this.factory = await FactoryFactory.deploy(this.nft.address, "NFT Edition", "NFT");
+        const name = "NFT Edition";
+        const symbol = "NFT";
+        this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol);
         console.log("owner = ", owner.address);
         console.log("factory = ", this.factory.address);
     })
 
     it("should correct deploy instance and do usual buy test", async() => {
+        
         const name = "NAME 1";
         const symbol = "SMBL1";
         await this.factory.produce(name, symbol);
@@ -101,13 +103,13 @@ describe("factory test", async() => {
 
         const saleInfo = await this.nft.getSaleInfo(id);
         expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(saleInfo.amount).to.be.equal(ZERO);
+        expect(saleInfo.price).to.be.equal(ZERO);
         expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
         const seriesInfo = await this.nft.getSeriesInfo(seriesId);
         expect(seriesInfo.author).to.be.equal(alice.address);
         expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(seriesInfo.saleInfo.amount).to.be.equal(price);
+        expect(seriesInfo.saleInfo.price).to.be.equal(price);
         expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
         expect(seriesInfo.baseURI).to.be.equal(baseURI);
         expect(seriesInfo.limit).to.be.equal(10000);
