@@ -9,10 +9,18 @@ async function main() {
 
 	console.log("Account balance:", (await deployer.getBalance()).toString());
 
-	const NFT = await ethers.getContractFactory("NFT");
-	const contract = await NFT.deploy();
+	const FactoryFactory = await ethers.getContractFactory("Factory");
+	const NftFactory = await ethers.getContractFactory("NFTSafeHook");
 
-	console.log("Contract deployed at:", contract.address);
+	this.nft = await NftFactory.deploy({gasLimit: 10e6});
+
+	const name = "NFT Edition";
+	const symbol = "NFT";
+	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, {gasLimit: 10e6});
+
+
+	console.log("NFT deployed at:", this.nft.address);
+	console.log("Factory deployed at:", this.factory.address);
 }
 
 main()

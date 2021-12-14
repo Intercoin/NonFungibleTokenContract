@@ -13,7 +13,8 @@ require('hardhat-docgen')
 
 const kovanURL = `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KOVAN}`
 const goerliURL = `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_GOERLI}`
-const rinkebyURL = `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
+const rinkebyURL = 'https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161' //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
+const bscURL = 'https://bsc-dataseed1.ninicoin.io' //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
 const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`
 
 module.exports = {
@@ -42,6 +43,13 @@ module.exports = {
       accounts: {mnemonic: process.env.MNEMONIC},
       saveDeployments: true
     },
+    bsc: {
+      url: rinkebyURL,
+      chainId: 56,
+      gasPrice: "auto",
+      accounts: {mnemonic: process.env.MNEMONIC},
+      saveDeployments: true
+    },
     mainnet: {
       url: mainnetURL,
       chainId: 1,
@@ -60,7 +68,7 @@ module.exports = {
     currency: "USD"
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    // apiKey: 
   },
   solidity: {
     compilers: [
