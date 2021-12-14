@@ -112,7 +112,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(
             seriesInfo[seriesId].author == _msgSender() || 
             owner() == _msgSender(), 
-            "!onlyContractOrSeriesOwner"
+            "!onlyOwnerOrAuthor"
         );
         _;
     }

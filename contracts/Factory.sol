@@ -6,24 +6,35 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface implementationContract {
     function initialize(string memory name_, string memory symbol_) external;
+    function name() view external returns(string memory);
+    function symbol() view external returns(string memory);
+    function owner() view external returns(address);
 }
 
 contract Factory is Ownable {
     address public implementation;
-    mapping(bytes => address) public getInstance;
+    mapping(bytes32 => address) public getInstance;
     address[] public instances;
-    
-    mapping(address => address) private _instanceCreators;
-    
+        
     struct InstanceInfo {
         string name;
         string symbol;
+        address creator;
     }
     mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    constructor (address instance) {
+    constructor (address instance, string memory name, string memory symbol) {
         implementation = instance;
+        implementationContract(instance).initialize(name, symbol);
+        Ownable(instance).transferOwnership(_msgSender());
+        getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
+        instances.push(instance);
+        _instanceInfos[instance] = InstanceInfo(
+            name,
+            symbol,
+            _msgSender()
+        );
     }
 
     function instancesCount() external view returns (uint256) {
@@ -42,11 +53,10 @@ contract Factory is Ownable {
     }
     
     function getInstanceInfo(
-        string memory name,
-        string memory symbol
+        uint256 instanceId
     ) public view returns(InstanceInfo memory) {
         
-        address instance = getInstance[abi.encodePacked(name, symbol)];
+        address instance = instances[instanceId];
         return _instanceInfos[instance];
     }
     
@@ -68,7 +78,7 @@ contract Factory is Ownable {
     ) internal view returns (address instance) {
         require((bytes(name)).length != 0, "Factory: EMPTY NAME");
         require((bytes(symbol)).length != 0, "Factory: EMPTY SYMBOL");
-        instance = getInstance[abi.encodePacked(name, symbol)];
+        instance = getInstance[keccak256(abi.encodePacked(name, symbol))];
         require(instance == address(0), "Factory: ALREADY_EXISTS");
     }
 
@@ -79,12 +89,12 @@ contract Factory is Ownable {
         
         instance = createClone(implementation);
         
-        getInstance[abi.encodePacked(name, symbol)] = instance;
+        getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
-        _instanceCreators[instance] = msg.sender;
         _instanceInfos[instance] = InstanceInfo(
             name,
-            symbol
+            symbol,
+            msg.sender
         );
         emit InstanceCreated(name, symbol, instance, instances.length);
     }

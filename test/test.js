@@ -529,7 +529,7 @@ describe("NFT test", function () {
     })
 
     it("shouldnt call setSaleInfo as an owner of series", async() => {
-      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyContractOrSeriesOwner');
+      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyOwnerOrAuthor');
 
     })
 
@@ -708,7 +708,6 @@ describe("NFT test", function () {
       })
 
     })
-    // TODO mint and list on sale for someBody
 
   })
   
@@ -716,13 +715,5 @@ describe("NFT test", function () {
 
 });
 
-// UNIT TESTS:
-// balanceOf()
-// ownerOf()
-// setSaleInfo()
-// setSeriesInfo()
-// listOnSale
 
-// USER CASES:
-// Alice creates collection
 
