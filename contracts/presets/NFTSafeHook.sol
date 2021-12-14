@@ -7,6 +7,10 @@ import "../extensions/ERC721SafeHooksUpgradeable.sol";
 * NFT with hooks support
 */
 contract NFTSafeHook is ERC721SafeHooksUpgradeable {
+
+    /**
+    * @notice initializes contract
+    */
     function initialize(string memory name_, string memory symbol_) public initializer {
         __Ownable_init();
         __ReentrancyGuard_init();

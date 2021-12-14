@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// OpenZeppelin Contracts v4.4.0 (token/ERC721/extensions/ERC721Pausable.sol)
 
 pragma solidity ^0.8.0;
 
@@ -8,8 +7,7 @@ import "../interfaces/ISafeHook.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 /**
-* hold count of series hooks while token mint
-* if in further we would to remove hooks from the list, keep in mind that EnumerableSet does not keep order of items after removing
+* holds count of series hooks while token mint and buy
 */
 abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721UpgradeableExt {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -24,12 +22,29 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 
     event NewHook(uint256 seriesId, address contractAddress);
 
+    /**
+    * @dev buys NFT for ETH with defined id. 
+    * mint token if it doesn't exist and transfer token
+    * if it exists and is on sale
+    * @param tokenId token ID to buy
+    * @param safe use safeMint and safeTransfer or not
+    * @param hookNumber number of hooks 
+    */
     function buy(uint256 tokenId, bool safe, uint256 hookNumber) external payable {
         uint256 seriesId = tokenId >> SERIES_BITS;
         require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
         super.buy(tokenId, safe);
     }
-
+    /**
+    * @dev buys NFT for specified currency with defined id. 
+    * mint token if it doesn't exist and transfer token
+    * if it exists and is on sale
+    * @param tokenId token ID to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    * @param hookNumber number of hooks 
+    */
     function buy(uint256 tokenId, address currency, uint256 price, bool safe, uint256 hookNumber) external {
         uint256 seriesId = tokenId >> SERIES_BITS;
         require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
@@ -37,8 +52,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-    * link safeHook contract to certain Series
-    * reverted if contract does not ISAfeHook interface
+    * @dev link safeHook contract to certain Series
     * @param seriesId series ID
     * @param contractAddress address of SafeHook contract
     */
@@ -65,7 +79,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-    * getting list of hooks for series with `seriesId`
+    * @dev gives the list of hooks for series with `seriesId`
     * @param seriesId seriesId
     */
     function getHookList(
@@ -84,7 +98,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-    * getting count of hooks for series with `seriesId`
+    * @dev gives count of hooks for series with `seriesId`
     * @param seriesId series ID
     */
     function hooksCount(
@@ -136,8 +150,9 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 
     }
     /**
-    * overrode _mint.
-    * here we will remember count of series hooks in this moment. so further hooks will not apply for this token
+    * @dev overriden _mint function.
+    * Here we remember count of series hooks at this moment. 
+    * So further hooks will not apply for this token
     */
     function _mint(
         address to, 
@@ -151,6 +166,11 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         super._mint(to, tokenId);
     }
 
+    /**
+    * @dev overriden _buy function.
+    * Here we remember count of series hooks at this moment. 
+    * So further hooks will not apply for this token
+    */
     function _buy(
         uint256 tokenId, 
         bool exists, 
@@ -166,6 +186,9 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         
     }
 
+    /** 
+    * @dev used to storage hooksCountByToken at this moment
+    */
     function _storeHookCount(
         uint256 tokenId
     )

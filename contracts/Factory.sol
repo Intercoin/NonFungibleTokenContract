@@ -37,10 +37,19 @@ contract Factory is Ownable {
         );
     }
 
+    /**
+    * @dev gives the count of instances
+    */
     function instancesCount() external view returns (uint256) {
         return instances.length;
     }
 
+    /**
+    * @dev produces new instance with defined name and symbol
+    * @param name name of new token
+    * @param symbol symbol of new token
+    * @return instance address of new contract
+    */
     function produce(
         string memory name,
         string memory symbol

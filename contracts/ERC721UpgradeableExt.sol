@@ -11,11 +11,6 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeabl
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-/**
- * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
- * the Metadata extension, but not including the Enumerable extension, which is available separately as
- * {ERC721Enumerable}.
- */
 abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
@@ -117,6 +112,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _;
     }
 
+    /**
+    * @dev buys NFT for ETH with defined id. 
+    * mint token if it doesn't exist and transfer token
+    * if it exists and is on sale
+    * @param tokenId token ID to buy
+    * @param safe use safeMint and safeTransfer or not
+    */
+
     function buy(uint256 tokenId, bool safe) public payable nonReentrant {
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
@@ -136,6 +139,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _buy(tokenId, exists, data, owner, safe);
     }
 
+    /**
+    * @dev buys NFT for specified currency with defined id. 
+    * mint token if it doesn't exist and transfer token
+    * if it exists and is on sale
+    * @param tokenId token ID to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    */
     function buy(uint256 tokenId, address currency, uint256 price, bool safe) public nonReentrant {
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
@@ -147,7 +159,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _buy(tokenId, exists, data, owner, safe);
     }
 
-
+    /**
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    */
     function setSeriesInfo(
         uint256 seriesId, 
         SeriesInfo memory info 
@@ -166,19 +182,28 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     }
 
+    /**
+    * @dev gives the info for sale of NFT with 'tokenId'. 
+    * @param tokenId token ID
+    */
     function getSaleInfo(uint256 tokenId) external view returns(SaleInfo memory) {
         return salesInfo[tokenId];
     }
+
+    /**
+    * @dev gives the info for series with 'seriesId'. 
+    * @param seriesId series ID
+    */
     function getSeriesInfo(uint256 seriesId) external view returns(SeriesInfo memory) {
         return seriesInfo[seriesId];
     }
 
     /**
-    * For individual tokens, their ownerOf(tokenId) owners can call listForSale(tokenId, duration)
-    * @param tokenId tokenId
-    * @param price price
-    * @param currency currency
-    * @param duration duration
+    * @dev lists on sale NFT with defined token ID with specified terms of sale
+    * @param tokenId token ID
+    * @param price price for sale 
+    * @param currency currency of sale 
+    * @param duration duration of sale 
     */
     function listForSale(
         uint256 tokenId,
@@ -201,6 +226,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         emit TokenPutOnSale(tokenId, _msgSender(), data.price, data.currency, data.onSaleUntil);
     }
 
+    /**
+    * @dev gives the list of all NFTs owned by 'account'
+    * @param account address of account
+    */
     function tokensByOwner(
         address account
     ) 
@@ -211,6 +240,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         return _tokensByOwner(account, 0);
     }
 
+    /**
+    * @dev gives the list of all NFTs owned by 'account' with limit
+    * @param account address of account
+    */
     function tokensByOwner(
         address account,
         uint256 limit
@@ -222,6 +255,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         return _tokensByOwner(account, limit);
     }
 
+    /**
+    * @dev mints and distributed NFTs with specified IDs
+    * to specified addresses
+    * @param tokenIds list of NFT IDs t obe minted
+    * @param addrs list of receiver addresses
+    */
     function mintAndDistribute(uint256[] memory tokenIds, address[] memory addrs) external onlyOwner {
         uint256 len = addrs.length;
         require(tokenIds.length == len, "lengths should be the same");
@@ -231,6 +270,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         }
     }
 
+    /**
+    * @dev sets sale info for the NFT with 'tokenId'
+    * @param tokenId token ID
+    * @param info information about sale 
+    */
     function setSaleInfo(
         uint256 tokenId, 
         SaleInfo memory info 
@@ -239,8 +283,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         salesInfo[tokenId] = info;
     }
+
     /**
-     * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
+     * @dev Returns a token ID owned by `owner` at a given `index` of its token list.
+     * Use along with {balanceOf} to enumerate all of ``owner``'s tokens.
      */
     function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual override returns (uint256) {
         require(index < balanceOf(owner), "ERC721Enumerable: owner index out of bounds");
@@ -248,14 +294,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721Enumerable-totalSupply}.
+     * @dev Returns the total amount of tokens stored by the contract.
      */
     function totalSupply() public view virtual override returns (uint256) {
         return _allTokens.length;
     }
 
     /**
-     * @dev See {IERC721Enumerable-tokenByIndex}.
+     * @dev Returns a token ID at a given `index` of all the tokens stored by the contract.
+     * Use along with {totalSupply} to enumerate all tokens.
      */
     function tokenByIndex(uint256 index) public view virtual override returns (uint256) {
         require(index < totalSupply(), "ERC721Enumerable: global index out of bounds");
@@ -276,7 +323,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721-balanceOf}.
+     * @dev Returns the number of tokens in ``owner``'s account.
      */
     function balanceOf(address owner) public view virtual override returns (uint256) {
         require(owner != address(0), "ERC721: balance query for the zero address");
@@ -284,38 +331,38 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721-ownerOf}.
+     * @dev Returns the owner of the `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
      */
 
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
-        // simply checking mapping ownerOf[token]
         address owner = _ownerOf(tokenId);
-
-        // left for potentially further use )
-        // if (tokensInfo[tokenId].owner != address(0)) {
-        //     owner = tokensInfo[tokenId].owner;
-        // } else if (seriesInfo[tokenId>>SERIES_BITS].owner != address(0)) {
-        //     owner = seriesInfo[tokenId>>SERIES_BITS].owner;
-        // }
-
         require(owner != address(0), "ERC721: owner query for nonexistent token");
         return owner;
     }
 
     /**
-     * @dev See {IERC721Metadata-name}.
+     * @dev Returns the token collection name.
      */
     function name() public view virtual override returns (string memory) {
         return _name;
     }
 
     /**
-     * @dev See {IERC721Metadata-symbol}.
+     * @dev Returns the token collection symbol.
      */
     function symbol() public view virtual override returns (string memory) {
         return _symbol;
     }
 
+    /** 
+    * @dev sets name and symbol for contract
+    * @param newName new name 
+    * @param newSymbol new symbol 
+    */
     function setNameAndSymbol(
         string memory newName, 
         string memory newSymbol
@@ -328,7 +375,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721Metadata-tokenURI}.
+     * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
@@ -351,7 +398,17 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
 
     /**
-     * @dev See {IERC721-approve}.
+     * @dev Gives permission to `to` to transfer `tokenId` token to another account.
+     * The approval is cleared when the token is transferred.
+     *
+     * Only a single account can be approved at a time, so approving the zero address clears previous approvals.
+     *
+     * Requirements:
+     *
+     * - The caller must own the token or be an approved operator.
+     * - `tokenId` must exist.
+     *
+     * Emits an {Approval} event.
      */
     function approve(address to, uint256 tokenId) public virtual override {
         address owner = ownerOf(tokenId);
@@ -366,7 +423,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721-getApproved}.
+     * @dev Returns the account approved for `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
      */
     function getApproved(uint256 tokenId) public view virtual override returns (address) {
         require(ownerOf(tokenId) != address(0), "ERC721: approved query for nonexistent token");
@@ -375,7 +436,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721-setApprovalForAll}.
+     * @dev Approve or remove `operator` as an operator for the caller.
+     * Operators can call {transferFrom} or {safeTransferFrom} for any token owned by the caller.
+     *
+     * Requirements:
+     *
+     * - The `operator` cannot be the caller.
+     *
+     * Emits an {ApprovalForAll} event.
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
         require(operator != _msgSender(), "ERC721: approve to caller");
@@ -385,14 +453,27 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721-isApprovedForAll}.
+     * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
+     *
+     * See {setApprovalForAll}
      */
     function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {
         return _operatorApprovals[owner][operator];
     }
 
     /**
-     * @dev See {IERC721-transferFrom}.
+     * @dev Transfers `tokenId` token from `from` to `to`.
+     *
+     * WARNING: Usage of this method is discouraged, use {safeTransferFrom} whenever possible.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must be owned by `from`.
+     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
+     *
+     * Emits a {Transfer} event.
      */
     function transferFrom(
         address from,
@@ -406,7 +487,18 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721-safeTransferFrom}.
+     * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
+     * are aware of the ERC721 protocol to prevent tokens from being forever locked.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by `from`.
+     * - If the caller is not `from`, it must be have been allowed to move this token by either {approve} or {setApprovalForAll}.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
      */
     function safeTransferFrom(
         address from,
@@ -417,7 +509,17 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
-     * @dev See {IERC721-safeTransferFrom}.
+     * @dev Safely transfers `tokenId` token from `from` to `to`.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by `from`.
+     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
      */
     function safeTransferFrom(
         address from,
@@ -463,6 +565,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         }
 
     }
+
+    /**
+    * @dev returns if token is on sale or not, does it exist or not, data about sale and it's owner
+    * @param tokenId token ID 
+    */
     
     function _isOnSale(uint256 tokenId) 
         internal 

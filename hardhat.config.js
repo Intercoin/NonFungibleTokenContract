@@ -8,6 +8,7 @@ require("@nomiclabs/hardhat-web3")
 require("@nomiclabs/hardhat-etherscan")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
+require('hardhat-docgen')
 
 
 const kovanURL = `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KOVAN}`
@@ -48,6 +49,11 @@ module.exports = {
       accounts: {mnemonic: process.env.MNEMONIC},
       saveDeployments: true
     }
+  },
+  docgen: {
+    path: './docs',
+    clear: true,
+    runOnCompile: true,
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
