@@ -30,10 +30,10 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         super.buy(tokenId, safe);
     }
 
-    function buy(uint256 tokenId, address token, uint256 amount, bool safe, uint256 hookNumber) external {
+    function buy(uint256 tokenId, address currency, uint256 price, bool safe, uint256 hookNumber) external {
         uint256 seriesId = tokenId >> SERIES_BITS;
         require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
-        super.buy(tokenId, token, amount, safe);
+        super.buy(tokenId, currency, price, safe);
     }
 
     /**
