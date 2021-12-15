@@ -62,6 +62,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         address currency;
         uint256 price;
     }
+
+       struct SeriesInfo { 
+        address payable author;
+        uint32 limit;
+        SaleInfo saleInfo;
+        string baseURI; 
+	    string suffix;
+    }
     
     struct CommissionInfo {
         uint64 maxValue;
@@ -73,14 +81,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     struct CommissionData {
         uint64 value;
         address recipient;
-    }
-
-    struct SeriesInfo { 
-        address payable author;
-        uint32 limit;
-        SaleInfo saleInfo;
-        string baseURI; 
-	    string suffix;
     }
 
     event SeriesPutOnSale(
@@ -392,13 +392,13 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @dev mints and distributed NFTs with specified IDs
     * to specified addresses
     * @param tokenIds list of NFT IDs t obe minted
-    * @param addrs list of receiver addresses
+    * @param addresses list of receiver addresses
     */
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addrs) external onlyOwner {
-        uint256 len = addrs.length;
+    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external onlyOwner {
+        uint256 len = addresses.length;
         require(tokenIds.length == len, "lengths should be the same");
         for(uint256 i = 0; i < len; i++) {
-            _mint(addrs[i], tokenIds[i]);
+            _mint(addresses[i], tokenIds[i]);
         }
     }
 

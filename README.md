@@ -316,7 +316,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <td>bool</td>
 <td>use safeMint and safeTransfer or not</td>
 </tr><tr>
-<td>hookNumber</td>
+<td>hookCount</td>
 <td>uint256</td>
 <td>Number of hooks, used to avoid front-running </td>
 </tr>
@@ -380,7 +380,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <td>bool</td>
 <td>use safeMint and safeTransfer or not</td>
 </tr><tr>
-<td>hookNumber</td>
+<td>hookCount</td>
 <td>uint256</td>
 <td>Number of hooks, used to avoid front-running</td>
 </tr>

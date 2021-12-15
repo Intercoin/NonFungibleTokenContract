@@ -77,14 +77,14 @@ describe("factory test", async() => {
         const baseURI = "";
         const suffix = ".json";
         const saleParams = [
+        now + 100000, 
         ZERO_ADDRESS, 
         price, 
-        now + 100000, 
         ]
         const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
         ];

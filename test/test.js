@@ -70,14 +70,14 @@ describe("NFT test", function () {
     const baseURI = "someURI";
     const suffix = ".json";
     const saleParams = [
+      now + 100000, 
       ZERO_ADDRESS, 
       price, 
-      now + 100000, 
     ]
     const params = [
       alice.address, 
-      saleParams,
       10000,
+      saleParams,
       baseURI,
       suffix
     ];
@@ -129,14 +129,14 @@ describe("NFT test", function () {
     const baseURI = "";
     const suffix = ".json";
     const saleParams = [
+      now + 100000, 
       ZERO_ADDRESS, 
       price, 
-      now + 100000, 
     ]
     const seriesParams = [
       alice.address,  
-      saleParams,
       10000,
+      saleParams,
       baseURI,
       suffix
     ];
@@ -173,14 +173,14 @@ describe("NFT test", function () {
   
     it("should correct mint NFT with token if ID doesn't exist", async() => {
       const saleParams = [
+        now + 100000, 
         this.erc20.address, 
         price, 
-        now + 100000, 
       ]
       const seriesParams = [
         alice.address, 
-        saleParams, 
         10000,
+        saleParams, 
         baseURI,
         suffix
       ];
@@ -215,9 +215,9 @@ describe("NFT test", function () {
     it("should correct buy minted NFT for ETH", async() => {
       await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
       const saleParams = [
+        now + 100000,
         ZERO_ADDRESS, 
         price.mul(TWO), 
-        now + 100000,
       ];      
 
       await this.nft.connect(bob).setSaleInfo(id, saleParams);
@@ -251,9 +251,9 @@ describe("NFT test", function () {
     it("should correct buy minted NFT for token", async() => {
       await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
       const saleParams = [
+        now + 100000,
         this.erc20.address, 
         price.mul(TWO), 
-        now + 100000,
       ];      
 
       await this.nft.connect(bob).setSaleInfo(id, saleParams);
@@ -287,14 +287,14 @@ describe("NFT test", function () {
 
     it("should correct mint NFT from own series", async() => {
       const saleParams = [
+        now + 100000, 
         this.erc20.address, 
         price, 
-        now + 100000, 
       ]
       const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -323,14 +323,14 @@ describe("NFT test", function () {
 
     it("shouldnt mint if series was unlisted from sale", async() => {
       const saleParams = [
+        ZERO, 
         this.erc20.address, 
         price, 
-        ZERO, 
       ]
       const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -344,23 +344,23 @@ describe("NFT test", function () {
 
     it("shouldnt set token info if not owner", async() => {   
       const saleParams = [
+        now + 100000,
         ZERO_ADDRESS, 
         price.mul(TWO), 
-        now + 100000,
       ];   
       await expect(this.nft.connect(charlie).setSaleInfo(id, saleParams)).to.be.revertedWith("can call only by owner");
     })
 
     it("shouldnt buy if user approved unsufficient token amount", async() => {
       const saleParams = [
+        now + 100000, 
         this.erc20.address, 
         price, 
-        now + 100000, 
       ]
       const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -373,14 +373,14 @@ describe("NFT test", function () {
     it("shouldnt buy if user passed unsufficient token amount", async() => {
 
       const saleParams = [
+        now + 100000, 
         this.erc20.address, 
         price, 
-        now + 100000, 
       ]
       const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -391,14 +391,14 @@ describe("NFT test", function () {
 
     it("shouldnt buy if token is invalid", async() => {
       const saleParams = [
+        now + 100000, 
         this.erc20.address, 
         price, 
-        now + 100000, 
       ]
       const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -497,14 +497,14 @@ describe("NFT test", function () {
     it("should correct call setSaleInfo as an owner of series", async() => {
       const newLimit = 11000;
       const saleParams = [
+        now + 100000, 
         ZERO_ADDRESS, 
         price, 
-        now + 100000, 
       ]
       const newParams = [
         alice.address,  
-        saleParams,
         newLimit,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -522,14 +522,14 @@ describe("NFT test", function () {
     it("shouldnt buy if limit exceeded", async() => {
       const newLimit = TWO;
       const saleParams = [
+        now + 100000, 
         ZERO_ADDRESS, 
         price, 
-        now + 100000, 
       ]
       const newParams = [
         alice.address,  
-        saleParams,
         newLimit,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -547,14 +547,14 @@ describe("NFT test", function () {
 
     it("shouldnt let buy for ETH if token currency specified", async() => {
       const saleParams = [
+        now + 100000, 
         this.erc20.address, 
         price, 
-        now + 100000, 
       ]
       const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -613,19 +613,19 @@ describe("NFT test", function () {
       it("shouldn't buy if hook number changed (ETH test)", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
         await this.nft.pushTokenTransferHook(seriesId, this.hook2.address);
-        await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price})).to.be.revertedWith("wrong hookNumber");
+        await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price})).to.be.revertedWith("wrong hookCount");
       })
 
       it("should correct set hook (token test)", async() => {
         const saleParams = [
+          now + 100000, 
           this.erc20.address, 
           price, 
-          now + 100000, 
         ]
         const seriesParams = [
           alice.address,  
-          saleParams,
           10000,
+          saleParams,
           baseURI,
           suffix
         ];
@@ -642,7 +642,7 @@ describe("NFT test", function () {
       it("shouldn't buy if hook number changed (token test)", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
         await this.nft.pushTokenTransferHook(seriesId, this.hook2.address);
-        await expect(this.nft.connect(bob)["buy(uint256,address,uint256,bool,uint256)"](id, this.erc20.address, price, false, ONE)).to.be.revertedWith("wrong hookNumber");
+        await expect(this.nft.connect(bob)["buy(uint256,address,uint256,bool,uint256)"](id, this.erc20.address, price, false, ONE)).to.be.revertedWith("wrong hookCount");
       })
 
       it("shouldn't buy if hook reverts", async() => {

@@ -40,14 +40,14 @@ describe("factory test", function () {
     const suffix = ".json";
     const limit = BigNumber.from('10000');
     const saleParams = [
+        now + 100000, 
         ZERO_ADDRESS, 
         price, 
-        now + 100000, 
       ]
       const seriesParams = [
         alice.address,  
-        saleParams,
         10000,
+        saleParams,
         baseURI,
         suffix
       ];
@@ -219,8 +219,8 @@ describe("factory test", function () {
         it('should return tokenID if baseURI is empty', async() => {
             const newSeriesParams = [
                 alice.address,  
-                saleParams,
                 10000,
+                saleParams,
                 "",
                 suffix
               ];

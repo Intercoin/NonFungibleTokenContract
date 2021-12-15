@@ -28,11 +28,11 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * if it exists and is on sale
     * @param tokenId token ID to buy
     * @param safe use safeMint and safeTransfer or not
-    * @param hookNumber number of hooks 
+    * @param hookCount number of hooks 
     */
-    function buy(uint256 tokenId, bool safe, uint256 hookNumber) external payable {
+    function buy(uint256 tokenId, bool safe, uint256 hookCount) external payable {
         uint256 seriesId = tokenId >> SERIES_BITS;
-        require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
+        require(hookCount == hooksCount(seriesId), "wrong hookCount");
         super.buy(tokenId, safe);
     }
     /**
@@ -43,11 +43,11 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * @param currency address of token to pay with
     * @param price amount of specified token to pay
     * @param safe use safeMint and safeTransfer or not
-    * @param hookNumber number of hooks 
+    * @param hookCount number of hooks 
     */
-    function buy(uint256 tokenId, address currency, uint256 price, bool safe, uint256 hookNumber) external {
+    function buy(uint256 tokenId, address currency, uint256 price, bool safe, uint256 hookCount) external {
         uint256 seriesId = tokenId >> SERIES_BITS;
-        require(hookNumber == hooksCount(seriesId), "wrong hookNumber");
+        require(hookCount == hooksCount(seriesId), "wrong hookCount");
         super.buy(tokenId, currency, price, safe);
     }
 
