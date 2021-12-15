@@ -43,11 +43,16 @@ describe("factory test", function () {
         now + 100000, 
         ZERO_ADDRESS, 
         price, 
-      ]
+      ];
+      const commissions = [
+        ZERO,
+        ZERO_ADDRESS
+      ];
       const seriesParams = [
         alice.address,  
         10000,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -221,6 +226,7 @@ describe("factory test", function () {
                 alice.address,  
                 10000,
                 saleParams,
+                commissions,
                 "",
                 suffix
               ];

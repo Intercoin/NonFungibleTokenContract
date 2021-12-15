@@ -73,11 +73,16 @@ describe("NFT test", function () {
       now + 100000, 
       ZERO_ADDRESS, 
       price, 
+    ];
+    const commissions = [
+      ZERO,
+      ZERO_ADDRESS
     ]
     const params = [
       alice.address, 
       10000,
       saleParams,
+      commissions,
       baseURI,
       suffix
     ];
@@ -132,11 +137,16 @@ describe("NFT test", function () {
       now + 100000, 
       ZERO_ADDRESS, 
       price, 
-    ]
+    ];
+    const commissions = [
+      ZERO,
+      ZERO_ADDRESS
+    ];
     const seriesParams = [
       alice.address,  
       10000,
       saleParams,
+      commissions,
       baseURI,
       suffix
     ];
@@ -176,11 +186,12 @@ describe("NFT test", function () {
         now + 100000, 
         this.erc20.address, 
         price, 
-      ]
+      ];
       const seriesParams = [
         alice.address, 
         10000,
-        saleParams, 
+        saleParams,
+        commissions, 
         baseURI,
         suffix
       ];
@@ -290,11 +301,12 @@ describe("NFT test", function () {
         now + 100000, 
         this.erc20.address, 
         price, 
-      ]
+      ];
       const seriesParams = [
         alice.address,  
         10000,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -326,11 +338,12 @@ describe("NFT test", function () {
         ZERO, 
         this.erc20.address, 
         price, 
-      ]
+      ];
       const seriesParams = [
         alice.address,  
         10000,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -356,11 +369,12 @@ describe("NFT test", function () {
         now + 100000, 
         this.erc20.address, 
         price, 
-      ]
+      ];       
       const seriesParams = [
         alice.address,  
         10000,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -376,11 +390,12 @@ describe("NFT test", function () {
         now + 100000, 
         this.erc20.address, 
         price, 
-      ]
+      ];
       const seriesParams = [
         alice.address,  
         10000,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -394,11 +409,12 @@ describe("NFT test", function () {
         now + 100000, 
         this.erc20.address, 
         price, 
-      ]
+      ];
       const seriesParams = [
         alice.address,  
         10000,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -505,6 +521,7 @@ describe("NFT test", function () {
         alice.address,  
         newLimit,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -530,6 +547,7 @@ describe("NFT test", function () {
         alice.address,  
         newLimit,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -550,11 +568,12 @@ describe("NFT test", function () {
         now + 100000, 
         this.erc20.address, 
         price, 
-      ]
+      ];
       const seriesParams = [
         alice.address,  
         10000,
         saleParams,
+        commissions,
         baseURI,
         suffix
       ];
@@ -626,6 +645,7 @@ describe("NFT test", function () {
           alice.address,  
           10000,
           saleParams,
+          commissions,
           baseURI,
           suffix
         ];

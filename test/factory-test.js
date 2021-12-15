@@ -77,16 +77,21 @@ describe("factory test", async() => {
         const baseURI = "";
         const suffix = ".json";
         const saleParams = [
-        now + 100000, 
-        ZERO_ADDRESS, 
-        price, 
-        ]
+            now + 100000, 
+            ZERO_ADDRESS, 
+            price, 
+        ];
+        const commissions = [
+            ZERO,
+            ZERO_ADDRESS
+          ];
         const seriesParams = [
-        alice.address,  
-        10000,
-        saleParams,
-        baseURI,
-        suffix
+            alice.address,  
+            10000,
+            saleParams,
+            commissions,
+            baseURI,
+            suffix
         ];
 
         console.log("owner of contract = ", await this.nft.owner());

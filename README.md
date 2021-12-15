@@ -20,6 +20,39 @@ The list of basic features:
 <h2> Factory </h2>
 Factory contract for NFTSafeHooks. Allows gas-efficiently deploating copies of the NFTSafeHooks contract 
 
+ <hr>
+<h1> Structs </h1>
+<h2> NFTSafeHook </h2>
+
+<h3>SaleInfo</h3>
+
+<p>Stores data about sale</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>onSaleUntil</td>
+<td>uint256</td>
+<td>block.timestamp of the sale end</td>
+</tr><tr>
+<td>currency</td>
+<td>address</td>
+<td>Address of token to pay with</td>
+</tr><tr>
+<td>price</td>
+<td>uint256</td>
+<td>Price of the sale</td>
+</tr>
+</tbody>
+</table>
+
 
  <hr>
 <h1> Events </h1>
@@ -426,7 +459,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 
 
 <hr>
-<h6>getApproved</h6>
+<h3>getApproved</h3>
 
 <p>Returns the account approved for `tokenId` token. Requirements: - `tokenId` must exist.</p>
 
@@ -721,7 +754,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <hr>
 <h3>pushTokenTransferHook</h3>
 
-<p>link safeHook contract to certain Series</p>
+<p>Adds safeHook contract to certain Series</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -735,22 +768,19 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>seriesId</td>
 <td>uint256</td>
-<td>series ID</td>
+<td>Series ID</td>
 </tr><tr>
 <td>contractAddress</td>
 <td>address</td>
-<td>address of SafeHook contract</td>
+<td>Address of SafeHook contract</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>renounceOwnership</h6>
+<h3>renounceOwnership</h3>
 
 <p>Leaves the contract without owner. It will not be 
 possible to call `onlyOwner` functions anymore. Can only be called by 
@@ -758,15 +788,10 @@ the current owner. NOTE: Renouncing ownership will leave the contract
 without an owner, thereby removing any functionality that is only 
 available to the owner.</p>
 
-<p>No parameters</p>
-
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>safeTransferFrom</h6>
+<h3>safeTransferFrom</h3>
 
 <p>Safely transfers `tokenId` token from `from` to `to`, 
 checking first that contract recipients are aware of the ERC721 protocol
@@ -790,26 +815,23 @@ upon a safe transfer. Emits a {Transfer} event.</p>
 <tr>
 <td>from</td>
 <td>address</td>
-<td></td>
+<td>Sender address</td>
 </tr><tr>
 <td>to</td>
 <td>address</td>
-<td></td>
+<td>Receiver address</td>
 </tr><tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>Token ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>safeTransferFrom</h6>
+<h3>safeTransferFrom</h3>
 
 <p>Safely transfers `tokenId` token from `from` to `to`, 
 checking first that contract recipients are aware of the ERC721 protocol
@@ -833,51 +855,30 @@ upon a safe transfer. Emits a {Transfer} event.</p>
 <tr>
 <td>from</td>
 <td>address</td>
-<td></td>
+<td>Sender address</td>
 </tr><tr>
 <td>to</td>
 <td>address</td>
-<td></td>
+<td>Receiver address</td>
 </tr><tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>Token ID</td>
 </tr><tr>
 <td>_data</td>
 <td>bytes</td>
-<td></td>
+<td>Data for the call</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<p>No parameters</p>
 
 
 <hr>
-<h6>salesInfo</h6>
+<h3>salesInfo</h3>
 
-<p><strong>**Add Documentation for the method here**</strong></p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-<p>Returns:</p>
+<p><strong>Returns SaleInfo struct of token with 'tokenId'</strong></p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -889,45 +890,18 @@ upon a safe transfer. Emits a {Transfer} event.</p>
 </thead>
 <tbody>
 <tr>
-<td>currency</td>
-<td>address</td>
-<td></td>
-</tr><tr>
-<td>price</td>
+<td>tokenId</td>
 <td>uint256</td>
-<td></td>
-</tr><tr>
-<td>onSaleUntil</td>
-<td>uint256</td>
-<td></td>
+<td>Token ID</td>
 </tr>
 </tbody>
 </table>
 
 
 <hr>
-<h6>seriesInfo</h6>
+<h3>seriesInfo</h3>
 
-<p><strong>**Add Documentation for the method here**</strong></p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-<p>Returns:</p>
+<p><strong>Returns SeriesInfo struct of series with 'seriesId'</strong></p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -939,28 +913,18 @@ upon a safe transfer. Emits a {Transfer} event.</p>
 </thead>
 <tbody>
 <tr>
-<td>author</td>
-<td>address</td>
-<td></td>
-</tr><tr>
-<td>saleInfo</td>
-<td>tuple</td>
-<td></td>
-</tr><tr>
-<td>limit</td>
+<td>seriesId</td>
 <td>uint256</td>
-<td></td>
-</tr><tr>
-<td>baseURI</td>
-<td>string</td>
-<td></td>
+<td>Series ID</td>
 </tr>
 </tbody>
 </table>
+
+
 
 
 <hr>
-<h6>setApprovalForAll</h6>
+<h3>setApprovalForAll</h3>
 
 <p>Approve or remove `operator` as an operator for the 
 caller. Operators can call {transferFrom} or {safeTransferFrom} for any 
