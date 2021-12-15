@@ -58,9 +58,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     mapping(uint256 => uint256) public mintedCountBySeries;
     
     struct SaleInfo { 
+        uint64 onSaleUntil; 
         address currency;
         uint256 price;
-        uint64 onSaleUntil; 
     }
     
     struct CommissionInfo {
@@ -77,8 +77,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     struct SeriesInfo { 
         address payable author;
-        SaleInfo saleInfo;
         uint32 limit;
+        SaleInfo saleInfo;
         string baseURI; 
 	    string suffix;
     }
