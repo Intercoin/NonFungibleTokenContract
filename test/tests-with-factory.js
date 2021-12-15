@@ -92,7 +92,7 @@ describe("Tests with factory", function () {
     describe('produced instance tests', async() => {
         
         it('check name, symbol and tokenURI', async() => {
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toString()).concat(".json"));
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");
@@ -105,7 +105,7 @@ describe("Tests with factory", function () {
             expect(await this.nft.symbol()).to.be.equal("NEW NFT");
         })
         it('should transfer token to user', async() => {
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
             const nftBalanceBeforeBob = await this.nft.balanceOf(bob.address);
             expect(nftBalanceBeforeAlice).to.be.equal(ONE);
@@ -120,7 +120,7 @@ describe("Tests with factory", function () {
         })
 
         it('should transfer token to user via approve', async() => {
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
             const nftBalanceBeforeBob = await this.nft.balanceOf(bob.address);
             expect(nftBalanceBeforeAlice).to.be.equal(ONE);
@@ -136,7 +136,7 @@ describe("Tests with factory", function () {
         })
 
         it('should transfer token to user via operator', async() => {
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
             const nftBalanceBeforeBob = await this.nft.balanceOf(bob.address);
             expect(nftBalanceBeforeAlice).to.be.equal(ONE);
@@ -152,7 +152,7 @@ describe("Tests with factory", function () {
         })
 
         it('should correct burn token', async() => {
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ZERO);
             await this.nft.connect(alice).burn(id);
             expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ONE);
@@ -160,18 +160,18 @@ describe("Tests with factory", function () {
         })
 
         it('shouldnt transfer token if not owner', async() => {
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
         })
         it('shouldnt transfer token on zero address', async() => {
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(alice).transferFrom(alice.address, ZERO_ADDRESS, id)).to.be.revertedWith("ERC721: transfer to the zero address");
         })
 
         it('should correct get token of owner by index', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(TEN), false, ZERO, {value: price}); 
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(HUN), false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TEN), price, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(HUN), price, false, ZERO, {value: price}); 
             const token1 = await this.nft.tokenOfOwnerByIndex(bob.address, ZERO);
             const token2 = await this.nft.tokenOfOwnerByIndex(bob.address, ONE);
             const token3 = await this.nft.tokenOfOwnerByIndex(bob.address, TWO);
@@ -180,18 +180,18 @@ describe("Tests with factory", function () {
             expect(token3).to.be.equal(id.add(HUN));
         })
         it('should correct get totalSupply', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(TEN), false, ZERO, {value: price}); 
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(HUN), false, ZERO, {value: price}); 
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price}); 
-            await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id.add(HUN.add(TEN)), false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TEN), price, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(HUN), price, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price}); 
+            await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(HUN.add(TEN)), price, false, ZERO, {value: price}); 
             const totalSupply = await this.nft.totalSupply();
             expect(totalSupply).to.be.equal(FIVE);
         })
         it('should correct get token by index', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
-            await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id.add(ONE), false, ZERO, {value: price}); 
-            await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+            await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price}); 
+            await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price}); 
             const token1 = await this.nft.tokenByIndex(ZERO);
             const token2 = await this.nft.tokenByIndex(ONE);
             const token3 = await this.nft.tokenByIndex(TWO);
@@ -201,12 +201,12 @@ describe("Tests with factory", function () {
         })
 
         it('shouldnt show tokenOfOwnerByIndex if owner index is out of bounds', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.tokenOfOwnerByIndex(bob.address, TWO)).to.be.revertedWith("ERC721Enumerable: owner index out of bounds");
         })
 
         it('shouldnt show tokenByIndex if index is out of bounds', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.tokenByIndex(TWO)).to.be.revertedWith("ERC721Enumerable: global index out of bounds");
         })
 
@@ -230,50 +230,50 @@ describe("Tests with factory", function () {
                 "",
                 suffix
               ];
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await this.nft.setSeriesInfo(seriesId, newSeriesParams);
             expect(await this.nft.tokenURI(id)).to.be.equal(id);
         })
         it('shouldnt approve to current owner', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(bob).approve(bob.address, id)).to.be.revertedWith("ERC721: approval to current owner");
         })
         it('shouldnt approve if not owner', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(alice).approve(charlie.address, id)).to.be.revertedWith("ERC721: approve caller is not owner nor approved for all");
         })
         it('shouldnt approve for all if operator is the owner', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(bob).setApprovalForAll(bob.address, true)).to.be.revertedWith("ERC721: approve to caller");
         })
 
         it('should correct safeTransfer to contract without data', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await this.nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id);
             expect(await this.nft.ownerOf(id)).to.be.equal(this.buyer.address);
             expect(await this.nft.balanceOf(this.buyer.address)).to.be.equal(ONE);
         })
 
         it('shouldnt safeTransfer if not owner', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
         })
 
         it('shouldnt burn if not owner', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(alice).burn(id)).to.be.revertedWith("ERC721Burnable: caller is not owner nor approved");
         })
 
         it('should correct safeTransfer to contract with data', async() => {
             const data = "0x123456";
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await this.nft.connect(bob)["safeTransferFrom(address,address,uint256,bytes)"](bob.address, this.buyer.address, id, data);
             expect(await this.nft.ownerOf(id)).to.be.equal(this.buyer.address);
             expect(await this.nft.balanceOf(this.buyer.address)).to.be.equal(ONE);
         })
 
         it('shouldnt safeTransfer to non-ERC721receiver', async() => {
-            await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await expect(this.nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, this.erc20.address, id)).to.be.revertedWith("ERC721: transfer to non ERC721Receiver implementer");
         })
         

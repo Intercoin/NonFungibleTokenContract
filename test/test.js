@@ -159,7 +159,7 @@ describe("NonFungibleToken tests", function () {
     it("should correct mint NFT with ETH if ID doesn't exist", async() => {
       const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
       const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
       const balanceAfterBob = await ethers.provider.getBalance(bob.address);
       const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
       expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.gt(price);
@@ -229,7 +229,7 @@ describe("NonFungibleToken tests", function () {
     });
 
     it("should correct buy minted NFT for ETH", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       const saleParams = [
         now + 100000,
         ZERO_ADDRESS, 
@@ -240,7 +240,7 @@ describe("NonFungibleToken tests", function () {
 
       const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
       const balanceBeforeCharlie = await ethers.provider.getBalance(charlie.address);
-      await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price.mul(THREE)}); // accidentially send more than needed
+      await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price.mul(TWO), false, ZERO, {value: price.mul(THREE)}); // accidentially send more than needed
       const balanceAfterBob = await ethers.provider.getBalance(bob.address);
       const balanceAfterCharlie = await ethers.provider.getBalance(charlie.address);
       expect(balanceAfterBob.sub(balanceBeforeBob)).to.be.equal(price.mul(TWO));
@@ -265,7 +265,7 @@ describe("NonFungibleToken tests", function () {
     });
 
     it("should correct buy minted NFT for token", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       const saleParams = [
         now + 100000,
         this.erc20.address, 
@@ -321,21 +321,21 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldnt buy if token was burned (ETH)", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id,  price, false, ZERO, {value: price});
       await this.nft.connect(bob).transferFrom(bob.address, DEAD_ADDRESS, id);
-      await expect(this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price})).to.be.revertedWith("token is not on sale");
+      await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith("token is not on sale");
     })
 
     it("shouldnt buy if token was burned (token)", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       await this.nft.connect(bob).transferFrom(bob.address, DEAD_ADDRESS, id);
       await this.erc20.connect(charlie).approve(this.nft.address, price);
       await expect(this.nft.connect(charlie)["buy(uint256,address,uint256,bool,uint256)"](id, this.erc20.address, price, false, ZERO)).to.be.revertedWith("token is not on sale");
     })
 
     it("shouldnt buy if token wasnt listed on sale", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
-      await expect(this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price})).to.be.revertedWith('token is not on sale');
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
+      await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith('token is not on sale');
     })
 
     it("shouldnt mint if series was unlisted from sale", async() => {
@@ -353,11 +353,11 @@ describe("NonFungibleToken tests", function () {
         suffix
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
-      await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price})).to.be.revertedWith("token is not on sale");
+      await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith("token is not on sale");
     })
     
     it("shouldnt buy if user passed unsufficient ETH", async() => {
-      await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price.sub(ONE)})).to.be.revertedWith("insufficient ETH");
+      await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.sub(ONE)})).to.be.revertedWith("insufficient ETH");
     })
 
     it("shouldnt set token info if not owner", async() => {   
@@ -430,7 +430,7 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("should correct list on sale via listForSale", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       const duration = 1000;
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
@@ -444,7 +444,7 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldnt list on sale via listForSale if already listed", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       const duration = 1000;
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
@@ -454,7 +454,7 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldnt list on sale via listForSale if not owner", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       const duration = 1000;
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
@@ -463,7 +463,7 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldnt list on sale via listForSale if duration is invalid", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       const duration = 0;
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
@@ -472,9 +472,9 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldnt buy burnt token", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       await this.nft.connect(bob).burn(id);
-      await expect(this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price})).to.be.revertedWith('token is not on sale');
+      await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith('token is not on sale');
     })
 
     it("should mint tokens for several users via mintAndDistribute", async() => {
@@ -557,9 +557,9 @@ describe("NonFungibleToken tests", function () {
         suffix
       ];
       await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
-      await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
-      await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id.add(ONE), false, ZERO, {value: price});
-      await expect(this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price})).to.be.revertedWith("exceed series limit");
+      await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
+      await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
+      await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price})).to.be.revertedWith("exceed series limit");
   
     })
 
@@ -583,14 +583,14 @@ describe("NonFungibleToken tests", function () {
         suffix
       ];
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
-      await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price})).to.be.revertedWith('wrong currency for sale');
+      await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith('wrong currency for sale');
 
     })
 
     it("shouldn correct list all tokens of user", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(ONE), false, ZERO, {value: price});
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price});
       const bobTokens = await this.nft.connect(bob)["tokensByOwner(address)"](bob.address);
       expect(bobTokens[0]).to.be.equal(id);
       expect(bobTokens[1]).to.be.equal(id.add(ONE));
@@ -599,9 +599,9 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldn correct list null tokens if there is ", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(ONE), false, ZERO, {value: price});
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price});
       const bobTokens = await this.nft.connect(bob)["tokensByOwner(address)"](bob.address);
       expect(bobTokens[0]).to.be.equal(id);
       expect(bobTokens[1]).to.be.equal(id.add(ONE));
@@ -614,9 +614,9 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("should correct list tokens of user with output limit", async() => {
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(ONE), false, ZERO, {value: price});
-      await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id.add(TWO), false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price});
       const limit = ONE;
       const bobTokens = await this.nft.connect(bob)["tokensByOwner(address,uint32)"](bob.address,limit);
       expect(bobTokens[0]).to.be.equal(id);
@@ -627,7 +627,7 @@ describe("NonFungibleToken tests", function () {
     describe("hooks tests", async() => {
       it("should correct set hook (ETH test)", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
-        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price});
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ONE, {value: price});
         expect(await this.nft.hooksCountByToken(id)).to.be.equal(ONE);
         const hooks = await this.nft.getHookList(seriesId);
         expect(hooks[0]).to.be.equal(this.hook1.address);
@@ -637,7 +637,7 @@ describe("NonFungibleToken tests", function () {
       it("shouldn't buy if hook number changed (ETH test)", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
         await this.nft.pushTokenTransferHook(seriesId, this.hook2.address);
-        await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price})).to.be.revertedWith("wrong hookCount");
+        await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ONE, {value: price})).to.be.revertedWith("wrong hookCount");
       })
 
       it("should correct set hook (token test)", async() => {
@@ -672,12 +672,12 @@ describe("NonFungibleToken tests", function () {
 
       it("shouldn't buy if hook reverts", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.badHook.address);
-        await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price})).to.be.revertedWith("Transfer Not Authorized");
+        await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ONE, {value: price})).to.be.revertedWith("Transfer Not Authorized");
       })
 
       it("shouldn't buy if hook returns false", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.falseHook.address);
-        await expect(this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ONE, {value: price})).to.be.revertedWith("Transfer Not Authorized");
+        await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ONE, {value: price})).to.be.revertedWith("Transfer Not Authorized");
       })
 
       it("shouldn't buy if hook doesn't supports interface", async() => {
@@ -691,7 +691,7 @@ describe("NonFungibleToken tests", function () {
       it("should correct set several hooks", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
         await this.nft.pushTokenTransferHook(seriesId, this.hook2.address);
-        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, TWO, {value: price});
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, TWO, {value: price});
         expect(await this.nft.hooksCountByToken(id)).to.be.equal(TWO);
         const hooks = await this.nft.getHookList(seriesId);
         expect(hooks[0]).to.be.equal(this.hook1.address);
@@ -703,14 +703,14 @@ describe("NonFungibleToken tests", function () {
       it("shouldnt aplly new hook for existing token", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
         await this.nft.pushTokenTransferHook(seriesId, this.hook2.address);
-        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, TWO, {value: price});
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, TWO, {value: price});
         await this.nft.pushTokenTransferHook(seriesId, this.hook3.address);
         await this.nft.connect(bob).transferFrom(bob.address, charlie.address, id);
         expect(await this.hook1.numberOfCalls()).to.be.equal(TWO);
         expect(await this.hook2.numberOfCalls()).to.be.equal(TWO);
         expect(await this.hook3.numberOfCalls()).to.be.equal(ZERO);
 
-        await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id.add(ONE), false, THREE, {value: price});
+        await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, THREE, {value: price});
         expect(await this.hook1.numberOfCalls()).to.be.equal(THREE);
         expect(await this.hook2.numberOfCalls()).to.be.equal(THREE);
         expect(await this.hook3.numberOfCalls()).to.be.equal(ONE);
@@ -735,7 +735,7 @@ describe("NonFungibleToken tests", function () {
       })
 
       it("should correct safe transfer to contract", async() => {
-        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
         await this.nft.connect(bob).listForSale(id, price, ZERO_ADDRESS, 10000);
         await this.buyer.buy(this.nft.address, id, true, ZERO, {value: price});
         expect(await this.nft.balanceOf(this.buyer.address)).to.be.equal(ONE);
@@ -822,7 +822,7 @@ describe("NonFungibleToken tests", function () {
         const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
         const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
         const balanceBeforeReceiver = await ethers.provider.getBalance(commissionReceiver.address);
-        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
         const balanceAfterBob = await ethers.provider.getBalance(bob.address);
         const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
         const balanceAfterReceiver = await ethers.provider.getBalance(commissionReceiver.address);
@@ -878,7 +878,7 @@ describe("NonFungibleToken tests", function () {
         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 
-        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
         const saleParams = [
           now + 100000,
           ZERO_ADDRESS, 
@@ -891,7 +891,7 @@ describe("NonFungibleToken tests", function () {
         const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
         const balanceBeforeCharlie = await ethers.provider.getBalance(charlie.address);
         const balanceBeforeReceiver = await ethers.provider.getBalance(commissionReceiver.address);
-        await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price.mul(THREE)}); // accidentially send more than needed
+        await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price.mul(TWO), false, ZERO, {value: price.mul(THREE)}); // accidentially send more than needed
         const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
         const balanceAfterBob = await ethers.provider.getBalance(bob.address);
         const balanceAfterCharlie = await ethers.provider.getBalance(charlie.address);
@@ -912,7 +912,7 @@ describe("NonFungibleToken tests", function () {
         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 
-        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
         const saleParams = [
           now + 100000,
           this.erc20.address, 
