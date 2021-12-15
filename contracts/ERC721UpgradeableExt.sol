@@ -16,13 +16,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     using StringsUpgradeable for uint256;
     
     // Token name
-    string private _name;
+    string public name;
 
     // Token symbol
-    string private _symbol;
-
-    // suffix
-    string private _suffixURIs;
+    string public symbol;
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -62,37 +59,38 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     struct SaleInfo { 
         address currency;
         uint256 price;
-        uint256 onSaleUntil; 
+        uint64 onSaleUntil; 
     }
     
     struct CommissionInfo {
-        uint256 maxValue;
-        uint256 minValue;
+        uint64 maxValue;
+        uint64 minValue;
         CommissionData defaultValues;
-        mapping (uint256 => CommissionData) fractions;  // seriesId => CommissionData
+        mapping (uint64 => CommissionData) fractions;  // seriesId => CommissionData
     }
 
     struct CommissionData {
-        uint256 value;
+        uint64 value;
         address recipient;
     }
 
     struct SeriesInfo { 
         address payable author;
         SaleInfo saleInfo;
-        uint256 limit;
+        uint32 limit;
         string baseURI; 
+	string suffix;
     }
 
     event SeriesPutOnSale(
-        uint256 indexed seriesId, 
+        uint64 indexed seriesId, 
         uint256 price, 
         address currency, 
-        uint256 onSaleUntil
+        uint64 onSaleUntil
     );
 
     event SeriesRemovedFromSale(
-        uint256 indexed seriesId
+        uint64 indexed seriesId
     );
 
     event TokenPutOnSale(
@@ -100,7 +98,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         address indexed seller, 
         uint256 price, 
         address currency, 
-        uint256 onSaleUntil
+        uint64 onSaleUntil
     );
     
     event TokenBought(
@@ -116,7 +114,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _;
     }
 
-    modifier onlyOwnerOrAuthor(uint256 seriesId) {
+    modifier onlyOwnerOrAuthor(uint64 seriesId) {
         require(
             seriesInfo[seriesId].author == _msgSender() || 
             owner() == _msgSender(), 
@@ -203,8 +201,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         view 
         returns(address[] memory addresses, uint256[] memory values) 
     {
-        uint256 seriesId = getSeriesId(tokenId);
-        uint256 i;
+        uint64 seriesId = getSeriesId(tokenId);
+        uint64 i;
 
         // contract owner commissions
         if (
@@ -234,7 +232,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param info new info to set
     */
     function setSeriesInfo(
-        uint256 seriesId, 
+        uint64 seriesId, 
         SeriesInfo memory info 
     ) 
         onlyOwnerOrAuthor(seriesId)
@@ -263,7 +261,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @dev gives the info for series with 'seriesId'. 
     * @param seriesId series ID
     */
-    function getSeriesInfo(uint256 seriesId) external view returns(SeriesInfo memory) {
+    function getSeriesInfo(uint64 seriesId) external view returns(SeriesInfo memory) {
         return seriesInfo[seriesId];
     }
 
@@ -277,9 +275,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function setDefaultCommission(
         address recipient_, 
-        uint256 default_, 
-        uint256 min_, 
-        uint256 max_
+        uint64 default_, 
+        uint64 min_, 
+        uint64 max_
     ) 
         external 
         onlyOwner 
@@ -300,8 +298,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param recipient recipient
     */
     function setCommission(
-        uint256 seriesId, 
-        uint256 commission, 
+        uint64 seriesId, 
+        uint64 commission, 
         address recipient
     ) 
         external 
@@ -324,7 +322,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param seriesId seriesId
     */
     function reduceCommission(
-        uint256 seriesId
+        uint64 seriesId
     ) 
         external 
         onlyOwnerOrAuthor(seriesId)
@@ -343,7 +341,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 tokenId,
         uint256 price,
         address currency,
-        uint256 duration
+        uint64 duration
     )
         external 
     {
@@ -380,7 +378,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function tokensByOwner(
         address account,
-        uint256 limit
+        uint32 limit
     ) 
         external
         view
@@ -477,20 +475,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         return owner;
     }
 
-    /**
-     * @dev Returns the token collection name.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the token collection symbol.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
     /** 
     * @dev sets name and symbol for contract
     * @param newName new name 
@@ -503,8 +487,24 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         public 
         onlyOwner 
     {
-        _name = newName;
-        _symbol = newSymbol;
+        name = newName;
+        symbol = newSymbol;
+    }
+
+    /**
+     * @dev Converts a uint256 to its ASCII string hexadecimal representation.
+     */
+    function toHexString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0x00";
+        }
+        uint256 temp = value;
+        uint256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp >>= 8;
+        }
+        return toHexString(value, length);
     }
 
     /**
@@ -512,21 +512,21 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
-        string memory _tokenURI = tokenId.toString();
-        string memory base = seriesInfo[getSeriesId(tokenId)].baseURI;
+        string memory _tokenIdHexString = toHexString(tokenId);
+	uint64 seriesId = getSeriesId(tokenId);
+        string memory baseURI = seriesInfo[seriesId].baseURI;
+	string memory suffix = seriesInfo[seriesId].suffix;
         require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
 
         // If there is no base URI, return the token URI.
-        if (bytes(base).length == 0) {
+        if (bytes(baseURI).length == 0) {
             return  string(abi.encodePacked(_tokenURI));
         }
-        // If both are set, concatenate the baseURI and tokenURI (via abi.encodePacked).
+        // If all are set, concatenate
         if (bytes(_tokenURI).length > 0) {
-            return string(abi.encodePacked(base, _tokenURI, _suffixURIs));
+            return string(abi.encodePacked(baseURI, _tokenIdHexString, suffix));
         }
         return "";
-
-        // return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
     }
 
 
@@ -726,7 +726,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
                     success = true;
                 } 
             } else {   
-                uint256 seriesId = getSeriesId(tokenId);
+                uint64 seriesId = getSeriesId(tokenId);
                 SeriesInfo memory seriesData = seriesInfo[seriesId];
                 if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
                     success = true;
@@ -747,9 +747,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         __ReentrancyGuard_init();
 
         
-        _name = name_;
-        _symbol = symbol_;
-        _suffixURIs = ".json";
+        name = name_;
+        symbol = symbol_;
 
     }
 
@@ -867,7 +866,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _balances[to] += 1;
         _owners[tokenId] = to;
 
-        uint256 seriesId = getSeriesId(tokenId);
+        uint64 seriesId = getSeriesId(tokenId);
         mintedCountBySeries[seriesId] += 1;
 
         if (seriesInfo[seriesId].limit != 0) {
@@ -961,7 +960,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function _tokensByOwner(
         address account,
-        uint256 limit
+        uint32 limit
     ) 
         internal
         view
@@ -982,7 +981,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     )
         internal
         pure
-        returns(uint256)
+        returns(uint64)
     {
         return tokenId >> SERIES_BITS;
     }
