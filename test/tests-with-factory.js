@@ -37,6 +37,7 @@ describe("factory test", function () {
     const price = ethers.utils.parseEther('1');
     const now = Math.round(Date.now() / 1000);   
     const baseURI = "someURI";
+    const suffix = ".json";
     const limit = BigNumber.from('10000');
     const saleParams = [
         ZERO_ADDRESS, 
@@ -47,7 +48,8 @@ describe("factory test", function () {
         alice.address,  
         saleParams,
         10000,
-        baseURI
+        baseURI,
+        suffix
       ];
 
     beforeEach("deploying", async() => {
@@ -219,7 +221,8 @@ describe("factory test", function () {
                 alice.address,  
                 saleParams,
                 10000,
-                ""
+                "",
+                suffix
               ];
             await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
             await this.nft.setSeriesInfo(seriesId, newSeriesParams);

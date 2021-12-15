@@ -37,6 +37,7 @@ describe("ERC721UpgradeableExt test", function () {
     const price = ethers.utils.parseEther('1');
     const now = Math.round(Date.now() / 1000);   
     const baseURI = "someURI";
+    const suffix = ".json";
     const limit = BigNumber.from('10000');
     const saleParams = [
         ZERO_ADDRESS, 
@@ -47,7 +48,8 @@ describe("ERC721UpgradeableExt test", function () {
         alice.address,  
         saleParams,
         10000,
-        baseURI
+        baseURI,
+        suffix
       ];
 
     beforeEach("deploying", async() => {
@@ -71,7 +73,7 @@ describe("ERC721UpgradeableExt test", function () {
     describe('transfer tests', async() => {
         it('check name, symbol and tokenURI', async() => {
             await this.nft.connect(alice)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
-            expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toString()).concat(".json"));
+            expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toString()).concat(suffix));
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");
         })
@@ -203,7 +205,8 @@ describe("ERC721UpgradeableExt test", function () {
                 alice.address,  
                 saleParams,
                 10000,
-                ""
+                "",
+                suffix
               ];
             await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price}); 
             await this.nft.setSeriesInfo(seriesId, newSeriesParams);

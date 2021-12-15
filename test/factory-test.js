@@ -75,6 +75,7 @@ describe("factory test", async() => {
         const price = ethers.utils.parseEther('1');
         const now = Math.round(Date.now() / 1000);   
         const baseURI = "";
+        const suffix = ".json";
         const saleParams = [
         ZERO_ADDRESS, 
         price, 
@@ -84,7 +85,8 @@ describe("factory test", async() => {
         alice.address,  
         saleParams,
         10000,
-        baseURI
+        baseURI,
+        suffix
         ];
 
         console.log("owner of contract = ", await this.nft.owner());

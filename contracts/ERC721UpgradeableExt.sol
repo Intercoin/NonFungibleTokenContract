@@ -12,14 +12,15 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+
     using AddressUpgradeable for address;
     using StringsUpgradeable for uint256;
     
     // Token name
-    string public name;
+    string private _name;
 
     // Token symbol
-    string public symbol;
+    string private _symbol;
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -46,7 +47,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     mapping(uint256 => uint256) private _allTokensIndex;
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-    uint256 internal constant SERIES_BITS = 192;
+    uint256 internal constant SERIES_BITS = 192; // do not change this!! depended of hardcoded uint64 for seriesId (256-192=64)
     uint256 internal constant DEFAULT_SERIES_ID = 0;
     uint256 internal constant FRACTION = 100000;
     
@@ -79,7 +80,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         SaleInfo saleInfo;
         uint32 limit;
         string baseURI; 
-	string suffix;
+	    string suffix;
     }
 
     event SeriesPutOnSale(
@@ -209,9 +210,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             commissionsInfo.defaultValues.recipient != address(0) && 
             commissionsInfo.defaultValues.value != 0
         ) {
-            i = addresses.length;
             addresses[i] = commissionsInfo.defaultValues.recipient;
             values[i] = commissionsInfo.defaultValues.value * price / FRACTION;
+            i += 1;
         }
 
         // author commissions
@@ -219,9 +220,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             commissionsInfo.fractions[seriesId].recipient != address(0) && 
             commissionsInfo.fractions[seriesId].value != 0
         ) {
-            i = addresses.length;
             addresses[i] = commissionsInfo.fractions[seriesId].recipient;
             values[i] = commissionsInfo.fractions[seriesId].value * price / FRACTION;
+            // i += 1;
         }
 
     }
@@ -350,7 +351,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(owner == _msgSender(), "invalid token owner");
         require(duration > 0, "invalid duration");
 
-        data.onSaleUntil = block.timestamp + duration;
+        data.onSaleUntil = uint64(block.timestamp) + duration;
         data.price = price;
         data.currency = currency;
         setSaleInfo(tokenId, data);
@@ -475,6 +476,20 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         return owner;
     }
 
+    /**
+     * @dev Returns the token collection name.
+     */
+    function name() public view virtual override returns (string memory) {
+        return _name;
+    }
+
+    /**
+     * @dev Returns the token collection symbol.
+     */
+    function symbol() public view virtual override returns (string memory) {
+        return _symbol;
+    }
+
     /** 
     * @dev sets name and symbol for contract
     * @param newName new name 
@@ -487,24 +502,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         public 
         onlyOwner 
     {
-        name = newName;
-        symbol = newSymbol;
-    }
-
-    /**
-     * @dev Converts a uint256 to its ASCII string hexadecimal representation.
-     */
-    function toHexString(uint256 value) internal pure returns (string memory) {
-        if (value == 0) {
-            return "0x00";
-        }
-        uint256 temp = value;
-        uint256 length = 0;
-        while (temp != 0) {
-            length++;
-            temp >>= 8;
-        }
-        return toHexString(value, length);
+        _setNameAndSymbol(newName, newSymbol);
     }
 
     /**
@@ -512,18 +510,20 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
-        string memory _tokenIdHexString = toHexString(tokenId);
-	uint64 seriesId = getSeriesId(tokenId);
+        //string memory _tokenIdHexString = tokenId.toHexString();
+        string memory _tokenIdHexString = tokenId.toString();
+
+	    uint64 seriesId = getSeriesId(tokenId);
         string memory baseURI = seriesInfo[seriesId].baseURI;
-	string memory suffix = seriesInfo[seriesId].suffix;
+	    string memory suffix = seriesInfo[seriesId].suffix;
         require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
 
         // If there is no base URI, return the token URI.
         if (bytes(baseURI).length == 0) {
-            return  string(abi.encodePacked(_tokenURI));
+            return string(abi.encodePacked(_tokenIdHexString));
         }
         // If all are set, concatenate
-        if (bytes(_tokenURI).length > 0) {
+        if (bytes(_tokenIdHexString).length > 0) {
             return string(abi.encodePacked(baseURI, _tokenIdHexString, suffix));
         }
         return "";
@@ -746,10 +746,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         __Ownable_init();
         __ReentrancyGuard_init();
 
+        _setNameAndSymbol(name_, symbol_);
         
-        name = name_;
-        symbol = symbol_;
-
     }
 
     /**
@@ -983,8 +981,24 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         pure
         returns(uint64)
     {
-        return tokenId >> SERIES_BITS;
+        return uint64(tokenId >> SERIES_BITS);
     }
+    
+    /** 
+    * @dev sets name and symbol for contract
+    * @param newName new name 
+    * @param newSymbol new symbol 
+    */
+    function _setNameAndSymbol(
+        string memory newName, 
+        string memory newSymbol
+    ) 
+        internal 
+    {
+        _name = newName;
+        _symbol = newSymbol;
+    }
+
 
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
