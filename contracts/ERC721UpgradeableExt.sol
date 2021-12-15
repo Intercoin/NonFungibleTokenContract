@@ -16,13 +16,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     using StringsUpgradeable for uint256;
     
     // Token name
-    string private _name;
+    string public name;
 
     // Token symbol
-    string private _symbol;
-
-    // suffix
-    string private _suffixURIs;
+    string public symbol;
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -62,7 +59,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     struct SaleInfo { 
         address currency;
         uint256 price;
-        uint256 onSaleUntil; 
+        uint64 onSaleUntil; 
     }
     
     struct CommissionInfo {
@@ -80,15 +77,16 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     struct SeriesInfo { 
         address payable author;
         SaleInfo saleInfo;
-        uint256 limit;
+        uint32 limit;
         string baseURI; 
+	string suffix;
     }
 
     event SeriesPutOnSale(
         uint256 indexed seriesId, 
         uint256 price, 
         address currency, 
-        uint256 onSaleUntil
+        uint64 onSaleUntil
     );
 
     event SeriesRemovedFromSale(
@@ -100,7 +98,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         address indexed seller, 
         uint256 price, 
         address currency, 
-        uint256 onSaleUntil
+        uint64 onSaleUntil
     );
     
     event TokenBought(
@@ -380,7 +378,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function tokensByOwner(
         address account,
-        uint256 limit
+        uint32 limit
     ) 
         external
         view
@@ -477,20 +475,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         return owner;
     }
 
-    /**
-     * @dev Returns the token collection name.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the token collection symbol.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
     /** 
     * @dev sets name and symbol for contract
     * @param newName new name 
@@ -503,8 +487,24 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         public 
         onlyOwner 
     {
-        _name = newName;
-        _symbol = newSymbol;
+        name = newName;
+        symbol = newSymbol;
+    }
+
+    /**
+     * @dev Converts a uint256 to its ASCII string hexadecimal representation.
+     */
+    function toHexString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0x00";
+        }
+        uint256 temp = value;
+        uint256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp >>= 8;
+        }
+        return toHexString(value, length);
     }
 
     /**
@@ -512,21 +512,21 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
-        string memory _tokenURI = tokenId.toString();
-        string memory base = seriesInfo[getSeriesId(tokenId)].baseURI;
+        string memory _tokenIdHexString = toHexString(tokenId);
+	uint256 seriesId = getSeriesId(tokenId);
+        string memory baseURI = seriesInfo[seriesId].baseURI;
+	string memory suffix = seriesInfo[seriesId].suffix;
         require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
 
         // If there is no base URI, return the token URI.
-        if (bytes(base).length == 0) {
+        if (bytes(baseURI).length == 0) {
             return  string(abi.encodePacked(_tokenURI));
         }
-        // If both are set, concatenate the baseURI and tokenURI (via abi.encodePacked).
+        // If all are set, concatenate
         if (bytes(_tokenURI).length > 0) {
-            return string(abi.encodePacked(base, _tokenURI, _suffixURIs));
+            return string(abi.encodePacked(baseURI, _tokenIdHexString, suffix));
         }
         return "";
-
-        // return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
     }
 
 
@@ -747,9 +747,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         __ReentrancyGuard_init();
 
         
-        _name = name_;
-        _symbol = symbol_;
-        _suffixURIs = ".json";
+        name = name_;
+        symbol = symbol_;
 
     }
 
@@ -961,7 +960,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function _tokensByOwner(
         address account,
-        uint256 limit
+        uint32 limit
     ) 
         internal
         view
