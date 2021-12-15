@@ -17,17 +17,19 @@ const TEN = BigNumber.from('10');
 const HUN = BigNumber.from('100');
 
 const SERIES_BITS = 192;
+const FRACTION = BigNumber.from('100000');
 
 chai.use(require('chai-bignumber')());
 
 
 
-describe("NFT test", function () {
+describe("NonFungibleToken tests", function () {
     const accounts = waffle.provider.getWallets();
     const owner = accounts[0];                     
     const alice = accounts[1];
     const bob = accounts[2];
     const charlie = accounts[3];
+    const commissionReceiver = accounts[4];
 
     beforeEach("deploying", async() => {
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
@@ -94,6 +96,7 @@ describe("NFT test", function () {
     expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
     expect(seriesInfo.baseURI).to.be.equal(baseURI);
     expect(seriesInfo.limit).to.be.equal(10000);
+
 
   })
 
@@ -177,6 +180,7 @@ describe("NFT test", function () {
       expect(seriesInfo.baseURI).to.be.equal(baseURI);
       expect(seriesInfo.limit).to.be.equal(10000);
 
+      expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
   
     });
 
@@ -220,6 +224,7 @@ describe("NFT test", function () {
       expect(seriesInfo.baseURI).to.be.equal(baseURI);
       expect(seriesInfo.limit).to.be.equal(10000);
 
+      expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
 
     });
 
@@ -740,6 +745,217 @@ describe("NFT test", function () {
       it("shouldnt safe buy for bad contract", async() => {
         await expect(this.badBuyer.buy(this.nft.address, id, true, ZERO, {value: price})).to.be.revertedWith("ERC721: transfer to non ERC721Receiver implementer");
       })
+
+    })
+
+    describe("tests with commission", async() => {
+      const TEN_PERCENTS = BigNumber.from('10000');
+      const FIVE_PERCENTS = BigNumber.from('5000');
+      const ONE_PERCENT = BigNumber.from('1000');
+      const seriesCommissions = [
+        TEN_PERCENTS,
+        alice.address
+      ];
+      const maxValue = TEN_PERCENTS;
+      const minValue = ONE_PERCENT;
+      const defaultCommissionInfo = [
+        maxValue,
+        minValue,
+        [
+          FIVE_PERCENTS,
+          commissionReceiver.address
+        ]
+      ];
+      it("should correct set default commission", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        const commissionInfo = await this.nft.commissionsInfo();
+        expect(commissionInfo.maxValue).to.be.equal(maxValue);
+        expect(commissionInfo.minValue).to.be.equal(minValue);
+        expect(commissionInfo.defaultValues.value).to.be.equal(FIVE_PERCENTS);
+        expect(commissionInfo.defaultValues.recipient).to.be.equal(commissionReceiver.address);
+      });
+
+      it("shouldnt set default commission if not owner", async() => {
+        await expect(this.nft.connect(bob).setDefaultCommission(defaultCommissionInfo)).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      it("should correct set series commission", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
+        const seriesInfo = await this.nft.seriesInfo(seriesId);
+        expect(seriesInfo.commissions.value).to.be.equal(TEN_PERCENTS);
+        expect(seriesInfo.commissions.recipient).to.be.equal(alice.address);
+      });
+
+      it("shouldnt set series commission if not owner or author", async() => {
+        await expect(this.nft.connect(bob).setCommission(seriesId, seriesCommissions)).to.be.revertedWith("!onlyOwnerOrAuthor");
+      });
+
+      it("shouldnt set series commission if it is not in the allowed range", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        let wrongCommission = [
+          minValue.sub(ONE),
+          alice.address
+        ]
+        await expect(this.nft.connect(alice).setCommission(seriesId, wrongCommission)).to.be.revertedWith("COMMISSION_INVALID");
+        wrongCommission = [
+          maxValue.add(ONE),
+          alice.address
+        ]
+        await expect(this.nft.connect(alice).setCommission(seriesId, wrongCommission)).to.be.revertedWith("COMMISSION_INVALID");
+
+      });
+
+      it("shouldnt set series commission if receipient is invalid", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        let wrongCommission = [
+          TEN_PERCENTS,
+          ZERO_ADDRESS
+        ]
+        await expect(this.nft.connect(alice).setCommission(seriesId, wrongCommission)).to.be.revertedWith("RECIPIENT_INVALID");
+
+      });
+
+      it("should pay commissions for primary sale with ETH (mint)", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
+        const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
+        const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
+        const balanceBeforeReceiver = await ethers.provider.getBalance(commissionReceiver.address);
+        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
+        const balanceAfterBob = await ethers.provider.getBalance(bob.address);
+        const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
+        const balanceAfterReceiver = await ethers.provider.getBalance(commissionReceiver.address);
+        const defaultCommission = FIVE_PERCENTS.mul(price).div(FRACTION);
+        expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.gt(price);
+        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price.sub(defaultCommission));
+        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(defaultCommission);
+        const newOwner = await this.nft.ownerOf(id);
+        expect(newOwner).to.be.equal(bob.address);
+  
+        expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
+
+      });
+
+      it("should pay commissions for primary sale with token (mint)", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
+        const saleParams = [
+          now + 100000, 
+          this.erc20.address, 
+          price, 
+        ];
+        const seriesParams = [
+          alice.address, 
+          10000,
+          saleParams,
+          commissions, 
+          baseURI,
+          suffix
+        ];
+        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.erc20.connect(bob).approve(this.nft.address, price);
+        const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
+        const balanceBeforeAlice = await this.erc20.balanceOf(alice.address);
+        const balanceBeforeReceiver = await this.erc20.balanceOf(commissionReceiver.address);
+        await this.nft.connect(bob)["buy(uint256,address,uint256,bool,uint256)"](id, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+        const balanceAfterBob = await this.erc20.balanceOf(bob.address);
+        const balanceAfterAlice = await this.erc20.balanceOf(alice.address);
+        const balanceAfterReceiver = await this.erc20.balanceOf(commissionReceiver.address);
+        const defaultCommission = FIVE_PERCENTS.mul(price).div(FRACTION);
+
+        expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.equal(price);
+        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price.sub(defaultCommission));
+        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(defaultCommission);
+        const newOwner = await this.nft.ownerOf(id);
+        expect(newOwner).to.be.equal(bob.address);
+          
+        expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
+      });
+
+
+      it("should correct buy minted NFT for ETH with commission", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
+
+        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+        const saleParams = [
+          now + 100000,
+          ZERO_ADDRESS, 
+          price.mul(TWO), 
+        ];      
+  
+        await this.nft.connect(bob).setSaleInfo(id, saleParams);
+  
+        const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
+        const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
+        const balanceBeforeCharlie = await ethers.provider.getBalance(charlie.address);
+        const balanceBeforeReceiver = await ethers.provider.getBalance(commissionReceiver.address);
+        await this.nft.connect(charlie)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price.mul(THREE)}); // accidentially send more than needed
+        const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
+        const balanceAfterBob = await ethers.provider.getBalance(bob.address);
+        const balanceAfterCharlie = await ethers.provider.getBalance(charlie.address);
+        const balanceAfterReceiver = await ethers.provider.getBalance(commissionReceiver.address);
+        const defaultCommission = FIVE_PERCENTS.mul(price.mul(TWO)).div(FRACTION); 
+        const authorCommission = TEN_PERCENTS.mul(price.mul(TWO)).div(FRACTION); 
+        expect(balanceAfterBob.sub(balanceBeforeBob)).to.be.equal(price.mul(TWO).sub(defaultCommission).sub(authorCommission));
+        expect(balanceBeforeCharlie.sub(balanceAfterCharlie)).to.be.gt(price.mul(TWO));
+        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(defaultCommission);
+        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(authorCommission);
+  
+        const newOwner = await this.nft.ownerOf(id);
+        expect(newOwner).to.be.equal(charlie.address);
+  
+      });
+
+      it("should correct buy minted NFT for ETH with commission", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
+
+        await this.nft.connect(bob)["buy(uint256,bool,uint256)"](id, false, ZERO, {value: price});
+        const saleParams = [
+          now + 100000,
+          this.erc20.address, 
+          price.mul(TWO), 
+        ];      
+  
+        await this.nft.connect(bob).setSaleInfo(id, saleParams);
+  
+        const balanceBeforeAlice = await this.erc20.balanceOf(alice.address);
+        const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
+        const balanceBeforeCharlie = await this.erc20.balanceOf(charlie.address);
+        const balanceBeforeReceiver = await this.erc20.balanceOf(commissionReceiver.address);
+        await this.erc20.connect(charlie).approve(this.nft.address, price.mul(THREE));
+        await this.nft.connect(charlie)["buy(uint256,address,uint256,bool,uint256)"](id, this.erc20.address, price.mul(THREE), false, ZERO); // accidentially send more than needed
+        const balanceAfterAlice = await this.erc20.balanceOf(alice.address);
+        const balanceAfterBob = await this.erc20.balanceOf(bob.address);
+        const balanceAfterCharlie = await this.erc20.balanceOf(charlie.address);
+        const balanceAfterReceiver = await this.erc20.balanceOf(commissionReceiver.address);
+        const defaultCommission = FIVE_PERCENTS.mul(price.mul(TWO)).div(FRACTION); 
+        const authorCommission = TEN_PERCENTS.mul(price.mul(TWO)).div(FRACTION); 
+        expect(balanceAfterBob.sub(balanceBeforeBob)).to.be.equal(price.mul(TWO).sub(defaultCommission).sub(authorCommission));
+        expect(balanceBeforeCharlie.sub(balanceAfterCharlie)).to.be.equal(price.mul(TWO));
+        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(defaultCommission);
+        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(authorCommission);
+  
+        const newOwner = await this.nft.ownerOf(id);
+        expect(newOwner).to.be.equal(charlie.address);
+  
+      });
+
+      it("should correct remove commission", async() => {
+        await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+        await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
+        await this.nft.connect(alice).removeCommission(seriesId);
+        const seriesInfo = await this.nft.seriesInfo(seriesId);
+        expect(seriesInfo.commissions.value).to.be.equal(ZERO);
+        expect(seriesInfo.commissions.recipient).to.be.equal(ZERO_ADDRESS);
+
+  
+      });
+
+      
+
 
     })
 

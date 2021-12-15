@@ -24,7 +24,7 @@ chai.use(require('chai-bignumber')());
 
 
 
-describe("factory test", function () {
+describe("Tests with factory", function () {
     const accounts = waffle.provider.getWallets();
     const owner = accounts[0];                     
     const alice = accounts[1];

@@ -24,7 +24,7 @@ chai.use(require('chai-bignumber')());
 
 
 
-describe("ERC721UpgradeableExt test", function () {
+describe("Standart ERC721 functional tests", function () {
     const accounts = waffle.provider.getWallets();
     const owner = accounts[0];                     
     const alice = accounts[1];

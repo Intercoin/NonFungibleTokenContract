@@ -22,7 +22,7 @@ const SERIES_BITS = 192;
 
 chai.use(require('chai-bignumber')());
 
-describe("factory test", async() => {
+describe("Factory tests", async() => {
     const accounts = waffle.provider.getWallets();
     const owner = accounts[0];                     
     const alice = accounts[1];
@@ -38,8 +38,6 @@ describe("factory test", async() => {
         const name = "NFT Edition";
         const symbol = "NFT";
         this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol);
-        console.log("owner = ", owner.address);
-        console.log("factory = ", this.factory.address);
     })
 
     it("should correct deploy instance and do usual buy test", async() => {
@@ -94,7 +92,6 @@ describe("factory test", async() => {
             suffix
         ];
 
-        console.log("owner of contract = ", await this.nft.owner());
 
         await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
 

@@ -53,7 +53,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     
     mapping (uint256 => SaleInfo) public salesInfo;  // tokenId => saleInfo
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => seriesInfo
-    CommissionInfo internal commissionsInfo;  // seriesId => commissionsInfo
+    CommissionInfo public commissionsInfo;  // seriesId => commissionsInfo
 
     mapping(uint256 => uint256) public mintedCountBySeries;
     
@@ -141,13 +141,13 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         bool transferSuccess;
         uint256 left = data.price;
 
-        // pay commissions (if exists)
-        (address[] memory addresses, uint256[] memory values) = calculateCommissions(tokenId, data.price);
-        for(uint256 i = 0; i < addresses.length; i++) {
+        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommissions(tokenId, data.price);
+        for(uint256 i = 0; i < length; i++) {
             (transferSuccess, ) = addresses[i].call{gas: 3000, value: values[i]}(new bytes(0));
             require(transferSuccess, "TRANSFER_COMMISSION_FAILED");
             left -= values[i];
         }
+        
         // all left after commissions send to owner
         (transferSuccess, ) = owner.call{gas: 3000, value: left}(new bytes(0));
         require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
@@ -177,12 +177,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(allowance >= data.price && price >= data.price, "insufficient amount");
 
         uint256 left = data.price;
-        // pay commissions (if exists)
-        (address[] memory addresses, uint256[] memory values) = calculateCommissions(tokenId, data.price);
-        for(uint256 i = 0; i < addresses.length; i++) {
+        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommissions(tokenId, data.price);
+        for(uint256 i = 0; i < length; i++) {
             IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
             left -= values[i];
         }
+        
         // all left after commissions send to owner
         IERC20Upgradeable(data.currency).transferFrom(_msgSender(), owner, left);
 
@@ -200,19 +200,22 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     ) 
         internal 
         view 
-        returns(address[] memory addresses, uint256[] memory values) 
+        returns(
+            address[2] memory addresses, 
+            uint256[2] memory values,
+            uint256 length
+        ) 
     {
         uint64 seriesId = getSeriesId(tokenId);
-        uint64 i;
 
         // contract owner commissions
         if (
             commissionsInfo.defaultValues.recipient != address(0) && 
             commissionsInfo.defaultValues.value != 0
         ) {
-            addresses[i] = commissionsInfo.defaultValues.recipient;
-            values[i] = commissionsInfo.defaultValues.value * price / FRACTION;
-            i += 1;
+            addresses[length] = commissionsInfo.defaultValues.recipient;
+            values[length] = commissionsInfo.defaultValues.value * price / FRACTION;
+            length++;
         }
 
         // author commissions
@@ -220,9 +223,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             seriesInfo[seriesId].commissions.recipient != address(0) && 
             seriesInfo[seriesId].commissions.value != 0
         ) {
-            addresses[i] = seriesInfo[seriesId].commissions.recipient;
-            values[i] = seriesInfo[seriesId].commissions.value * price / FRACTION;
-            // i += 1;
+            addresses[length] = seriesInfo[seriesId].commissions.recipient;
+            values[length] = seriesInfo[seriesId].commissions.value * price / FRACTION;
+            length++;
         }
 
     }
@@ -269,60 +272,47 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     /**
     * set default commission that used for contract owner
-    * @param recipient_ recipient
-    * @param default_ default commission value
-    * @param min_ mininimum commission value  that author's series can set
-    * @param max_ maximum commission value that author's series can set
+    * @param commissions new commissions info
     */
     function setDefaultCommission(
-        address recipient_, 
-        uint64 default_, 
-        uint64 min_, 
-        uint64 max_
+        CommissionInfo memory commissions
     ) 
         external 
         onlyOwner 
     {
         // validation?
-
-        commissionsInfo.defaultValues.recipient = recipient_;
-        commissionsInfo.defaultValues.value = default_;
-        commissionsInfo.maxValue = max_;
-        commissionsInfo.minValue = min_;
+        commissionsInfo = commissions;
 
     }
 
     /**
     * set commission for series
-    * @param seriesId seriesId
-    * @param commission commission
-    * @param recipient recipient
+    * @param commissionData new commission data
     */
     function setCommission(
         uint64 seriesId, 
-        uint64 commission, 
-        address recipient
+        CommissionData memory commissionData
     ) 
         external 
         onlyOwnerOrAuthor(seriesId)
     {
         require(
             (
-                commission <= commissionsInfo.maxValue &&
-                commission >= commissionsInfo.minValue
+                commissionData.value <= commissionsInfo.maxValue &&
+                commissionData.value >= commissionsInfo.minValue &&
+                commissionData.value + commissionsInfo.defaultValues.value < FRACTION
             ),
             "COMMISSION_INVALID"
         );
-        require(recipient!= address(0), "RECIPIENT_INVALID");
-
-        seriesInfo[seriesId].commissions = CommissionData(commission, recipient);
+        require(commissionData.recipient!= address(0), "RECIPIENT_INVALID");
+        seriesInfo[seriesId].commissions = CommissionData(commissionData.value, commissionData.recipient);
     }
 
     /**
     * clear commission for series
     * @param seriesId seriesId
     */
-    function reduceCommission(
+    function removeCommission(
         uint64 seriesId
     ) 
         external 
