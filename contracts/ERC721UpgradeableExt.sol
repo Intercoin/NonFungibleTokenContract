@@ -129,13 +129,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * mint token if it doesn't exist and transfer token
     * if it exists and is on sale
     * @param tokenId token ID to buy
+    * @param price amount of specified ETH to pay
     * @param safe use safeMint and safeTransfer or not
     */
 
-    function buy(uint256 tokenId, bool safe) public payable nonReentrant {
+    function buy(uint256 tokenId, uint256 price, bool safe) public payable nonReentrant {
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
-        require(msg.value >= data.price, "insufficient ETH");
+        require(msg.value >= data.price && price >= data.price, "insufficient ETH");
         require(address(0) == data.currency, "wrong currency for sale");
 
         bool transferSuccess;
@@ -652,6 +653,45 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     ) public virtual override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         _safeTransfer(from, to, tokenId, _data);
+    }
+
+    /**
+     * @dev Transfers `tokenId` token from sender to `to`.
+     *
+     * WARNING: Usage of this method is discouraged, use {safeTransferFrom} whenever possible.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must be owned by sender.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(
+        address to,
+        uint256 tokenId
+    ) public virtual {
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _transfer(_msgSender(), to, tokenId);
+    }
+
+    /**
+     * @dev Safely transfers `tokenId` token from sender to `to`.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by sender.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     */
+    function safeTransfer(
+        address to,
+        uint256 tokenId
+    ) public virtual {
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _safeTransfer(_msgSender(), to, tokenId, "");
     }
 
     /**
