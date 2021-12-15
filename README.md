@@ -1,13 +1,33 @@
 
-<h3>NFTSafeHook </h3>
+<h1> Contracts overview </h1>
+<h2> NFTSafeHook </h2>
 
-<p class="lead">NFT with hooks support</p>
+<p class="lead">
 
- <br>
-<p><strong>Events</strong></p>
+Non fungible token contract of the new standard. It is based on the ERC721 standard, but with significant changes. The basic idea is to represent the token ID in a special way, in which the ID is the concatenation of the series ID and the token itself in that series. 
+
+The contract allows to create a series of tokens, with certain properties and conditions of sale (custom baseURI, suffix, limit, currency, price and royalties). Thus, it is not only a token contract, but a platform for creating various NFT projects and selling tokens with different logic. 
+
+The list of basic features:
+- Creation of a series of tokens with different terms of sale (royalties, price, currency) and token properties (custom baseURI, suffix, limit)
+- Conduction of primary purchase (mint) for a specified currency and price
+- Possibility for the users to resell tokens on special conditions
+- Supporting of additional hooks connection (SafeHooks). SafeHooks mechanism doesn't put the current token owners at risk, since only the hooks that were present at the time of purchase will be applied to the individual token
+- The contract owner can call a separate function mintAndDistribute() and mint the specified IDs to the specified addresses 
+- The contract supports all functions of the ERC721 standard and ERC721Enumerable, besides there are public transfer() and burn() function
+
+<br>
+<h2> Factory </h2>
+Factory contract for NFTSafeHooks. Allows gas-efficiently deploating copies of the NFTSafeHooks contract 
+
+
+ <hr>
+<h1> Events </h1>
+
+<h2> NFTSafeHook </h2>
 
 <hr>
-<h6>NewHook</h6>
+<h3>NewHook</h3>
 
 <p>Emitted when new hook to the collection added</p>
 
@@ -35,7 +55,7 @@
 
 
 <hr>
-<h6>SeriesPutOnSale</h6>
+<h3>SeriesPutOnSale</h3>
 
 <p>Emitted when a series is put on sale</p>
 
@@ -63,7 +83,7 @@
 </tr><tr>
 <td>onSaleUntil</td>
 <td>uint256</td>
-<td>deadline of sale in seconds</td>
+<td>timestamp of the sale end</td>
 </tr>
 </tbody>
 </table>
@@ -72,7 +92,7 @@
 
 
 <hr>
-<h6>SeriesRemovedFromSale</h6>
+<h3>SeriesRemovedFromSale</h3>
 
 <p>Emitted when a series is removed from sale</p>
 
@@ -98,7 +118,7 @@
 
 
 <hr>
-<h6>TokenPutOnSale</h6>
+<h3>TokenPutOnSale</h3>
 
 <p>Emitted when a token is put on sale</p>
 
@@ -130,7 +150,7 @@
 </tr><tr>
 <td>onSaleUntil</td>
 <td>uint256</td>
-<td>deadline of sale in seconds</td>
+<td>timestamp of the sale end</td>
 </tr>
 </tbody>
 </table>
@@ -138,7 +158,7 @@
 
 
 <hr>
-<h6>TokenBought</h6>
+<h3>TokenBought</h3>
 
 <p>Emitted when a token is put on sale</p>
 
@@ -175,16 +195,18 @@
 </tbody>
 </table>
 
+<All ERC721 standard events>
+
 
 
 
 <br>
-<p><strong>Functions</strong></p>
+<h2>Functions</h2>
 
 
 
 <hr>
-<h6>approve</h6>
+<h3>approve</h3>
 
 <p>Gives permission to `to` to transfer `tokenId` token to 
 another account. The approval is cleared when the token is transferred. 
@@ -205,24 +227,20 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>to</td>
 <td>address</td>
-<td></td>
+<td>address to approve token transfer</td>
 </tr><tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>ID of the token</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
-
 
 <hr>
-<h6>balanceOf</h6>
+<h3>balanceOf</h3>
 
-<p>Returns the number of tokens in ``owner``'s account.</p>
+<p>Returns the number of tokens in `owner`'s account.</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -236,33 +254,14 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>owner</td>
 <td>address</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
+<td>address of account to check balance</td>
 </tr>
 </tbody>
 </table>
 
 
 <hr>
-<h6>burn</h6>
+<h3>burn</h3>
 
 <p>Burns `tokenId`. See {ERC721-_burn}. Requirements: - The caller must own `tokenId` or be an approved operator.</p>
 
@@ -278,20 +277,18 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>token ID to burn</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<p>No parameters</p>
 
 
 <hr>
-<h6>buy</h6>
+<h3>buy</h3>
 
-<p>buys NFT for specified currency with defined id.  mint token if it doesn't exist and transfer token if it exists and is on sale</p>
+<p>Buys NFT for specified currency with defined id. Mint token if it doesn't exist and transfer token if it exists and is on sale. Has hook front-running defence</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -321,20 +318,18 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </tr><tr>
 <td>hookNumber</td>
 <td>uint256</td>
-<td></td>
+<td>Number of hooks, used to avoid front-running </td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<p>No parameters</p>
 
 
 <hr>
-<h6>buy</h6>
+<h3>buy</h3>
 
-<p>buys NFT for specified currency with defined id.  mint token if it doesn't exist and transfer token if it exists and is on sale</p>
+<p>Buys NFT for ETH with defined id. Mint token if it doesn't exist and transfer token if it exists and is on sale</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -357,15 +352,15 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<p>No parameters</p>
+
+
 
 
 <hr>
-<h6>buy</h6>
+<h3>buy</h3>
 
-<p>buys NFT for specified currency with defined id.  mint token if it doesn't exist and transfer token if it exists and is on sale</p>
+<p>Buys NFT for specified currency with defined id.  mint token if it doesn't exist and transfer token if it exists and is on sale. Has hook front-running defence</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -387,20 +382,17 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </tr><tr>
 <td>hookNumber</td>
 <td>uint256</td>
-<td></td>
+<td>Number of hooks, used to avoid front-running</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>buy</h6>
+<h3>buy</h3>
 
-<p>buys NFT for specified currency with defined id.  mint token if it doesn't exist and transfer token if it exists and is on sale</p>
+<p>Buys NFT for specified currency with defined id. Mint token if it doesn't exist and transfer token if it exists and is on sale</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -431,9 +423,6 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
@@ -453,35 +442,18 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>Token ID </td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>address</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>getHookList</h6>
+<h3>getHookList</h3>
 
-<p>gives the list of hooks for series with `seriesId`</p>
+<p>Returns the list of hooks for series with `seriesId`</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -495,35 +467,18 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>seriesId</td>
 <td>uint256</td>
-<td>seriesId</td>
+<td>Series ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>address[]</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>getSaleInfo</h6>
+<h3>getSaleInfo</h3>
 
-<p>gives the info for sale of NFT with 'tokenId'. </p>
+<p>Returns the 'SaleInfo' struct for sale of NFT with 'tokenId'. </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -537,35 +492,17 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td>token ID</td>
+<td>Token ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>tuple</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>getSeriesInfo</h6>
+<h3>getSeriesInfo</h3>
 
-<p>gives the info for series with 'seriesId'. </p>
+<p>Returns the SeriesInfo struct for series with 'seriesId'. </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -579,54 +516,17 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>seriesId</td>
 <td>uint256</td>
-<td>series ID</td>
+<td>Series ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>tuple</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>hooksCountByToken</h6>
+<h3>hooksCountByToken</h3>
 
-<p><strong>**Add Documentation for the method here**</strong></p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-<p>Returns:</p>
+<p><strong>Returns number of hooks applied to token with 'tokenId'</strong></p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -638,18 +538,20 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </thead>
 <tbody>
 <tr>
-<td></td>
+<td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>Token ID</td>
 </tr>
 </tbody>
 </table>
+
+
 
 
 <hr>
-<h6>initialize</h6>
+<h3>initialize</h3>
 
-<p><strong>**Add Documentation for the method here**</strong></p>
+<p><strong>Initializes contract</strong></p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -661,26 +563,23 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </thead>
 <tbody>
 <tr>
-<td>name_</td>
+<td>name</td>
 <td>string</td>
-<td></td>
+<td>Name of NFT</td>
 </tr><tr>
-<td>symbol_</td>
+<td>symbol</td>
 <td>string</td>
-<td></td>
+<td>Symbol of NFT</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>isApprovedForAll</h6>
+<h3>isApprovedForAll</h3>
 
-<p>Returns if the `operator` is allowed to manage all of the assets of `owner`. See {setApprovalForAll}</p>
+<p>Returns true if the `operator` is allowed to manage all of the assets of `owner`. See {setApprovalForAll}</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -694,39 +593,22 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>owner</td>
 <td>address</td>
-<td></td>
+<td>Address of tokens' owner</td>
 </tr><tr>
 <td>operator</td>
 <td>address</td>
-<td></td>
+<td>Address of the operator</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>bool</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>listForSale</h6>
+<h3>listForSale</h3>
 
-<p>lists on sale NFT with defined token ID with specified terms of sale</p>
+<p>Lists NFT with defined token ID on sale with specified terms</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -740,32 +622,29 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td>token ID</td>
+<td>Token ID</td>
 </tr><tr>
 <td>price</td>
 <td>uint256</td>
-<td>price for sale </td>
+<td>Price for the sale </td>
 </tr><tr>
 <td>currency</td>
 <td>address</td>
-<td>currency of sale </td>
+<td>Currency of sale </td>
 </tr><tr>
 <td>duration</td>
 <td>uint256</td>
-<td>duration of sale </td>
+<td>Duration of sale in seconds</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>mintAndDistribute</h6>
+<h3>mintAndDistribute</h3>
 
-<p>mints and distributed NFTs with specified IDs to specified addresses</p>
+<p>Mints and distributes NFTs with specified IDs to specified addresses</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -779,24 +658,22 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <tr>
 <td>tokenIds</td>
 <td>uint256[]</td>
-<td>list of NFT IDs t obe minted</td>
+<td>List of NFT IDs to be minted</td>
 </tr><tr>
 <td>addrs</td>
 <td>address[]</td>
-<td>list of receiver addresses</td>
+<td>List of receiver addresses</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<p>No parameters</p>
 
 
 <hr>
-<h6>mintedCountBySeries</h6>
+<h3>mintedCountBySeries</h3>
 
-<p><strong>**Add Documentation for the method here**</strong></p>
+<p><strong>Returns number of tokens minted in the series</strong></p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -808,131 +685,41 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </thead>
 <tbody>
 <tr>
-<td></td>
+<td>seriesId</td>
 <td>uint256</td>
-<td></td>
+<td>Series ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>name</h6>
+<h3>name</h3>
 
 <p>Returns the token collection name.</p>
 
-<p>No parameters</p>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>string</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>owner</h6>
+<h3>owner</h3>
 
 <p>Returns the address of the current owner.</p>
 
-<p>No parameters</p>
-
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>address</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>ownerOf</h6>
+<h3>ownerOf</h3>
 
 <p>Returns the owner of the `tokenId` token. Requirements: - `tokenId` must exist.</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>tokenId</td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
-<p>Returns:</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>address</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>pushTokenTransferHook</h6>
+<h3>pushTokenTransferHook</h3>
 
 <p>link safeHook contract to certain Series</p>
 
