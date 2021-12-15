@@ -341,7 +341,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 tokenId,
         uint256 price,
         address currency,
-        uint256 duration
+        uint64 duration
     )
         external 
     {
