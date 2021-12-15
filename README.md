@@ -952,15 +952,12 @@ caller. Emits an {ApprovalForAll} event.</p>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>setNameAndSymbol</h6>
+<h3>setNameAndSymbol</h3>
 
-<p>sets name and symbol for contract</p>
+<p>Sets name and symbol for contract</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -974,24 +971,23 @@ caller. Emits an {ApprovalForAll} event.</p>
 <tr>
 <td>newName</td>
 <td>string</td>
-<td>new name </td>
+<td>New name </td>
 </tr><tr>
 <td>newSymbol</td>
 <td>string</td>
-<td>new symbol </td>
+<td>New symbol </td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<p>No parameters</p>
+
 
 
 <hr>
-<h6>setSaleInfo</h6>
+<h3>setSaleInfo</h3>
 
-<p>sets sale info for the NFT with 'tokenId'</p>
+<p>Sets sale info for the NFT with 'tokenId'</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1005,24 +1001,23 @@ caller. Emits an {ApprovalForAll} event.</p>
 <tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td>token ID</td>
+<td>Token ID</td>
 </tr><tr>
 <td>info</td>
 <td>tuple</td>
-<td>information about sale </td>
+<td>Information about sale </td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<p>No parameters</p>
+
 
 
 <hr>
-<h6>setSeriesInfo</h6>
+<h3>setSeriesInfo</h3>
 
-<p>sets information for series with 'seriesId'. </p>
+<p>Sets information for series with 'seriesId'. </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1036,24 +1031,21 @@ caller. Emits an {ApprovalForAll} event.</p>
 <tr>
 <td>seriesId</td>
 <td>uint256</td>
-<td>series ID</td>
+<td>Series ID</td>
 </tr><tr>
 <td>info</td>
 <td>tuple</td>
-<td>new info to set</td>
+<td>New info to set</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>supportsInterface</h6>
+<h3>supportsInterface</h3>
 
-<p>See {IERC165-supportsInterface}.</p>
+<p>Returns true if the contract supports interface with 'interfaceId' </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1067,60 +1059,24 @@ caller. Emits an {ApprovalForAll} event.</p>
 <tr>
 <td>interfaceId</td>
 <td>bytes4</td>
-<td></td>
+<td>Interface ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>bool</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>symbol</h6>
+<h3>symbol</h3>
 
-<p>Returns the token collection symbol.</p>
+<p>Returns the token collection symbol</p>
 
-<p>No parameters</p>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>string</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>tokenByIndex</h6>
+<h3>tokenByIndex</h3>
 
 <p>Returns a token ID at a given `index` of all the tokens 
 stored by the contract. Use along with {totalSupply} to enumerate all 
@@ -1138,33 +1094,16 @@ tokens.</p>
 <tr>
 <td>index</td>
 <td>uint256</td>
-<td></td>
+<td>Token index</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>tokenOfOwnerByIndex</h6>
+<h3>tokenOfOwnerByIndex</h3>
 
 <p>Returns a token ID owned by `owner` at a given `index` of
 its token list. Use along with {balanceOf} to enumerate all of 
@@ -1182,37 +1121,21 @@ its token list. Use along with {balanceOf} to enumerate all of
 <tr>
 <td>owner</td>
 <td>address</td>
-<td></td>
+<td>Owner address</td>
 </tr><tr>
 <td>index</td>
 <td>uint256</td>
-<td></td>
+<td>Token index</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
 
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
+
 
 
 <hr>
-<h6>tokenURI</h6>
+<h3>tokenURI</h3>
 
 <p>Returns the Uniform Resource Identifier (URI) for `tokenId` token.</p>
 
@@ -1228,35 +1151,17 @@ its token list. Use along with {balanceOf} to enumerate all of
 <tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>Token ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>string</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>tokensByOwner</h6>
+<h3>tokensByOwner</h3>
 
-<p>gives the list of all NFTs owned by 'account'</p>
+<p>Returns the list of all NFTs owned by 'account'</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1270,35 +1175,17 @@ its token list. Use along with {balanceOf} to enumerate all of
 <tr>
 <td>account</td>
 <td>address</td>
-<td>address of account</td>
+<td>Address of account</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ret</td>
-<td>uint256[]</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>tokensByOwner</h6>
+<h3>tokensByOwner</h3>
 
-<p>gives the list of all NFTs owned by 'account'</p>
+<p>Returns the list of all NFTs owned by 'account'</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1312,64 +1199,26 @@ its token list. Use along with {balanceOf} to enumerate all of
 <tr>
 <td>account</td>
 <td>address</td>
-<td>address of account</td>
+<td>Address of account</td>
 </tr><tr>
 <td>limit</td>
 <td>uint256</td>
-<td></td>
+<td>Limit for list</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ret</td>
-<td>uint256[]</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>totalSupply</h6>
+<h3>totalSupply</h3>
 
 <p>Returns the total amount of tokens stored by the contract.</p>
 
-<p>No parameters</p>
-
-<p>Returns:</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>uint256</td>
-<td></td>
-</tr>
-</tbody>
-</table>
 
 
 <hr>
-<h6>transferFrom</h6>
+<h3>transferFrom</h3>
 
 <p>Transfers `tokenId` token from `from` to `to`. WARNING: 
 Usage of this method is discouraged, use {safeTransferFrom} whenever 
@@ -1390,26 +1239,23 @@ either {approve} or {setApprovalForAll}. Emits a {Transfer} event.</p>
 <tr>
 <td>from</td>
 <td>address</td>
-<td></td>
+<td>Sender address</td>
 </tr><tr>
 <td>to</td>
 <td>address</td>
-<td></td>
+<td>Receiver address</td>
 </tr><tr>
 <td>tokenId</td>
 <td>uint256</td>
-<td></td>
+<td>Token ID</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
 
 
 <hr>
-<h6>transferOwnership</h6>
+<h3>transferOwnership</h3>
 
 <p>Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.</p>
 
@@ -1425,11 +1271,8 @@ either {approve} or {setApprovalForAll}. Emits a {Transfer} event.</p>
 <tr>
 <td>newOwner</td>
 <td>address</td>
-<td></td>
+<td>New owner address</td>
 </tr>
 </tbody>
 </table>
 
-<p>Returns:</p>
-
-<p>No parameters</p>
