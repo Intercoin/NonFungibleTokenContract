@@ -63,19 +63,19 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 price;
     }
 
-       struct SeriesInfo { 
+    struct SeriesInfo { 
         address payable author;
         uint32 limit;
         SaleInfo saleInfo;
-        string baseURI; 
-	    string suffix;
+        CommissionData commissions;
+        string baseURI;
+        string suffix;
     }
     
     struct CommissionInfo {
         uint64 maxValue;
         uint64 minValue;
         CommissionData defaultValues;
-        mapping (uint64 => CommissionData) fractions;  // seriesId => CommissionData
     }
 
     struct CommissionData {
@@ -217,11 +217,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         // author commissions
         if (
-            commissionsInfo.fractions[seriesId].recipient != address(0) && 
-            commissionsInfo.fractions[seriesId].value != 0
+            seriesInfo[seriesId].commissions.recipient != address(0) && 
+            seriesInfo[seriesId].commissions.value != 0
         ) {
-            addresses[i] = commissionsInfo.fractions[seriesId].recipient;
-            values[i] = commissionsInfo.fractions[seriesId].value * price / FRACTION;
+            addresses[i] = seriesInfo[seriesId].commissions.recipient;
+            values[i] = seriesInfo[seriesId].commissions.value * price / FRACTION;
             // i += 1;
         }
 
@@ -315,7 +315,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         );
         require(recipient!= address(0), "RECIPIENT_INVALID");
 
-        commissionsInfo.fractions[seriesId] = CommissionData(commission, recipient);
+        seriesInfo[seriesId].commissions = CommissionData(commission, recipient);
     }
 
     /**
@@ -328,7 +328,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         external 
         onlyOwnerOrAuthor(seriesId)
     {
-        delete commissionsInfo.fractions[seriesId];
+        delete seriesInfo[seriesId].commissions;
     }
 
     /**
