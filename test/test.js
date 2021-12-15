@@ -959,6 +959,23 @@ describe("NonFungibleToken tests", function () {
 
     })
 
+    describe('transfer tests', async() => {
+      it('should correct transfer token via transfer()', async() => {
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+        await this.nft.connect(bob).transfer(this.buyer.address, id);
+        expect(await this.nft.ownerOf(id)).to.be.equal(this.buyer.address);
+        expect(await this.nft.balanceOf(this.buyer.address)).to.be.equal(ONE);
+
+      })
+      it('should correct safe transfer token via safeTransfer()', async() => {
+        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+        await this.nft.connect(bob).safeTransfer(this.buyer.address, id);
+        expect(await this.nft.ownerOf(id)).to.be.equal(this.buyer.address);
+        expect(await this.nft.balanceOf(this.buyer.address)).to.be.equal(ONE);
+
+      })
+    })
+
   })
   
 
