@@ -665,6 +665,45 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
+     * @dev Transfers `tokenId` token from sender to `to`.
+     *
+     * WARNING: Usage of this method is discouraged, use {safeTransferFrom} whenever possible.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must be owned by sender.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(
+        address to,
+        uint256 tokenId
+    ) public virtual {
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _transfer(_msgSender(), to, tokenId);
+    }
+
+    /**
+     * @dev Safely transfers `tokenId` token from sender to `to`.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by sender.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     */
+    function safeTransfer(
+        address to,
+        uint256 tokenId
+    ) public virtual {
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _safeTransfer(_msgSender(), to, tokenId, "");
+    }
+
+    /**
      * @dev Burns `tokenId`. See {ERC721-_burn}.
      *
      * Requirements:
