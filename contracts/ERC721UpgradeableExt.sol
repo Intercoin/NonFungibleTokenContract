@@ -501,8 +501,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
-        //string memory _tokenIdHexString = tokenId.toHexString();
-        string memory _tokenIdHexString = tokenId.toString();
+        string memory _tokenIdHexString = tokenId.toHexString();
+        //string memory _tokenIdHexString = tokenId.toString();
 
 	    uint64 seriesId = getSeriesId(tokenId);
         string memory baseURI = seriesInfo[seriesId].baseURI;
