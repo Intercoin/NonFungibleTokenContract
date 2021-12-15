@@ -27,13 +27,14 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * mint token if it doesn't exist and transfer token
     * if it exists and is on sale
     * @param tokenId token ID to buy
+    * @param price amount of specified ETH to pay
     * @param safe use safeMint and safeTransfer or not
     * @param hookCount number of hooks 
     */
-    function buy(uint256 tokenId, bool safe, uint256 hookCount) external payable {
+    function buy(uint256 tokenId, uint256 price, bool safe, uint256 hookCount) external payable {
         uint256 seriesId = tokenId >> SERIES_BITS;
         require(hookCount == hooksCount(seriesId), "wrong hookCount");
-        super.buy(tokenId, safe);
+        super.buy(tokenId, price, safe);
     }
     /**
     * @dev buys NFT for specified currency with defined id. 

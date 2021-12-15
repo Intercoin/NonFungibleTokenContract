@@ -129,13 +129,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * mint token if it doesn't exist and transfer token
     * if it exists and is on sale
     * @param tokenId token ID to buy
+    * @param price amount of specified ETH to pay
     * @param safe use safeMint and safeTransfer or not
     */
 
-    function buy(uint256 tokenId, bool safe) public payable nonReentrant {
+    function buy(uint256 tokenId, uint256 price, bool safe) public payable nonReentrant {
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
-        require(msg.value >= data.price, "insufficient ETH");
+        require(msg.value >= data.price && price >= data.price, "insufficient ETH");
         require(address(0) == data.currency, "wrong currency for sale");
 
         bool transferSuccess;
