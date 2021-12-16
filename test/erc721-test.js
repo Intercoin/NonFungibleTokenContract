@@ -36,7 +36,7 @@ describe("Standart ERC721 functional tests", function () {
     const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
     const price = ethers.utils.parseEther('1');
     const now = Math.round(Date.now() / 1000);   
-    const baseURI = "someURI";
+    const baseURI = "http://baseUri/";
     const suffix = ".json";
     const limit = BigNumber.from('10000');
     const saleParams = [
@@ -79,7 +79,7 @@ describe("Standart ERC721 functional tests", function () {
         it('check name, symbol and tokenURI', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             console.log("await this.nft.tokenURI(id) = ", await this.nft.tokenURI(id));
-            expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString()).concat(suffix));
+            expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");
         })
@@ -217,7 +217,7 @@ describe("Standart ERC721 functional tests", function () {
               ];
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await this.nft.setSeriesInfo(seriesId, newSeriesParams);
-            expect(await this.nft.tokenURI(id)).to.be.equal(id);
+            expect(await this.nft.tokenURI(id)).to.be.equal(id.toHexString().substring(2));
         })
         it('shouldnt approve to current owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
