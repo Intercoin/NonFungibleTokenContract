@@ -943,11 +943,11 @@ caller. Emits an {ApprovalForAll} event.</p>
 <tr>
 <td>operator</td>
 <td>address</td>
-<td></td>
+<td>Address of the operator</td>
 </tr><tr>
 <td>approved</td>
 <td>bool</td>
-<td></td>
+<td>Is approved or not</td>
 </tr>
 </tbody>
 </table>

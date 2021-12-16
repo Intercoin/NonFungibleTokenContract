@@ -14,8 +14,8 @@ async function main() {
 
 	this.nft = await NftFactory.deploy({gasLimit: 10e6});
 
-	const name = "NFT Edition";
-	const symbol = "NFT";
+	const name = "NFT SafeHooks";
+	const symbol = "NFTSH";
 	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, {gasLimit: 10e6});
 
 
