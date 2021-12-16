@@ -55,6 +55,115 @@ Factory contract for NFTSafeHooks. Allows gas-efficiently deploating copies of t
 
 
  <hr>
+
+
+<h3>CommissionData</h3>
+
+<p>Stores data about a commission</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>value</td>
+<td>uint64</td>
+<td>Amount of fractions (1/100000) to pay to receiver</td>
+</tr><tr>
+<td>recipient</td>
+<td>address</td>
+<td>Address of commission recipient </td>
+</tr>
+</tbody>
+</table>
+
+
+ <hr>
+
+
+<h3>CommissionInfo</h3>
+
+<p>Stores data about a default commission and global commission parameters</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>maxValue</td>
+<td>uint64</td>
+<td>Maximum amount of fractions for commissions</td>
+</tr><tr>
+<td>minValue</td>
+<td>uint64</td>
+<td>Minimum amount of fractions for commissions </td>
+</tr><tr>
+<td>defaultValues</td>
+<td>CommissionData</td>
+<td>Default commission data</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+ <hr>
+
+<h3>SeriesInfo</h3>
+
+<p>Stores data about a series</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>author</td>
+<td>address payable</td>
+<td>Author of a series</td>
+</tr><tr>
+<td>limit</td>
+<td>uint32</td>
+<td>Maximum amount of NFTs in collection </td>
+</tr><tr>
+<td>saleInfo</td>
+<td>SaleInfo</td>
+<td>Information about sale</td>
+</tr><tr>
+<td>commissions</td>
+<td>CommissionData</td>
+<td>Information about series commission </td>
+</tr><tr>
+<td>baseURI</td>
+<td>string</td>
+<td>baseUri for all tokens in a collection </td>
+</tr><tr>
+<td>suffix</td>
+<td>string</td>
+<td>Suffix for tokenURI (baseURI|tokenId|suffix) </td>
+</tr>
+</tbody>
+</table>
+
+
+
+ <hr>
 <h1> Events </h1>
 
 <h2> NFTSafeHook </h2>
@@ -791,6 +900,61 @@ available to the owner.</p>
 
 
 <hr>
+<h3>transfer</h3>
+
+<p>Tranfers token with 'tokenId' to 'to' address</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>to</td>
+<td>address</td>
+<td>Receiver address</td>
+</tr><tr>
+<td>tokenId</td>
+<td>uint256</td>
+<td>Token ID</td>
+</tr>
+</tbody>
+</table>
+
+
+
+<hr>
+<h3>safeTransfer</h3>
+
+<p>Safely tranfers token with 'tokenId' to 'to' address</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>to</td>
+<td>address</td>
+<td>Receiver address</td>
+</tr><tr>
+<td>tokenId</td>
+<td>uint256</td>
+<td>Token ID</td>
+</tr>
+</tbody>
+</table>
+
+
+<hr>
 <h3>safeTransferFrom</h3>
 
 <p>Safely transfers `tokenId` token from `from` to `to`, 
@@ -1011,6 +1175,107 @@ caller. Emits an {ApprovalForAll} event.</p>
 </table>
 
 
+<hr>
+<h3>setDefaultCommission</h3>
+
+<p>Sets information for default commission. </p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>commissions</td>
+<td>CommissionInfo</td>
+<td>Commission information</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+<hr>
+<h3>setCommission</h3>
+
+<p>Sets commission for the series. </p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seriesId</td>
+<td>uint64</td>
+<td>Series ID</td>
+</tr><tr>
+<td>commissionData</td>
+<td>CommissionData</td>
+<td>Commission data</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+<hr>
+<h3>removeCommission</h3>
+
+<p>Removes commission for the series</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seriesId</td>
+<td>uint64</td>
+<td>Series ID</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+<hr>
+<h3>commissionsInfo</h3>
+
+<p> Returns information about commission in the series with 'seriesId' </p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>seriesId</td>
+<td>uint64</td>
+<td>Series ID</td>
+</tr>
+</tbody>
+</table>
 
 
 
