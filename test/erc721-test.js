@@ -64,7 +64,7 @@ describe("Standart ERC721 functional tests", function () {
 
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.nft = await NFTFactory.deploy();
-        await this.nft.connect(owner).initialize("NFT Edition", "NFT", ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS);
         await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
         const retval = '0x150b7a02';
         const error = ZERO;

@@ -67,8 +67,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     // tokenID is 64bit(series)+152bit(token)
-    uint256 internal constant SERIES_BITS = 192; // do not change this!! depended of hardcoded uint64 for seriesId (256-192=64)
-    uint256 internal constant SERIES_BITS_OPERATION = 192; // 192-64 = 128
+    uint8 internal constant SERIES_BITS = 192; // do not change this!! depended of hardcoded uint64 for seriesId (256-192=64)
+    uint8 internal constant SERIES_BITS_OPERATION = 72; // 192-64 = 128
 
     uint256 internal constant DEFAULT_SERIES_ID = 0;
     uint256 internal constant FRACTION = 100000;
@@ -1141,7 +1141,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         pure
         returns(uint72)
     {
-        return uint72(operation | seriesId);
+        return ((uint72(operation) << SERIES_BITS_OPERATION) | seriesId);
     }
     
     /** 

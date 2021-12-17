@@ -54,7 +54,7 @@ describe("NonFungibleToken tests", function () {
         this.buyer = await BuyerFactory.deploy(retval, error);
         this.badBuyer = await BadBuyerFactory.deploy();
         this.nft = await NFTFactory.deploy();
-        await this.nft.connect(owner).initialize("NFT Edition", "NFT", ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS);
 
         await this.erc20.mint(owner.address, TOTALSUPPLY);
 

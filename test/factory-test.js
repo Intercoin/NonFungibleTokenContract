@@ -37,14 +37,14 @@ describe("Factory tests", async() => {
 
         const name = "NFT Edition";
         const symbol = "NFT";
-        this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, ZERO_ADDRESS);
+        this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, "", ZERO_ADDRESS);
     })
 
     it("should correct deploy instance and do usual buy test", async() => {
         
         const name = "NAME 1";
         const symbol = "SMBL1";
-        await this.factory["produce(string,string)"](name, symbol);
+        await this.factory["produce(string,string,string)"](name, symbol, "");
         const hash = ethers.utils.solidityKeccak256(["string", "string"], [name, symbol]);
         const instance = await this.factory.getInstance(hash);
         console.log('instance = ', instance);
@@ -124,9 +124,9 @@ describe("Factory tests", async() => {
     it("should correct several deploy instances", async() => {
         const names = ["NAME 1", "NAME 2", "NAME 3"];
         const symbols = ["SMBL1", "SMBL2", "SMBL3"];
-        await this.factory["produce(string,string)"](names[0], symbols[0]);
-        await this.factory["produce(string,string)"](names[1], symbols[1]);
-        await this.factory["produce(string,string)"](names[2], symbols[2]);
+        await this.factory["produce(string,string,string)"](names[0], symbols[0], "");
+        await this.factory["produce(string,string,string)"](names[1], symbols[1], "");
+        await this.factory["produce(string,string,string)"](names[2], symbols[2], "");
 
         expect(await this.factory.instancesCount()).to.be.equal(FOUR);
 
@@ -169,13 +169,13 @@ describe("Factory tests", async() => {
     })
 
     it("shouldn't deploy instance with the existing name and symbol", async() => {
-        await this.factory["produce(string,string)"]("NAME", "SMBL");
-        await expect(this.factory["produce(string,string)"]("NAME", "SMBL")).to.be.revertedWith("Factory: ALREADY_EXISTS");
-        await expect(this.factory["produce(string,string)"]("NFT Edition", "NFT")).to.be.revertedWith("Factory: ALREADY_EXISTS");
+        await this.factory["produce(string,string,string)"]("NAME", "SMBL", "");
+        await expect(this.factory["produce(string,string,string)"]("NAME", "SMBL", "")).to.be.revertedWith("Factory: ALREADY_EXISTS");
+        await expect(this.factory["produce(string,string,string)"]("NFT Edition", "NFT", "")).to.be.revertedWith("Factory: ALREADY_EXISTS");
     })
 
     it("shouldn't deploy instance with empty name or symbol", async() => {
-        await expect(this.factory["produce(string,string)"]("", "SMBL")).to.be.revertedWith("Factory: EMPTY NAME");
-        await expect(this.factory["produce(string,string)"]("NAME", "")).to.be.revertedWith("Factory: EMPTY SYMBOL");
+        await expect(this.factory["produce(string,string,string)"]("", "SMBL", "")).to.be.revertedWith("Factory: EMPTY NAME");
+        await expect(this.factory["produce(string,string,string)"]("NAME", "", "")).to.be.revertedWith("Factory: EMPTY SYMBOL");
     })
 })
