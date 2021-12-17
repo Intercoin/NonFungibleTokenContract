@@ -22,6 +22,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     // Token symbol
     string private _symbol;
+
+    // contract URI
+    string internal _contractURI;
 	
     // Utility token, if any, to manage during operations
     address public utilityToken;
@@ -298,10 +301,18 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
+    * @dev sets contract URI. 
+    * @param newContractURI new contract URI
+    */
+    function setContractURI(string memory newContractURI) external onlyOwner {
+        _contractURI = newContractURI;
+    }
+
+    /**
     * @dev returns contract URI. 
     */
     function contractURI() public view returns(string memory){
-        return "https://pastebin.com/raw/armzdJZr";
+        return _contractURI;
     }
 
     /**

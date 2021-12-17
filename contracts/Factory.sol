@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IInstanceContract {
-    function initialize(string memory name_, string memory symbol_, address utilityToken_) external;
+    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address utilityToken_) external;
     function name() view external returns(string memory);
     function symbol() view external returns(string memory);
     function owner() view external returns(address);
@@ -25,10 +25,10 @@ contract Factory is Ownable {
     mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    constructor (address instance, string memory name, string memory symbol, address utilityToken) {
+    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address utilityToken) {
         implementation = instance;
         utility = utilityToken;
-        IInstanceContract(instance).initialize(name, symbol, utilityToken);
+        IInstanceContract(instance).initialize(name, symbol, contractURI_, utilityToken);
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -54,13 +54,14 @@ contract Factory is Ownable {
     */
     function produce(
         string memory name,
-        string memory symbol
+        string memory symbol,
+        string memory contractURI
     ) 
         public 
         returns (address instance) 
     {
         // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol, utility);
+        return _produce(name, symbol, contractURI, utility);
     }
 
     /**
@@ -73,13 +74,14 @@ contract Factory is Ownable {
     function produce(
         string memory name,
         string memory symbol,
+        string memory contractURI,
         address utilityToken
     ) 
         public 
         returns (address instance) 
     {
         // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol, utilityToken);
+        return _produce(name, symbol, contractURI, utilityToken);
     }
     
     function getInstanceInfo(
@@ -93,12 +95,13 @@ contract Factory is Ownable {
     function _produce(
         string memory name,
         string memory symbol,
+        string memory contractURI,
         address utilityToken
     ) internal returns (address instance) {
         _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        IInstanceContract(instanceCreated).initialize(name, symbol, utilityToken);
+        IInstanceContract(instanceCreated).initialize(name, symbol, contractURI, utilityToken);
         Ownable(instanceCreated).transferOwnership(_msgSender());
         instance = instanceCreated;        
     }
