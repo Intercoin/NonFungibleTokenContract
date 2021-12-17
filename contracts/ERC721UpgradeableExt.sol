@@ -75,7 +75,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     struct CommissionInfo {
         uint64 maxValue;
         uint64 minValue;
-        CommissionData defaultValues;
+        CommissionData ownerCommission;
     }
 
     struct CommissionData {
@@ -208,14 +208,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         ) 
     {
         uint64 seriesId = getSeriesId(tokenId);
-
+	length = 0;
+	
         // contract owner commissions
         if (
-            commissionsInfo.defaultValues.recipient != address(0) && 
-            commissionsInfo.defaultValues.value != 0
+            commissionsInfo.ownerCommission.recipient != address(0) && 
+            commissionsInfo.ownerCommission.value != 0
         ) {
-            addresses[length] = commissionsInfo.defaultValues.recipient;
-            values[length] = commissionsInfo.defaultValues.value * price / FRACTION;
+            addresses[length] = commissionsInfo.ownerCommission.recipient;
+            values[length] = commissionsInfo.ownerCommission.value * price / FRACTION;
             length++;
         }
 
@@ -301,7 +302,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             (
                 commissionData.value <= commissionsInfo.maxValue &&
                 commissionData.value >= commissionsInfo.minValue &&
-                commissionData.value + commissionsInfo.defaultValues.value < FRACTION
+                commissionData.value + commissionsInfo.ownerCommission.value < FRACTION
             ),
             "COMMISSION_INVALID"
         );
