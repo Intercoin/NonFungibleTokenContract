@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Code coverage report for contracts/Factory.sol</title>
+    <title>Code coverage report for contracts\Factory.sol</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../prettify.css" />
     <link rel="stylesheet" href="../base.css" />
@@ -20,9 +20,9 @@
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
-        <span class="strong">100% </span>
+        <span class="strong">96.43% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>26/26</span>
+        <span class='fraction'>27/28</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">87.5% </span>
@@ -30,14 +30,14 @@
         <span class='fraction'>7/8</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">100% </span>
+        <span class="strong">88.89% </span>
         <span class="quiet">Functions</span>
-        <span class='fraction'>8/8</span>
+        <span class='fraction'>8/9</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">100% </span>
+        <span class="strong">96.55% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>27/27</span>
+        <span class='fraction'>28/29</span>
       </div>
     </div>
   </div>
@@ -165,7 +165,29 @@
 120
 121
 122
-123</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -192,6 +214,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">87×</span>
 <span class="cline-any cline-yes">87×</span>
 <span class="cline-any cline-yes">87×</span>
 <span class="cline-any cline-yes">87×</span>
@@ -232,8 +256,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5×</span>
 <span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -293,18 +337,19 @@ pragma solidity ^0.8.0;
 &nbsp;
 import "@openzeppelin/contracts/access/Ownable.sol";
 &nbsp;
-interface implementationContract {
-    function initialize(string memory name_, string memory symbol_) external;
+interface IInstanceContract {
+    function initialize(string memory name_, string memory symbol_, address utilityToken_) external;
     function name() view external returns(string memory);
     function symbol() view external returns(string memory);
     function owner() view external returns(address);
 }
 &nbsp;
 contract Factory is Ownable {
+    address public utility;
     address public implementation;
     mapping(bytes32 =&gt; address) public getInstance;
     address[] public instances;
-        
+       
     struct InstanceInfo {
         string name;
         string symbol;
@@ -313,9 +358,10 @@ contract Factory is Ownable {
     mapping(address =&gt; InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    constructor (address instance, string memory name, string memory symbol) {
+    constructor (address instance, string memory name, string memory symbol, address utilityToken) {
         implementation = instance;
-        implementationContract(instance).initialize(name, symbol);
+        utility = utilityToken;
+        IInstanceContract(instance).initialize(name, symbol, utilityToken);
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -347,7 +393,26 @@ contract Factory is Ownable {
         returns (address instance) 
     {
         // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol);
+        return _produce(name, symbol, utility);
+    }
+&nbsp;
+    /**
+    * @dev produces new instance with defined name, symbol and utility token
+    * @param name name of new token
+    * @param symbol symbol of new token
+    * @param utilityToken address of utility token
+    * @return instance address of new contract
+    */
+<span class="fstat-no" title="function not covered" >    function produce(</span>
+        string memory name,
+        string memory symbol,
+        address utilityToken
+    ) 
+        public 
+        returns (address instance) 
+    {
+        // 1% from LP tokens should move to owner while user try to redeem
+<span class="cstat-no" title="statement not covered" >        return _produce(name, symbol, utilityToken);</span>
     }
     
     function getInstanceInfo(
@@ -360,12 +425,13 @@ contract Factory is Ownable {
     
     function _produce(
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address utilityToken
     ) internal returns (address instance) {
-        instance = _createInstanceValidate(name, symbol);
+        _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         <span class="missing-if-branch" title="else path not taken" >E</span>require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        implementationContract(instanceCreated).initialize(name, symbol);
+        IInstanceContract(instanceCreated).initialize(name, symbol, utilityToken);
         Ownable(instanceCreated).transferOwnership(_msgSender());
         instance = instanceCreated;        
     }
@@ -373,10 +439,10 @@ contract Factory is Ownable {
     function _createInstanceValidate(
         string memory name,
         string memory symbol
-    ) internal view returns (address instance) {
+    ) internal view {
         require((bytes(name)).length != 0, "Factory: EMPTY NAME");
         require((bytes(symbol)).length != 0, "Factory: EMPTY SYMBOL");
-        instance = getInstance[keccak256(abi.encodePacked(name, symbol))];
+        address instance = getInstance[keccak256(abi.encodePacked(name, symbol))];
         require(instance == address(0), "Factory: ALREADY_EXISTS");
     }
 &nbsp;
@@ -415,7 +481,7 @@ contract Factory is Ownable {
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Wed Dec 15 2021 19:03:11 GMT+0300 (Moscow Standard Time)
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Fri Dec 17 2021 16:43:23 GMT+0200 (Восточная Европа, стандартное время)
 </div>
 </div>
 <script src="../prettify.js"></script>

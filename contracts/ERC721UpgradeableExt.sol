@@ -10,6 +10,7 @@ import "./lib/StringsW0x.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "./interfaces/IUtilityToken.sol";
 
 abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
@@ -21,9 +22,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     // Token symbol
     string private _symbol;
-	
-	// Factory that produced this contract, if any
-	address public factory;
 	
     // Utility token, if any, to manage during operations
     address public utilityToken;
@@ -53,19 +51,22 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     mapping(uint256 => uint256) private _allTokensIndex;
 	
 	// Constants representing operations
-	uint256 internal constant OPERATION_BUY = 0x0100000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_SETSERIESINFO = 0x0200000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_SETOWNERCOMMISSION = 0x0300000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_SETCOMMISSION = 0x0400000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_REMOVECOMMISSION = 0x0500000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_LISTFORSALE = 0x0600000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_MINTANDDISTRIBUTE = 0x0700000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_SETSALEINFO = 0x0800000000000000000000000000000000000000;
-	uint256 internal constant OPERATION_TRANSFER = 0x0900000000000000000000000000000000000000;
-	
+	uint8 internal constant OPERATION_BUY = 0x1;
+	uint8 internal constant OPERATION_SETSERIESINFO = 0x2;
+	uint8 internal constant OPERATION_SETOWNERCOMMISSION = 0x3;
+	uint8 internal constant OPERATION_SETCOMMISSION = 0x4;
+	uint8 internal constant OPERATION_REMOVECOMMISSION = 0x5;
+	uint8 internal constant OPERATION_LISTFORSALE = 0x6;
+	uint8 internal constant OPERATION_MINTANDDISTRIBUTE = 0x7;
+	uint8 internal constant OPERATION_SETSALEINFO = 0x8;
+	uint8 internal constant OPERATION_TRANSFER = 0x9;
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+
+    // tokenID is 64bit(series)+152bit(token)
     uint256 internal constant SERIES_BITS = 192; // do not change this!! depended of hardcoded uint64 for seriesId (256-192=64)
+    uint256 internal constant SERIES_BITS_OPERATION = 192; // 192-64 = 128
+
     uint256 internal constant DEFAULT_SERIES_ID = 0;
     uint256 internal constant FRACTION = 100000;
     
@@ -179,13 +180,13 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         _buy(tokenId, exists, data, owner, safe);
 		
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_BUY | getSeriesId(tokenId), 
-				0,
-				price
-			);
-        }
+        uint64 seriesId = getSeriesId(tokenId); // `stack too deep` if put inside getOperationId
+        _accountForOperation(
+            getOperationId(OPERATION_BUY, seriesId), 
+            0,
+            price
+        );
+        
     }
     /**
     * @dev buys NFT for specified currency with defined id. 
@@ -204,23 +205,24 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(allowance >= data.price && price >= data.price, "insufficient amount");
 
         uint256 left = data.price;
-        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommissions(tokenId, data.price);
+        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
         for(uint256 i = 0; i < length; i++) {
             IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
             left -= values[i];
         }
-        
+
         // what's left after sending commission to owner
         IERC20Upgradeable(data.currency).transferFrom(_msgSender(), owner, left);
 
         _buy(tokenId, exists, data, owner, safe);
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_BUY | getSeriesId(tokenId),
-				uint256(uint160(currency)),
-				price
-			);
-        }
+
+        uint64 seriesId = getSeriesId(tokenId); // `stack too deep` if put inside getOperationId
+        _accountForOperation(
+            getOperationId(OPERATION_BUY, seriesId),
+            uint256(uint160(currency)),
+            price
+        );
+        
     }
 
     /**
@@ -228,7 +230,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param tokenId token ID to calculate commission
     * @param price amount of specified token to pay 
     */
-    function calculateCommissions(
+    function calculateCommission(
         uint256 tokenId,
         uint256 price
     ) 
@@ -286,13 +288,13 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         
         seriesInfo[seriesId] = info;
 
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_SETSERIESINFO | seriesId,
-				info.currency,
-				info.price
-			);
-        }
+        
+        _accountForOperation(
+            getOperationId(OPERATION_SETSERIESINFO,seriesId),
+            uint256(uint160(info.saleInfo.currency)),
+            info.saleInfo.price
+        );
+        
     }
 
     /**
@@ -325,13 +327,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         // validation?
         commissionInfo = commission;
 
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_SETOWNERCOMMISSION | seriesId,
-				commission.ownerCommission.value,
-				uint256(uint160(commission.ownerCommission.recipient))
-			);
-        }
+        _accountForOperation(
+            getOperationId(OPERATION_SETOWNERCOMMISSION),
+            commission.ownerCommission.value,
+            uint256(uint160(commission.ownerCommission.recipient))
+        );
+
     }
 
     /**
@@ -356,13 +357,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(commissionData.recipient!= address(0), "RECIPIENT_INVALID");
         seriesInfo[seriesId].commission = CommissionData(commissionData.value, commissionData.recipient);
 		
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_SETCOMMISSION | seriesId,
-				commissionData.value,
-				uint256(uint160(comissionData.recipient))
-			);
-        }
+        _accountForOperation(
+            getOperationId(OPERATION_SETCOMMISSION,seriesId),
+            commissionData.value,
+            uint256(uint160(commissionData.recipient))
+        );
+        
     }
 
     /**
@@ -377,11 +377,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         delete seriesInfo[seriesId].commission;
 		
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_REMOVECOMMISSION | getSeriesId(tokenId)
-			);
-        }
+        _accountForOperation(
+            getOperationId(OPERATION_REMOVECOMMISSION, seriesId)
+        );
+        
     }
 
     /**
@@ -411,13 +410,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         emit TokenPutOnSale(tokenId, _msgSender(), data.price, data.currency, data.onSaleUntil);
 		
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_LISTFORSALE | seriesId,
-				currency,
-				price
-			);
-        }
+        _accountForOperation(
+            getOperationId(OPERATION_LISTFORSALE, getSeriesId(tokenId)),
+            uint256(uint160(currency)),
+            price
+        );
+        
     }
 
     /**
@@ -462,13 +460,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             _mint(addresses[i], tokenIds[i]);
         }
 		
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_MINTANDDISTRIBUTE,
-				len,
-				0
-			);
-        }
+        _accountForOperation(
+            getOperationId(OPERATION_MINTANDDISTRIBUTE),
+            len,
+            0
+        );
+        
     }
 
     /**
@@ -484,13 +481,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         salesInfo[tokenId] = info;
 		
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_SETSALEINFO | getSeriesId(tokenId),
-				info.currency,
-				info.price
-			);
-        }
+        _accountForOperation(
+            getOperationId(OPERATION_SETSALEINFO,getSeriesId(tokenId)),
+            uint256(uint160(info.currency)),
+            info.price
+        );
+        
     }
 
     /**
@@ -582,23 +578,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _setNameAndSymbol(newName, newSymbol);
     }
 	
-    /** 
-    * @dev sets name and symbol for contract
-    * @param newName new name 
-    * @param newSymbol new symbol 
-    */
-    function setUtilityToken(
-        address utilityToken_
-    ) 
-        external 
-    {
-    require (
-        OwnableUpgradeable(factory).owner() == msg.caller,
-        "contact factory owner"
-    );
-        utilityToken = utilityToken_;
-    }
-
+  
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
@@ -830,7 +810,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             emit Transfer(owner, _msgSender(), tokenId);
             emit TokenBought(tokenId, seriesInfo[getSeriesId(tokenId)].author, _msgSender(), data.currency, data.price);
         }
-
+         
     }
 
     /**
@@ -881,7 +861,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         __ReentrancyGuard_init();
 
         _setNameAndSymbol(name_, symbol_);
-        factory = msg.caller;
         utilityToken = utilityToken_;
     }
 
@@ -1076,13 +1055,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         emit Transfer(from, to, tokenId);
 		
-        if (utilityToken != address(0)) {
-			_accountForOperation(
-				OPERATION_TRANSFER | getSeriesId(tokenId),
-				uint256(uint160(from)),
-				uint256(uint160(to))
-			);
-        }
+        _accountForOperation(
+            getOperationId(OPERATION_TRANSFER,getSeriesId(tokenId)),
+            uint256(uint160(from)),
+            uint256(uint160(to))
+        );
+        
     }
 
     /**
@@ -1125,6 +1103,27 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         returns(uint64)
     {
         return uint64(tokenId >> SERIES_BITS);
+    }
+
+    function getOperationId(
+        uint8 operation
+    )
+        internal
+        pure
+        returns(uint72)
+    {
+        return getOperationId(operation, uint64(0));
+    }
+
+    function getOperationId(
+        uint8 operation,
+        uint64 seriesId
+    )
+        internal
+        pure
+        returns(uint72)
+    {
+        return uint72(operation | seriesId);
     }
     
     /** 
@@ -1290,16 +1289,21 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 	 * @param param1 uint256 Some more information, if any
 	 * @param param2 uint256 Some more information, if any
      */
-	function _accountForOperation(uint256 info, uint256 param1, uint256 param2) private {
-	    try IUtilityToken(utilityToken).accountForOperation(info, param1, param2)
-		returns (uint256 spent, uint256 remaining) {
-	        // if error is not thrown, we are fine
-	    } catch Error(string memory reason) {
-            // This is executed in case revert() was called with a reason
-	        revert(reason);
-	    } catch {
-	        revert("Insufficient Utility Token: Contact Owner");
-	    }
+	function _accountForOperation(uint72 info, uint256 param1, uint256 param2) private {
+        if (utilityToken != address(0)) {
+            try IUtilityToken(utilityToken).accountForOperation(info, param1, param2)
+            returns (uint256 /*spent*/, uint256 /*remaining*/) {
+                // if error is not thrown, we are fine
+            } catch Error(string memory reason) {
+                // This is executed in case revert() was called with a reason
+                revert(reason);
+            } catch {
+                revert("Insufficient Utility Token: Contact Owner");
+            }
+        }
 	}
-
+    function _accountForOperation(uint72 info) private {
+        _accountForOperation(info, uint256(0), uint256(0));
+    }
+    
 }

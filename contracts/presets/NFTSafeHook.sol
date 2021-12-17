@@ -11,9 +11,9 @@ contract NFTSafeHook is ERC721SafeHooksUpgradeable {
     /**
     * @notice initializes contract
     */
-    function initialize(string memory name_, string memory symbol_) public initializer {
+    function initialize(string memory name_, string memory symbol_, address utilityToken_) public initializer {
         __Ownable_init();
         __ReentrancyGuard_init();
-        __ERC721SafeHook_init(name_, symbol_);
+        __ERC721SafeHook_init(name_, symbol_, utilityToken_);
     }
 }

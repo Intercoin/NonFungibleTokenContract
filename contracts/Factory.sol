@@ -12,10 +12,11 @@ interface IInstanceContract {
 }
 
 contract Factory is Ownable {
+    address public utility;
     address public implementation;
     mapping(bytes32 => address) public getInstance;
     address[] public instances;
-        
+       
     struct InstanceInfo {
         string name;
         string symbol;
@@ -26,6 +27,7 @@ contract Factory is Ownable {
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
     constructor (address instance, string memory name, string memory symbol, address utilityToken) {
         implementation = instance;
+        utility = utilityToken;
         IInstanceContract(instance).initialize(name, symbol, utilityToken);
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
@@ -58,7 +60,26 @@ contract Factory is Ownable {
         returns (address instance) 
     {
         // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol);
+        return _produce(name, symbol, utility);
+    }
+
+    /**
+    * @dev produces new instance with defined name, symbol and utility token
+    * @param name name of new token
+    * @param symbol symbol of new token
+    * @param utilityToken address of utility token
+    * @return instance address of new contract
+    */
+    function produce(
+        string memory name,
+        string memory symbol,
+        address utilityToken
+    ) 
+        public 
+        returns (address instance) 
+    {
+        // 1% from LP tokens should move to owner while user try to redeem
+        return _produce(name, symbol, utilityToken);
     }
     
     function getInstanceInfo(
@@ -71,12 +92,13 @@ contract Factory is Ownable {
     
     function _produce(
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address utilityToken
     ) internal returns (address instance) {
-        instance = _createInstanceValidate(name, symbol);
+        _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        IInstanceContract(instanceCreated).initialize(name, symbol);
+        IInstanceContract(instanceCreated).initialize(name, symbol, utilityToken);
         Ownable(instanceCreated).transferOwnership(_msgSender());
         instance = instanceCreated;        
     }
@@ -84,10 +106,10 @@ contract Factory is Ownable {
     function _createInstanceValidate(
         string memory name,
         string memory symbol
-    ) internal view returns (address instance) {
+    ) internal view {
         require((bytes(name)).length != 0, "Factory: EMPTY NAME");
         require((bytes(symbol)).length != 0, "Factory: EMPTY SYMBOL");
-        instance = getInstance[keccak256(abi.encodePacked(name, symbol))];
+        address instance = getInstance[keccak256(abi.encodePacked(name, symbol))];
         require(instance == address(0), "Factory: ALREADY_EXISTS");
     }
 

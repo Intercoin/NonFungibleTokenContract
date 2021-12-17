@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Code coverage report for contracts\mocks\ERC721ReceiverMock.sol</title>
+    <title>Code coverage report for contracts\lib\StringsW0x.sol</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -16,18 +16,18 @@
 <div class='wrapper'>
   <div class='pad1'>
     <h1>
-      <a href="../../index.html">all files</a> / <a href="index.html">contracts/mocks/</a> ERC721ReceiverMock.sol
+      <a href="../../index.html">all files</a> / <a href="index.html">contracts/lib/</a> StringsW0x.sol
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
-        <span class="strong">70% </span>
+        <span class="strong">92.31% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>7/10</span>
+        <span class='fraction'>12/13</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">50% </span>
         <span class="quiet">Branches</span>
-        <span class='fraction'>3/6</span>
+        <span class='fraction'>2/4</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">100% </span>
@@ -35,13 +35,13 @@
         <span class='fraction'>2/2</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">55.56% </span>
+        <span class="strong">92.86% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>5/9</span>
+        <span class='fraction'>13/14</span>
       </div>
     </div>
   </div>
-  <div class='status-line medium'></div>
+  <div class='status-line high'></div>
 <pre><table class="coverage">
 <tr><td class="line-count quiet">1
 2
@@ -84,8 +84,7 @@
 39
 40
 41
-42
-43</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+42</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -93,20 +92,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">318×</span>
-<span class="cline-any cline-yes">318×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -118,55 +103,67 @@
 <span class="cline-any cline-yes">7×</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">132×</span>
+<span class="cline-any cline-yes">132×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">264×</span>
+<span class="cline-any cline-yes">264×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7×</span>
 <span class="cline-any cline-yes">7×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.4.0 (utils/Strings.sol)
 &nbsp;
 pragma solidity ^0.8.0;
 &nbsp;
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+/**
+ * @dev String operations.
+ */
+library StringsW0x {
+    bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
 &nbsp;
-contract ERC721ReceiverMock is IERC721Receiver {
-    enum Error {
-        None,
-        RevertWithMessage,
-        RevertWithoutMessage,
-        Panic
-    }
-   
-    bytes4 private immutable _retval;
-    Error private immutable _error;
-&nbsp;
-    event Received(address operator, address from, uint256 tokenId, bytes data, uint256 gas);
-&nbsp;
-    constructor(bytes4 retval, Error error) {
-        _retval = retval;
-        _error = error;
-    }
-&nbsp;
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes memory data
-    ) public override returns (bytes4) {
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (_error == Error.RevertWithMessage) {
-<span class="cstat-no" title="statement not covered" >            revert("ERC721ReceiverMock: reverting")</span>;
-        } else <span class="missing-if-branch" title="if path not taken" >I</span>if (_error == Error.RevertWithoutMessage) {
-<span class="cstat-no" title="statement not covered" >            revert()</span>;
-        } else <span class="missing-if-branch" title="if path not taken" >I</span>if (_error == Error.Panic) {
-<span class="cstat-no" title="statement not covered" >            uint256 a = uint256(0) / uint256(0);</span>
-            a;
+    
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation.
+     */
+    function toHexString(uint256 value) internal pure returns (string memory) {
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (value == 0) {
+<span class="cstat-no" title="statement not covered" >            return "0x00";</span>
         }
-        emit Received(operator, from, tokenId, data, gasleft());
-        return _retval;
+        uint256 temp = value;
+        int256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp &gt;&gt;= 8;
+        }
+        return toHexString(value, length);
+    }
+&nbsp;
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
+     */
+    function toHexString(uint256 value, int256 length) internal pure returns (string memory) {
+        bytes memory buffer = new bytes(2 * uint256(length));
+        for (int256 i = 2 * length - 1; i &gt; -1; --i) {
+            buffer[uint256(i)] = _HEX_SYMBOLS[value &amp; 0xf];
+            value &gt;&gt;= 4;
+        }
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(value == 0, "Strings: hex length insufficient");
+        return string(buffer);
     }
 }
 &nbsp;</pre></td></tr>

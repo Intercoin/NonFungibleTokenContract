@@ -116,8 +116,8 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * @param name_ name 
     * @param symbol_ symbol 
     */
-    function __ERC721SafeHook_init(string memory name_, string memory symbol_) internal initializer {
-        __ERC721_init(name_, symbol_);
+    function __ERC721SafeHook_init(string memory name_, string memory symbol_, address utilityToken_) internal initializer {
+        __ERC721_init(name_, symbol_, utilityToken_);
     }
 
     /**

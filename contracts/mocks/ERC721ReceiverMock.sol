@@ -11,7 +11,7 @@ contract ERC721ReceiverMock is IERC721Receiver {
         RevertWithoutMessage,
         Panic
     }
-
+   
     bytes4 private immutable _retval;
     Error private immutable _error;
 
