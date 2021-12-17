@@ -1,0 +1,8 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
+
+interface IUtilityToken is IERC165Upgradeable {
+    function accountForOperation(uint256 info, uint256 params) external returns(uint256 spent, uint256 remaining);
+}
