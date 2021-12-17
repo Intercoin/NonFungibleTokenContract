@@ -767,7 +767,7 @@
 //         ]
 //       ];
 //       it("should correct set default commission", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         const commissionInfo = await this.nft.commissionsInfo();
 //         expect(commissionInfo.maxValue).to.be.equal(maxValue);
 //         expect(commissionInfo.minValue).to.be.equal(minValue);
@@ -776,11 +776,11 @@
 //       });
 
 //       it("shouldnt set default commission if not owner", async() => {
-//         await expect(this.nft.connect(bob).setDefaultCommission(defaultCommissionInfo)).to.be.revertedWith("Ownable: caller is not the owner");
+//         await expect(this.nft.connect(bob).setOwnerCommission(defaultCommissionInfo)).to.be.revertedWith("Ownable: caller is not the owner");
 //       });
 
 //       it("should correct set series commission", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 //         const seriesInfo = await this.nft.seriesInfo(seriesId);
 //         expect(seriesInfo.commissions.value).to.be.equal(TEN_PERCENTS);
@@ -792,7 +792,7 @@
 //       });
 
 //       it("shouldnt set series commission if it is not in the allowed range", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         let wrongCommission = [
 //           minValue.sub(ONE),
 //           alice.address
@@ -807,7 +807,7 @@
 //       });
 
 //       it("shouldnt set series commission if receipient is invalid", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         let wrongCommission = [
 //           TEN_PERCENTS,
 //           ZERO_ADDRESS
@@ -817,7 +817,7 @@
 //       });
 
 //       it("should pay commissions for primary sale with ETH (mint)", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 //         const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
 //         const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
@@ -838,7 +838,7 @@
 //       });
 
 //       it("should pay commissions for primary sale with token (mint)", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 //         const saleParams = [
 //           now + 100000, 
@@ -875,7 +875,7 @@
 
 
 //       it("should correct buy minted NFT for ETH with commission", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 
 //         await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
@@ -909,7 +909,7 @@
 //       });
 
 //       it("should correct buy minted NFT for ETH with commission", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 
 //         await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
@@ -944,7 +944,7 @@
 //       });
 
 //       it("should correct remove commission", async() => {
-//         await this.nft.connect(owner).setDefaultCommission(defaultCommissionInfo);
+//         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
 //         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
 //         await this.nft.connect(alice).removeCommission(seriesId);
 //         const seriesInfo = await this.nft.seriesInfo(seriesId);

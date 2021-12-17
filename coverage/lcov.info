@@ -8,7 +8,7 @@ FN:198,calculateCommissions
 FN:243,setSeriesInfo
 FN:261,getSaleInfo
 FN:269,getSeriesInfo
-FN:282,setDefaultCommission
+FN:282,setOwnerCommission
 FN:298,setCommission
 FN:320,removeCommission
 FN:332,listForSale
@@ -68,7 +68,7 @@ FNDA:105,calculateCommissions
 FNDA:120,setSeriesInfo
 FNDA:6,getSaleInfo
 FNDA:7,getSeriesInfo
-FNDA:9,setDefaultCommission
+FNDA:9,setOwnerCommission
 FNDA:9,setCommission
 FNDA:1,removeCommission
 FNDA:6,listForSale

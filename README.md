@@ -146,7 +146,7 @@ Factory contract for NFTSafeHooks. Allows gas-efficiently deploating copies of t
 <td>SaleInfo</td>
 <td>Information about sale</td>
 </tr><tr>
-<td>commissions</td>
+<td>commission</td>
 <td>CommissionData</td>
 <td>Information about series commission </td>
 </tr><tr>
@@ -1176,7 +1176,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 
 
 <hr>
-<h3>setDefaultCommission</h3>
+<h3>setOwnerCommission</h3>
 
 <p>Sets information for default commission. </p>
 
@@ -1190,7 +1190,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 </thead>
 <tbody>
 <tr>
-<td>commissions</td>
+<td>commission</td>
 <td>CommissionInfo</td>
 <td>Commission information</td>
 </tr>
@@ -1256,7 +1256,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 
 
 <hr>
-<h3>commissionsInfo</h3>
+<h3>commissionInfo</h3>
 
 <p> Returns information about commission in the series with 'seriesId' </p>
 
