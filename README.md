@@ -15,6 +15,7 @@ The list of basic features:
 - Supporting of additional hooks connection (SafeHooks). SafeHooks mechanism doesn't put the current token owners at risk, since only the hooks that were present at the time of purchase will be applied to the individual token
 - The contract owner can call a separate function mintAndDistribute() and mint the specified IDs to the specified addresses 
 - The contract supports all functions of the ERC721 standard and ERC721Enumerable, besides there are public transfer() and burn() function
+- Name and symbol can be changed by owner
 
  <h3> Current version addresses: </h3>
 
@@ -38,7 +39,7 @@ Polygon: 0x327033c8097B493072723233e494bA6579Ca2916 (not verified)
 
  <hr>
 <h1> Getting started </h1>
-To deploy a new instance of NFTSafeHooks contract user should call produce() method of Factory contract with desired 'name' and 'symbol' of a new token. Since it is done, address of the new instance can be obtained by calling getInstance() method of Factory contract. The caller of the Factory contract is the owner of the new token. Owner can call all onlyOwner functions. For example, owner can call mintAndDistribute() method and freely mint list of specified IDs to list of specified addresses. To create the new series of tokens, function setSeriesInfo() must be called with appropriate parameters ('onSaleUntil' must be > current timestamp).
+To deploy a new instance of NFTSafeHooks contract user should call produce() method of Factory contract with desired 'name' and 'symbol' of a new token. Since it is done, address of the new instance can be obtained by calling getInstance() method of Factory contract. The caller of the Factory contract is the owner of the new contract. Owner can call all onlyOwner functions. For example, owner can call mintAndDistribute() method and freely mint list of specified IDs to list of specified addresses. To create the new series of tokens, function setSeriesInfo() must be called with appropriate parameters ('onSaleUntil' must be > current timestamp).
 
  <hr>
 <h1> Structs </h1>
@@ -806,7 +807,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <hr>
 <h3>mintAndDistribute</h3>
 
-<p>Mints and distributes NFTs with specified IDs to specified addresses</p>
+<p>Only owner. Mints and distributes NFTs with specified IDs to specified addresses</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1141,7 +1142,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <hr>
 <h3>setNameAndSymbol</h3>
 
-<p>Sets name and symbol for contract</p>
+<p>Only owner. Sets name and symbol for contract</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1198,7 +1199,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <hr>
 <h3>setOwnerCommission</h3>
 
-<p>Sets information for default commission. </p>
+<p> Only owner. Sets information for default commission. </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1223,7 +1224,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <hr>
 <h3>setCommission</h3>
 
-<p>Sets commission for the series. </p>
+<p>Only owner. Sets commission for the series. </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1253,7 +1254,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <hr>
 <h3>removeCommission</h3>
 
-<p>Removes commission for the series</p>
+<p>Only owner. Removes commission for the series</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1302,7 +1303,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <hr>
 <h3>setSeriesInfo</h3>
 
-<p>Sets information for series with 'seriesId'. </p>
+<p>Only owner. Sets information for series with 'seriesId'. </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
