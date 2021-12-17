@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface implementationContract {
-    function initialize(string memory name_, string memory symbol_) external;
+interface IInstanceContract {
+    function initialize(string memory name_, string memory symbol_, address utilityToken_) external;
     function name() view external returns(string memory);
     function symbol() view external returns(string memory);
     function owner() view external returns(address);
@@ -24,9 +24,9 @@ contract Factory is Ownable {
     mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    constructor (address instance, string memory name, string memory symbol) {
+    constructor (address instance, string memory name, string memory symbol, address utilityToken) {
         implementation = instance;
-        implementationContract(instance).initialize(name, symbol);
+        IInstanceContract(instance).initialize(name, symbol, utilityToken);
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -76,7 +76,7 @@ contract Factory is Ownable {
         instance = _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        implementationContract(instanceCreated).initialize(name, symbol);
+        IInstanceContract(instanceCreated).initialize(name, symbol);
         Ownable(instanceCreated).transferOwnership(_msgSender());
         instance = instanceCreated;        
     }

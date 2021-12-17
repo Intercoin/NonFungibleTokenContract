@@ -22,8 +22,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     // Token symbol
     string private _symbol;
 	
+	// Factory that produced this contract, if any
+	address public factory;
+	
     // Utility token, if any, to manage during operations
-    address public utilityToken = address(0);
+    address public utilityToken;
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -578,6 +581,23 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         _setNameAndSymbol(newName, newSymbol);
     }
+	
+    /** 
+    * @dev sets name and symbol for contract
+    * @param newName new name 
+    * @param newSymbol new symbol 
+    */
+    function setUtilityToken(
+        address utilityToken_
+    ) 
+        external 
+    {
+    require (
+        OwnableUpgradeable(factory).owner() == msg.caller,
+        "contact factory owner"
+    );
+        utilityToken = utilityToken_;
+    }
 
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
@@ -854,14 +874,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    function __ERC721_init(string memory name_, string memory symbol_) internal initializer {
+    function __ERC721_init(string memory name_, string memory symbol_, address utilityToken_) internal initializer {
         __Context_init();
         __ERC165_init();
         __Ownable_init();
         __ReentrancyGuard_init();
 
         _setNameAndSymbol(name_, symbol_);
-        
+        factory = msg.caller;
+        utilityToken = utilityToken_;
     }
 
     /**
