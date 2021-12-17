@@ -138,11 +138,15 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     {
         uint256 seriesId = tokenId >> SERIES_BITS;
         for (uint256 i = 0; i < hooksCountByToken[tokenId]; i++) {
-            try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId) returns (bool success) {
+            try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
+			returns (bool success) {
                 if (!success) {
                     revert("Transfer Not Authorized");
                 }
-            } catch {
+            } catch Error(string memory reason) {
+                // This is executed in case revert() was called with a reason
+	            revert(reason);
+	        } catch {
                 revert("Transfer Not Authorized");
             }
         }
