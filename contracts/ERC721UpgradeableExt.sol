@@ -298,6 +298,13 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     }
 
     /**
+    * @dev returns contract URI. 
+    */
+    function contractURI() public view returns(string memory){
+        return "https://pastebin.com/raw/armzdJZr";
+    }
+
+    /**
     * @dev gives the info for sale of NFT with 'tokenId'. 
     * @param tokenId token ID
     */

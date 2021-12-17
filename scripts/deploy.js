@@ -1,7 +1,7 @@
 async function main() {
 
 	const [deployer] = await ethers.getSigners();
-
+	const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 	console.log(
 	"Deploying contracts with the account:",
 	deployer.address
@@ -12,11 +12,11 @@ async function main() {
 	const FactoryFactory = await ethers.getContractFactory("Factory");
 	const NftFactory = await ethers.getContractFactory("NFTSafeHook");
 
-	this.nft = await NftFactory.deploy({gasLimit: 10e6});
+	this.nft = await NftFactory.deploy({gasLimit: 5e6});
 
-	const name = "NFT SafeHooks";
-	const symbol = "NFTSH";
-	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, {gasLimit: 10e6});
+	const name = "NFT ContractURI BSC";
+	const symbol = "NFTCUB";
+	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, ZERO_ADDRESS, {gasLimit: 3e6});
 
 
 	console.log("NFT deployed at:", this.nft.address);

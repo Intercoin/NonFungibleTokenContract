@@ -13,7 +13,7 @@ require('hardhat-docgen')
 
 const kovanURL = `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KOVAN}`
 const goerliURL = `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_GOERLI}`
-const rinkebyURL = 'https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161' //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
+const rinkebyURL = `https://rinkeby.infura.io/v3/${process.env.INFURA_ID_PROJECT}` //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
 const bscURL = 'https://bsc-dataseed.binance.org' //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
 const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`
 
@@ -68,7 +68,7 @@ module.exports = {
     currency: "USD"
   },
   etherscan: {
-    apiKey: 'SQMI6KNXQ76SA435HJC3SH66VBAC4GSBGC'
+    apiKey: process.env.BSCSCAN_API_KEY
   },
   solidity: {
     compilers: [

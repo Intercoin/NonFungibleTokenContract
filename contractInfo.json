@@ -1,0 +1,8 @@
+{
+    "name": "NFT Safe Hooks Contract Name",
+    "description": "New standart of NFT",
+    "image": "https://intercoin.org/img/intercoin/logo.png",
+    "external_link": "https://intercoin.org",
+    "seller_fee_basis_points": 100, # Indicates a 1% seller fee.
+    "fee_recipient": "0x620CF3F656ddb5c650A11f852F2eDd9aeb4bd826" # Where seller fees will be paid to.
+  }
