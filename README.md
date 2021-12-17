@@ -4,7 +4,7 @@
 
 <p class="lead">
 
-Non fungible token contract of the new standard. It is based on the ERC721 standard, but with significant changes. The basic idea is to represent the token ID in a special way, in which the ID is the concatenation of the series ID and the token itself in that series. 
+NFTSafeHook is a non fungible token contract of the new standard. It is based on the ERC721 standard, but with significant changes. The basic idea is to represent the token ID in a special way, in which the ID is the concatenation of the series ID and the token itself in that series. 
 
 The contract allows to create a series of tokens, with certain properties and conditions of sale (custom baseURI, suffix, limit, currency, price and royalties). Thus, it is not only a token contract, but a platform for creating various NFT projects and selling tokens with different logic. 
 
@@ -16,9 +16,29 @@ The list of basic features:
 - The contract owner can call a separate function mintAndDistribute() and mint the specified IDs to the specified addresses 
 - The contract supports all functions of the ERC721 standard and ERC721Enumerable, besides there are public transfer() and burn() function
 
+ <h3> Current version addresses: </h3>
+
+BSC: 0x7127206a49824D693932f9edCb77C53Fbb8443D7 (https://bscscan.com/address/0x7127206a49824D693932f9edCb77C53Fbb8443D7#code)
+
+Rinkeby: 0xe9cc267028e51EA0176222abFebBD4Bb91D6Ef64 (https://rinkeby.etherscan.io/address/0xe9cc267028e51EA0176222abFebBD4Bb91D6Ef64#code)
+
+Polygon: 0xf220eAd4222dD8a443C9591Fa1969E15Ca43E44c (not verified)
+
 <br>
 <h2> Factory </h2>
-Factory contract for NFTSafeHooks. Allows gas-efficiently deploating copies of the NFTSafeHooks contract 
+Factory contract for NFTSafeHooks. Allows gas-efficient deploy of copies of the NFTSafeHooks contract.
+
+<h3> Current version addresses: </h3>
+
+BSC: 0x30aA8512f275AC3a0194F240572F8f9e5095A7D2 (https://bscscan.com/address/0x30aA8512f275AC3a0194F240572F8f9e5095A7D2#code)
+
+Rinkeby: 0x165D223e3756f8E3E54dc3af0545d65E6B9aaBbF (https://rinkeby.etherscan.io/address/0x165D223e3756f8E3E54dc3af0545d65E6B9aaBbF)
+
+Polygon: 0x327033c8097B493072723233e494bA6579Ca2916 (not verified)
+
+ <hr>
+<h1> Getting started </h1>
+To deploy a new instance of NFTSafeHooks contract user should call produce() method of Factory contract with desired 'name' and 'symbol' of a new token. Since it is done, address of the new instance can be obtained by calling getInstance() method of Factory contract. The caller of the Factory contract is the owner of the new token. Owner can call all onlyOwner functions. For example, owner can call mintAndDistribute() method and freely mint list of specified IDs to list of specified addresses. To create the new series of tokens, function setSeriesInfo() must be called with appropriate parameters ('onSaleUntil' must be > current timestamp).
 
  <hr>
 <h1> Structs </h1>
