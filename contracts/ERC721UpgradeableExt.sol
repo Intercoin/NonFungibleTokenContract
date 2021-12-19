@@ -415,14 +415,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     /**
     * @dev lists on sale NFT with defined token ID with specified terms of sale
     * @param tokenId token ID
-    * @param price price for sale 
     * @param currency currency of sale 
+    * @param price price for sale 
     * @param duration duration of sale 
     */
     function listForSale(
         uint256 tokenId,
-        uint256 price,
         address currency,
+        uint256 price,
         uint64 duration
     )
         external 
@@ -442,7 +442,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         );
         
         _accountForOperation(
-            getOperationId(OPERATION_LISTFORSALE, tokenId);
+            getOperationId(OPERATION_LISTFORSALE, tokenId),
+            price,
+            currency
         );
     }
     
@@ -467,7 +469,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         emit TokenRemoveFromSale(tokenId, ms);
         
         _accountForOperation(
-            getOperationId(OPERATION_REMOVEFROMSALE, tokenId);
+            getOperationId(OPERATION_REMOVEFROMSALE, tokenId),
+            data.currency,
+            data.price
         );
     }
 
