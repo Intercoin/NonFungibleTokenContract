@@ -78,12 +78,7 @@ contract Factory is Ownable {
     * @param operator the address to test
     */
     function canSetUtilityToken(address operator) external view returns (bool) {
-        if (owner) {
-            return true;
-        }
-        if (operators[operator]) {
-            return true;
-        }
+        return (operator == owner() || operators[operator]);
     }
 
     /**
