@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IUtilityToken.sol";
 import "./interfaces/IFactory.sol";
-
+import "hardhat/console.sol";
 
 abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
@@ -276,6 +276,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function setBaseURI(
         string calldata baseURI_
     ) 
+        onlyOwner
         external
     {
         baseURI = baseURI_;
@@ -288,6 +289,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function setSuffix(
         string calldata suffix_
     ) 
+        onlyOwner
         external
     {
         suffix = suffix_;
@@ -369,8 +371,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         _accountForOperation(
             getOperationId(OPERATION_SETOWNERCOMMISSION),
-            commission.ownerCommission.value,
-            uint256(uint160(commission.ownerCommission.recipient))
+            uint256(uint160(commission.ownerCommission.recipient)),
+            commission.ownerCommission.value
         );
 
     }
@@ -426,14 +428,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     /**
     * @dev lists on sale NFT with defined token ID with specified terms of sale
     * @param tokenId token ID
-    * @param currency currency of sale 
     * @param price price for sale 
+    * @param currency currency of sale 
     * @param duration duration of sale 
     */
     function listForSale(
         uint256 tokenId,
-        address currency,
         uint256 price,
+        address currency,
         uint64 duration
     )
         external 
@@ -454,8 +456,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
             getOperationId(OPERATION_LISTFORSALE, seriesId),
-            price,
-            uint256(uint160(currency))
+            uint256(uint160(currency)),
+            price
         );
     }
     
@@ -481,8 +483,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
             getOperationId(OPERATION_REMOVEFROMSALE, seriesId),
-            data.price,
-            uint256(uint160(data.currency))
+            uint256(uint160(data.currency)),
+            data.price
         );
     }
 
@@ -531,7 +533,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require(tokenIds.length == len, "lengths should be the same");
         //address ms = _msgSender();
         for(uint256 i = 0; i < len; i++) {
-            _requireOnlyOwnerAuthorOrOperator(getSeriesId(tokenIds[i] >> SERIES_BITS));
+            _requireOnlyOwnerAuthorOrOperator(getSeriesId(tokenIds[i]));
             _mint(addresses[i], tokenIds[i]);
         }
         
@@ -1398,11 +1400,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
              
     function _requireOnlyTokenOwnerOrOperator(uint256 tokenId) internal view virtual {
         address ms = _msgSender();
-        address owner = ownerOf(tokenId);
+        address owner = _ownerOf(tokenId);
         require(_exists(tokenId), "ERC721: operator query for nonexistent token");
         require(
             (
-                ownerOf(tokenId) == ms
+                owner == ms
                 || getApproved(tokenId) == ms
                 || isApprovedForAll(owner, ms)
             ),
@@ -1412,10 +1414,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     
     function _requireOnlyTokenOwnerAuthorOrOperator(uint256 tokenId) internal view virtual {
         address ms = _msgSender();
-        address owner = ownerOf(tokenId);
+        address owner = _ownerOf(tokenId);
         //require(_exists(tokenId), "ERC721: operator query for nonexistent token");
         require(
-            ownerOf(tokenId) == ms
+            owner == ms
             || seriesInfo[getSeriesId(tokenId)].author == ms
             || isApprovedForAll(owner, ms),
             "!onlyTokenOwnerAuthorOrOperator"

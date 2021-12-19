@@ -161,7 +161,7 @@ describe("Tests with factory", function () {
 
         it('shouldnt transfer token if not owner', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+            await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
         })
         it('shouldnt transfer token on zero address', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
@@ -232,7 +232,7 @@ describe("Tests with factory", function () {
               ];
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await this.nft.setSeriesInfo(seriesId, newSeriesParams);
-            expect(await this.nft.tokenURI(id)).to.be.equal(id.toHexString().substring(2));
+            expect(await this.nft.tokenURI(id)).to.be.equal(id.toHexString().substring(2).concat(suffix));
         })
         it('shouldnt approve to current owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
@@ -256,12 +256,21 @@ describe("Tests with factory", function () {
 
         it('shouldnt safeTransfer if not owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+            await expect(this.nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
         })
 
         it('shouldnt burn if not owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(alice).burn(id)).to.be.revertedWith("ERC721Burnable: caller is not owner nor approved");
+            await expect(this.nft.connect(alice).burn(id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
+        })
+
+        it('should burn if approved before', async() => {
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+            await this.nft.connect(bob).approve(alice.address, id);
+            expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ZERO);
+            await this.nft.connect(alice).burn(id);
+            expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ONE);
+            expect(await this.nft.ownerOf(id)).to.be.equal(DEAD_ADDRESS);
         })
 
         it('should correct safeTransfer to contract with data', async() => {

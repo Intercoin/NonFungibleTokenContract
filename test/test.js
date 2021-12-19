@@ -366,7 +366,7 @@ describe("NonFungibleToken tests", function () {
         ZERO_ADDRESS, 
         price.mul(TWO), 
       ];   
-      await expect(this.nft.connect(charlie).setSaleInfo(id, saleParams)).to.be.revertedWith("can call only by owner");
+      await expect(this.nft.connect(charlie).setSaleInfo(id, saleParams)).to.be.revertedWith("!onlyTokenOwnerAuthorOrOperator");
     })
 
     it("shouldnt buy if user approved unsufficient token amount", async() => {
@@ -448,8 +448,11 @@ describe("NonFungibleToken tests", function () {
       const duration = 1000;
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
+      
       await this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration);
-      await expect(this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('already in sale');
+      
+      await expect(this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith("already on sale");
+      
 
     })
 
@@ -458,7 +461,7 @@ describe("NonFungibleToken tests", function () {
       const duration = 1000;
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
-      await expect(this.nft.connect(alice).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('invalid token owner');
+      await expect(this.nft.connect(alice).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('!onlyTokenOwnerOrOperator');
 
     })
 
@@ -564,7 +567,7 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldnt call setSaleInfo as an owner of series", async() => {
-      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyOwnerOrAuthor');
+      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyOwnerAuthorOrOperator');
 
     })
 
@@ -788,7 +791,7 @@ describe("NonFungibleToken tests", function () {
       });
 
       it("shouldnt set series commission if not owner or author", async() => {
-        await expect(this.nft.connect(bob).setCommission(seriesId, seriesCommissions)).to.be.revertedWith("!onlyOwnerOrAuthor");
+        await expect(this.nft.connect(bob).setCommission(seriesId, seriesCommissions)).to.be.revertedWith("!onlyOwnerAuthorOrOperator");
       });
 
       it("shouldnt set series commission if it is not in the allowed range", async() => {
