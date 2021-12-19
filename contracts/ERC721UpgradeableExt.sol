@@ -10,7 +10,7 @@ import "./lib/StringsW0x.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "./interfaces/IUtilityToken.sol";
+import "./interfaces/ICostManager.sol";
 import "./interfaces/IFactory.sol";
 import "hardhat/console.sol";
 
@@ -32,7 +32,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     string internal _contractURI;
     
     // Utility token, if any, to manage during operations
-    address public utilityToken;
+    address public costManager;
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -943,40 +943,40 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    function __ERC721_init(string memory name_, string memory symbol_, address utilityToken_) internal initializer {
+    function __ERC721_init(string memory name_, string memory symbol_, address costManager_, address msgSender_) internal initializer {
         __Context_init();
         __ERC165_init();
         __Ownable_init();
         __ReentrancyGuard_init();
 
         _setNameAndSymbol(name_, symbol_);
-        utilityToken = utilityToken_;
+        costManager = costManager_;
         factory = _msgSender();
         
         _accountForOperation(
             getOperationId(OPERATION_INITIALIZE),
-            0,
+            uint256(uint160(msgSender_)),
             0
         );
     }
     
     /** 
     * @dev sets the utility token
-    * @param utilityToken_ new address of utility token, or 0
+    * @param costManager_ new address of utility token, or 0
     */
-    function setUtilityToken(address utilityToken_) external {
+    function overrideCostManager(address costManager_) external {
         // require factory owner or operator
         // otherwise needed deployer(!!not contract owner) in cases if was deployed manually
         require (
             (factory.isContract()) 
                 ?
-                    IFactory(factory).canSetUtilityToken(_msgSender()) == true
+                    IFactory(factory).canOverrideCostManager(_msgCaller(), address(this)) == true
                 :
                     factory == _msgSender()
             ,
             "contact factory owner"
         );
-        utilityToken = utilityToken_;
+        costManager = costManager_;
     }
 
     /**
@@ -1407,8 +1407,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
      * @param param2 uint256 Some more information, if any
      */
     function _accountForOperation(uint72 info, uint256 param1, uint256 param2) private {
-        if (utilityToken != address(0)) {
-            try IUtilityToken(utilityToken).accountForOperation(
+        if (costManager != address(0)) {
+            try ICostManager(costManager).accountForOperation(
                 _msgSender(), info, param1, param2
             )
             returns (uint256 /*spent*/, uint256 /*remaining*/) {

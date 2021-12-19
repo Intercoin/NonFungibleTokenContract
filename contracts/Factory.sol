@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 import "./interfaces/IFactory.sol";
 
 interface IInstanceContract {
-    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address utilityToken_) external;
+    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address costManager_, address msgCaller_) external;
     function name() view external returns(string memory);
     function symbol() view external returns(string memory);
     function owner() view external returns(address);
@@ -16,11 +16,11 @@ interface IInstanceContract {
 contract Factory is Ownable, IFactory {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
-    address public utility;
+    address public costManager;
     address public implementation;
     mapping(bytes32 => address) public getInstance;
     address[] public instances;
-    EnumerableSetUpgradeable.AddressSet private _renouncedSetUtility;
+    EnumerableSetUpgradeable.AddressSet private _renouncedOverrideCostManager;
        
     struct InstanceInfo {
         string name;
@@ -30,12 +30,12 @@ contract Factory is Ownable, IFactory {
     mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    event RenouncedSetUtilityTokenForInstance(address indexed instance);
+    event RenouncedOverrideCostManagerForInstance(address indexed instance);
 
-    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address utilityToken) {
+    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address costManager_) {
         implementation = instance;
-        utility = utilityToken;
-        IInstanceContract(instance).initialize(name, symbol, contractURI_, utilityToken);
+        costManager = costManager_;
+        IInstanceContract(instance).initialize(name, symbol, contractURI_, costManager);
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -53,18 +53,30 @@ contract Factory is Ownable, IFactory {
         return instances.length;
     }
     
-    function renounceSetUtilityToken(address instance) external onlyOwner {
-        _renouncedSetUtility.add(instance);
-        emit RenouncedSetUtilityTokenForInstance(instance);
+    /**
+    * @dev set the costManager for all future calls to produce()
+    */
+    fuction setCostManager(address costManager_) public onlyOwner {
+        costManager = costManager_;
+    }
+    
+    /**
+    * @dev renounces ability to override cost manager on instances
+    */
+    function renounceOverrideCostManager(address instance) public onlyOwner {
+        _renouncedOverrideCostManager.add(instance);
+        emit RenouncedSetCostManagerForInstance(instance);
     }
     
     /** 
-    * @dev find out whether a given address can set the utility token
+    * @dev instance can call this to find out whether a given address can set the cost manager contract
     * @param account the address to test
     */
-    function canSetUtilityToken(address account) external override view returns (bool) {
+    function canOverrideCostManager(address account, address instance)
+    external override view
+    returns (bool) {
         // here _msgSender - are contract that will check
-        return (account == owner() && !_renouncedSetUtility.contains(_msgSender()));
+        return (account == owner() && !_renouncedOverrideCostManager.contains(instance));
     }
 
     /**
@@ -81,28 +93,7 @@ contract Factory is Ownable, IFactory {
         public 
         returns (address instance) 
     {
-        // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol, contractURI, utility);
-    }
-
-    /**
-    * @dev produces new instance with defined name, symbol and utility token
-    * @param name name of new token
-    * @param symbol symbol of new token
-    * @param utilityToken address of utility token
-    * @return instance address of new contract
-    */
-    function produce(
-        string memory name,
-        string memory symbol,
-        string memory contractURI,
-        address utilityToken
-    ) 
-        public 
-        returns (address instance) 
-    {
-        // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol, contractURI, utilityToken);
+        return _produce(name, symbol, contractURI, costManager);
     }
     
     function getInstanceInfo(
@@ -116,15 +107,17 @@ contract Factory is Ownable, IFactory {
     function _produce(
         string memory name,
         string memory symbol,
-        string memory contractURI,
-        address utilityToken
+        string memory contractURI
     ) internal returns (address instance) {
         _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        IInstanceContract(instanceCreated).initialize(name, symbol, contractURI, utilityToken);
-        Ownable(instanceCreated).transferOwnership(_msgSender());
-        instance = instanceCreated;        
+        address ms; = _msgSender();
+        IInstanceContract(instanceCreated).initialize(
+            name, symbol, contractURI, costManager, ms
+        );
+        Ownable(instanceCreated).transferOwnership(ms);
+        instance = instanceCreated;
     }
     
     function _createInstanceValidate(
