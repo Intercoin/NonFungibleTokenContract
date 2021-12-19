@@ -72,6 +72,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     uint256 internal constant DEFAULT_SERIES_ID = 0;
     uint256 internal constant FRACTION = 100000;
+	
+	string public baseURI;
+	string public suffix;
     
     mapping (uint256 => SaleInfo) public salesInfo;  // tokenId => saleInfo
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => seriesInfo
@@ -269,6 +272,26 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         }
 
     }
+
+	/**
+    * @dev sets the default baseURI for the whole contract
+    * @param baseURI the prefix to prepend to URIs
+    */
+    function setBaseURI(
+        string calldata baseURI_
+    ) {
+		baseURI = baseURI_;
+	}
+	
+	/**
+    * @dev sets the default URI suffix for the whole contract
+    * @param suffix the suffix to append to URIs
+    */
+    function setSuffix(
+        string calldata suffix_
+    ) {
+		suffix = suffix_;
+	}
 
 	/**
     * @dev sets information for series with 'seriesId'. 
@@ -600,24 +623,23 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-
+    function tokenURI(uint256 tokenId) 
+	public view virtual override
+	returns (string memory) {
+		require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
         string memory _tokenIdHexString = tokenId.toHexString();
-      
-        //string memory _tokenIdHexString = tokenId.toString();
-
 	    uint64 seriesId = getSeriesId(tokenId);
-        string memory baseURI = seriesInfo[seriesId].baseURI;
-	    string memory suffix = seriesInfo[seriesId].suffix;
-        require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
-
-        // If there is no base URI, return the token URI.
-        if (bytes(baseURI).length == 0) {
-            return string(abi.encodePacked(_tokenIdHexString));
-        }
+        string memory baseURI_ = seriesInfo[seriesId].baseURI;
+	    string memory suffix_ = seriesInfo[seriesId].suffix;
+		if (bytes(baseURI_).length == 0) {
+			baseURI_ = baseURI;
+		}
+		if (bytes(suffix_).length == 0) {
+			suffix_ = suffix;
+		}
         // If all are set, concatenate
         if (bytes(_tokenIdHexString).length > 0) {
-            return string(abi.encodePacked(baseURI, _tokenIdHexString, suffix));
+            return string(abi.encodePacked(baseURI_, _tokenIdHexString, suffix_));
         }
         return "";
     }
