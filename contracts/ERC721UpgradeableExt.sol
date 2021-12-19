@@ -91,6 +91,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint64 onSaleUntil; 
         address currency;
         uint256 price;
+        uint256 ownerCommissionValue;
+        uint256 authorCommissionValue;
     }
 
     struct SeriesInfo { 
@@ -146,18 +148,18 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     );
 
     /**
-    * @dev buys NFT for ETH with defined id. 
+    * @dev buys NFT for native coin with defined id. 
     * mint token if it doesn't exist and transfer token
     * if it exists and is on sale
     * @param tokenId token ID to buy
-    * @param price amount of specified ETH to pay
+    * @param price amount of specified native coin to pay
     * @param safe use safeMint and safeTransfer or not
     */
 
     function buy(uint256 tokenId, uint256 price, bool safe) public payable nonReentrant {
         (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token is not on sale");
-        require(msg.value >= data.price && price >= data.price, "insufficient ETH");
+        require(msg.value >= data.price && price >= data.price, "insufficient amount sent");
         require(address(0) == data.currency, "wrong currency for sale");
 
         bool transferSuccess;
@@ -245,16 +247,19 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         ) 
     {
         uint64 seriesId = getSeriesId(tokenId);
-    length = 0;
+        length = 0;
     
         // contract owner commission
-        if (
-            commissionInfo.ownerCommission.recipient != address(0) && 
-            commissionInfo.ownerCommission.value != 0
-        ) {
-            addresses[length] = commissionInfo.ownerCommission.recipient;
-            values[length] = commissionInfo.ownerCommission.value * price / FRACTION;
-            length++;
+        if (commissionInfo.ownerCommission.recipient != address(0)) {
+            uint256 oc = salesInfo[tokenId].ownerCommissionValue;
+            if (commissionInfo.ownerCommission.value < oc) {
+                oc = commissionInfo.ownerCommission.value;
+            }
+            if (oc != 0) {
+                addresses[length] = commissionInfo.ownerCommission.recipient;
+                values[length] = oc * price / FRACTION;
+                length++;
+            }
         }
 
         // author commission
@@ -262,9 +267,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             seriesInfo[seriesId].commission.recipient != address(0) && 
             seriesInfo[seriesId].commission.value != 0
         ) {
-            addresses[length] = seriesInfo[seriesId].commission.recipient;
-            values[length] = seriesInfo[seriesId].commission.value * price / FRACTION;
-            length++;
+            uint256 ac = salesInfo[tokenId].authorCommissionValue;
+            if (seriesInfo[seriesId].commission.value < ac) {
+                ac = seriesInfo[seriesId].commission.value;
+            }
+            if (ac != 0) {
+                addresses[length] = seriesInfo[seriesId].commission.recipient;
+                values[length] = ac * price / FRACTION;
+                length++;
+            }
         }
 
     }
@@ -345,14 +356,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function getSaleInfo(uint256 tokenId) external view returns(SaleInfo memory) {
         return salesInfo[tokenId];
-    }
-
-    /**
-    * @dev gives the info for series with 'seriesId'. 
-    * @param seriesId series ID
-    */
-    function getSeriesInfo(uint64 seriesId) external view returns(SeriesInfo memory) {
-        return seriesInfo[seriesId];
     }
 
 
@@ -445,15 +448,18 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _requireOnlyTokenOwnerOrOperator(tokenId);
         require(duration > 0, "invalid duration");
 
+        uint64 seriesId = getSeriesId(tokenId);
         data.onSaleUntil = uint64(block.timestamp) + duration;
         data.price = price;
         data.currency = currency;
-        setSaleInfo(tokenId, data);
+        data.ownerCommissionValue = commissionInfo.ownerCommission.value;
+        data.authorCommissionValue = seriesInfo[seriesId].commission.value;
+        _setSaleInfo(tokenId, data);
 
         emit TokenPutOnSale(
             tokenId, _msgSender(), data.price, data.currency, data.onSaleUntil
         );
-        uint64 seriesId = getSeriesId(tokenId);
+        
         _accountForOperation(
             getOperationId(OPERATION_LISTFORSALE, seriesId),
             uint256(uint160(currency)),
@@ -476,7 +482,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _requireOnlyTokenOwnerOrOperator(tokenId);
 
         data.onSaleUntil = 0;
-        setSaleInfo(tokenId, data);
+        _setSaleInfo(tokenId, data);
 
         emit TokenRemovedFromSale(tokenId, ms);
         
@@ -543,21 +549,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             0
         );
         
-    }
-
-    /**
-    * @dev sets sale info for the NFT with 'tokenId'
-    * @param tokenId token ID
-    * @param info information about sale 
-    */
-    function setSaleInfo(
-        uint256 tokenId, 
-        SaleInfo memory info 
-    ) 
-        public 
-    {
-        _requireOnlyTokenOwnerAuthorOrOperator(tokenId);
-        salesInfo[tokenId] = info;
     }
 
     /**
@@ -1142,6 +1133,21 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             uint256(uint160(to))
         );
         
+    }
+    
+    /**
+    * @dev sets sale info for the NFT with 'tokenId'
+    * @param tokenId token ID
+    * @param info information about sale 
+    */
+    function _setSaleInfo(
+        uint256 tokenId, 
+        SaleInfo memory info 
+    ) 
+        internal 
+    {
+        _requireOnlyTokenOwnerAuthorOrOperator(tokenId);
+        salesInfo[tokenId] = info;
     }
 
     /**
