@@ -42,7 +42,7 @@ describe("Standart ERC721 functional tests", function () {
     const saleParams = [
         now + 100000, 
         ZERO_ADDRESS, 
-        price, 
+        price,
       ];
     const commissions = [
         ZERO,
@@ -64,7 +64,7 @@ describe("Standart ERC721 functional tests", function () {
 
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.nft = await NFTFactory.deploy();
-        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS, ZERO_ADDRESS);
         await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
         const retval = '0x150b7a02';
         const error = ZERO;
@@ -78,7 +78,7 @@ describe("Standart ERC721 functional tests", function () {
     describe('transfer tests', async() => {
         it('check name, symbol and tokenURI', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            console.log("await this.nft.tokenURI(id) = ", await this.nft.tokenURI(id));
+            //console.log("await this.nft.tokenURI(id) = ", await this.nft.tokenURI(id));
             expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");

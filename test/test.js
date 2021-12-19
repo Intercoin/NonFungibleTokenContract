@@ -54,7 +54,7 @@ describe("NonFungibleToken tests", function () {
         this.buyer = await BuyerFactory.deploy(retval, error);
         this.badBuyer = await BadBuyerFactory.deploy();
         this.nft = await NFTFactory.deploy();
-        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS, ZERO_ADDRESS);
 
         await this.erc20.mint(owner.address, TOTALSUPPLY);
 
@@ -74,7 +74,7 @@ describe("NonFungibleToken tests", function () {
     const saleParams = [
       now + 100000, 
       ZERO_ADDRESS, 
-      price, 
+      price
     ];
     const commissions = [
       ZERO,
@@ -89,7 +89,7 @@ describe("NonFungibleToken tests", function () {
       suffix
     ];
     await this.nft.connect(owner).setSeriesInfo(seriesId, params);
-    const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+    const seriesInfo = await this.nft.seriesInfo(seriesId);
     expect(seriesInfo.author).to.be.equal(alice.address);
     expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
     expect(seriesInfo.saleInfo.price).to.be.equal(price);
@@ -119,7 +119,7 @@ describe("NonFungibleToken tests", function () {
   //   await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
 
   //   await this.nft.connect(alice).listForSale(id, price, ZERO_ADDRESS, 100000);
-  //   const tokenInfo = await this.nft.getSaleInfo(id);
+  //   const tokenInfo = await this.nft.salesInfo(id);
   //   expect(tokenInfo.owner).to.be.equal(alice.address);
   //   expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
   //   expect(tokenInfo.amount).to.be.equal(price);
@@ -139,7 +139,7 @@ describe("NonFungibleToken tests", function () {
     const saleParams = [
       now + 100000, 
       ZERO_ADDRESS, 
-      price, 
+      price,
     ];
     const commissions = [
       ZERO,
@@ -167,12 +167,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
 
-      const saleInfo = await this.nft.getSaleInfo(id);
+      const saleInfo = await this.nft.salesInfo(id);
       expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
       expect(saleInfo.price).to.be.equal(ZERO);
       expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
-      const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+      const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
       expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
       expect(seriesInfo.saleInfo.price).to.be.equal(price);
@@ -189,7 +189,7 @@ describe("NonFungibleToken tests", function () {
       const saleParams = [
         now + 100000, 
         this.erc20.address, 
-        price, 
+        price
       ];
       const seriesParams = [
         alice.address, 
@@ -211,12 +211,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
       
-      const saleInfo = await this.nft.getSaleInfo(id);
+      const saleInfo = await this.nft.salesInfo(id);
       expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
       expect(saleInfo.price).to.be.equal(ZERO);
       expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
-      const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+      const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
       expect(seriesInfo.saleInfo.currency).to.be.equal(this.erc20.address);
       expect(seriesInfo.saleInfo.price).to.be.equal(price);
@@ -233,10 +233,11 @@ describe("NonFungibleToken tests", function () {
       const saleParams = [
         now + 100000,
         ZERO_ADDRESS, 
-        price.mul(TWO), 
+        price.mul(TWO)
       ];      
 
-      await this.nft.connect(bob).setSaleInfo(id, saleParams);
+      //await this.nft.connect(bob).setSaleInfo(id, saleParams);
+      await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
 
       const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
       const balanceBeforeCharlie = await ethers.provider.getBalance(charlie.address);
@@ -249,12 +250,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(charlie.address);
 
-      const saleInfo = await this.nft.getSaleInfo(id);
+      const saleInfo = await this.nft.salesInfo(id);
       expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
       expect(saleInfo.price).to.be.equal(price.mul(TWO));
       expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
-      const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+      const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
       expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
       expect(seriesInfo.saleInfo.price).to.be.equal(price);
@@ -269,10 +270,11 @@ describe("NonFungibleToken tests", function () {
       const saleParams = [
         now + 100000,
         this.erc20.address, 
-        price.mul(TWO), 
+        price.mul(TWO),
       ];      
 
-      await this.nft.connect(bob).setSaleInfo(id, saleParams);
+      //await this.nft.connect(bob).setSaleInfo(id, saleParams);
+      await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
 
       const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
       const balanceBeforeCharlie = await this.erc20.balanceOf(charlie.address);
@@ -286,12 +288,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(charlie.address);
 
-      const saleInfo = await this.nft.getSaleInfo(id);
+      const saleInfo = await this.nft.salesInfo(id);
       expect(saleInfo.currency).to.be.equal(this.erc20.address);
       expect(saleInfo.price).to.be.equal(price.mul(TWO));
       expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
-      const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+      const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
       expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
       expect(seriesInfo.saleInfo.price).to.be.equal(price);
@@ -357,23 +359,25 @@ describe("NonFungibleToken tests", function () {
     })
     
     it("shouldnt buy if user passed unsufficient ETH", async() => {
-      await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.sub(ONE)})).to.be.revertedWith("insufficient ETH");
+      await expect(this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.sub(ONE)})).to.be.revertedWith("insufficient amount sent");
     })
-
-    it("shouldnt set token info if not owner", async() => {   
-      const saleParams = [
-        now + 100000,
-        ZERO_ADDRESS, 
-        price.mul(TWO), 
-      ];   
-      await expect(this.nft.connect(charlie).setSaleInfo(id, saleParams)).to.be.revertedWith("!onlyTokenOwnerAuthorOrOperator");
-    })
+    // deprecated 
+    // it("shouldnt set token info if not owner", async() => {   
+    //   const saleParams = [
+    //     now + 100000,
+    //     ZERO_ADDRESS, 
+    //     price.mul(TWO),
+    //     ZERO, //ownerCommissionValue;
+    //     ZERO  //authorCommissionValue;
+    //   ];   
+    //   await expect(this.nft.connect(charlie).listForSale(id, saleParams[2], saleParams[1], saleParams[0])).to.be.revertedWith("!onlyTokenOwnerAuthorOrOperator");
+    // })
 
     it("shouldnt buy if user approved unsufficient token amount", async() => {
       const saleParams = [
         now + 100000, 
         this.erc20.address, 
-        price, 
+        price
       ];       
       const seriesParams = [
         alice.address,  
@@ -435,7 +439,7 @@ describe("NonFungibleToken tests", function () {
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
       await this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration);
-      const saleInfo = await this.nft.getSaleInfo(id);
+      const saleInfo = await this.nft.salesInfo(id);
       expect(saleInfo.currency).to.be.equal(newCurrency);
       expect(saleInfo.price).to.be.equal(newPrice);
       const lastTs = await time.latest();
@@ -518,7 +522,7 @@ describe("NonFungibleToken tests", function () {
 
     })
 
-    it("should correct call setSaleInfo as an owner of series", async() => {
+    it("should correct call setSeriesInfo as an owner of series", async() => {
       const newLimit = 11000;
       const saleParams = [
         now + 100000, 
@@ -534,7 +538,7 @@ describe("NonFungibleToken tests", function () {
         suffix
       ];
       await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
-      const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+      const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
       expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
       expect(seriesInfo.saleInfo.price).to.be.equal(price);
@@ -566,7 +570,7 @@ describe("NonFungibleToken tests", function () {
   
     })
 
-    it("shouldnt call setSaleInfo as an owner of series", async() => {
+    it("shouldnt call setSeriesInfo as an owner of series", async() => {
       await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyOwnerAuthorOrOperator');
 
     })
@@ -819,7 +823,7 @@ describe("NonFungibleToken tests", function () {
 
       });
 
-      it("should pay commissions for primary sale with ETH (mint)", async() => {
+      it("shouldnt pay commissions for primary sale with ETH (mint)", async() => {
         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
         const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
@@ -829,10 +833,10 @@ describe("NonFungibleToken tests", function () {
         const balanceAfterBob = await ethers.provider.getBalance(bob.address);
         const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
         const balanceAfterReceiver = await ethers.provider.getBalance(commissionReceiver.address);
-        const defaultCommission = FIVE_PERCENTS.mul(price).div(FRACTION);
+        
         expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.gt(price);
-        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price.sub(defaultCommission));
-        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(defaultCommission);
+        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price);
+        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(ZERO);
         const newOwner = await this.nft.ownerOf(id);
         expect(newOwner).to.be.equal(bob.address);
   
@@ -865,11 +869,10 @@ describe("NonFungibleToken tests", function () {
         const balanceAfterBob = await this.erc20.balanceOf(bob.address);
         const balanceAfterAlice = await this.erc20.balanceOf(alice.address);
         const balanceAfterReceiver = await this.erc20.balanceOf(commissionReceiver.address);
-        const defaultCommission = FIVE_PERCENTS.mul(price).div(FRACTION);
-
+        
         expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.equal(price);
-        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price.sub(defaultCommission));
-        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(defaultCommission);
+        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price);
+        expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(ZERO);
         const newOwner = await this.nft.ownerOf(id);
         expect(newOwner).to.be.equal(bob.address);
           
@@ -888,7 +891,7 @@ describe("NonFungibleToken tests", function () {
           price.mul(TWO), 
         ];      
   
-        await this.nft.connect(bob).setSaleInfo(id, saleParams);
+        await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
   
         const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
         const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
@@ -922,7 +925,8 @@ describe("NonFungibleToken tests", function () {
           price.mul(TWO), 
         ];      
   
-        await this.nft.connect(bob).setSaleInfo(id, saleParams);
+        //await this.nft.connect(bob).setSaleInfo(id, saleParams);
+        await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
   
         const balanceBeforeAlice = await this.erc20.balanceOf(alice.address);
         const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
