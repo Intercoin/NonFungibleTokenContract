@@ -30,7 +30,7 @@ contract Factory is Ownable, IFactory {
     mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    event RenounceSetUtilityTokenForInstance(address indexed instance);
+    event RenouncedSetUtilityTokenForInstance(address indexed instance);
 
     constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address utilityToken) {
         implementation = instance;
@@ -56,7 +56,7 @@ contract Factory is Ownable, IFactory {
     
     function renounceSetUtilityToken(address instance) external onlyOwner {
         instances4UtilityTokens.remove(instance);
-        emit RenounceSetUtilityTokenForInstance(instance);
+        emit RenouncedSetUtilityTokenForInstance(instance);
     }
     
     /** 
