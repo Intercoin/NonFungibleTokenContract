@@ -59,7 +59,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     mapping(uint256 => uint256) private _allTokensIndex;
     
     // Constants representing operations
-    uint8 internal constant OPERATION_BUY = 0x1;
+    uint8 internal constant OPERATION_SETMETADATA = 0x1;
     uint8 internal constant OPERATION_SETSERIESINFO = 0x2;
     uint8 internal constant OPERATION_SETOWNERCOMMISSION = 0x3;
     uint8 internal constant OPERATION_SETCOMMISSION = 0x4;
@@ -67,7 +67,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     uint8 internal constant OPERATION_LISTFORSALE = 0x6;
     uint8 internal constant OPERATION_REMOVEFROMSALE = 0x7;
     uint8 internal constant OPERATION_MINTANDDISTRIBUTE = 0x8;
-    uint8 internal constant OPERATION_TRANSFER = 0x9;
+    uint8 internal constant OPERATION_BURN = 0x9;
+    uint8 internal constant OPERATION_BUY = 0xA;
+    uint8 internal constant OPERATION_TRANSFER = 0xB;
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
@@ -226,7 +228,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             uint256(uint160(currency)),
             price
         );
-        
     }
 
     /**
@@ -291,6 +292,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         external
     {
         baseURI = baseURI_;
+        _accountForOperation(
+            getOperationId(OPERATION_SETMETADATA)
+            0x100,
+            0
+        );
     }
     
     /**
@@ -304,6 +310,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         external
     {
         suffix = suffix_;
+        _accountForOperation(
+            getOperationId(OPERATION_SETMETADATA)
+            0x010,
+            0
+        );
     }
 
     /**
@@ -341,6 +352,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     */
     function setContractURI(string memory newContractURI) external onlyOwner {
         _contractURI = newContractURI;
+        _accountForOperation(
+            getOperationId(OPERATION_SETMETADATA)
+            0x001,
+            0
+        );
     }
 
     /**
@@ -548,7 +564,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             len,
             0
         );
-        
     }
 
     /**
@@ -850,6 +865,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         //solhint-disable-next-line max-line-length
         _requireOnlyTokenOwnerOrOperator(tokenId);
         _burn(tokenId);
+        
+        _accountForOperation(
+            getOperationId(OPERATION_BURN),
+            tokenId,
+            0
+        );
     }
 
     function _buy(
@@ -1378,7 +1399,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
      */
     function _accountForOperation(uint72 info, uint256 param1, uint256 param2) private {
         if (utilityToken != address(0)) {
-            try IUtilityToken(utilityToken).accountForOperation(info, param1, param2)
+            try IUtilityToken(utilityToken).accountForOperation(
+                _msgSender(), info, param1, param2
+            )
             returns (uint256 /*spent*/, uint256 /*remaining*/) {
                 // if error is not thrown, we are fine
             } catch Error(string memory reason) {
