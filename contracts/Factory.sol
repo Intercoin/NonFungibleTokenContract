@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 interface IInstanceContract {
     function initialize(string memory name_, string memory symbol_, string memory contractURI_, address utilityToken_) external;
@@ -12,10 +13,13 @@ interface IInstanceContract {
 }
 
 contract Factory is Ownable {
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    
     address public utility;
     address public implementation;
     mapping(bytes32 => address) public getInstance;
     address[] public instances;
+    EnumerableSetUpgradeable.AddressSet private _operators;
        
     struct InstanceInfo {
         string name;
@@ -44,6 +48,42 @@ contract Factory is Ownable {
     */
     function instancesCount() external view returns (uint256) {
         return instances.length;
+    }
+    
+    /** 
+    * @dev adds an operator address to factory
+    * @param operator address of the operator
+    */
+    function addOperator(address operator) external {
+        _operators.add(operator);
+    }
+
+    /** 
+    * @dev removes an operator address from factory
+    * @param operator address of the operator
+    */
+    function removeOperator(address operator) external {
+        _operators.remove(operator);
+    }
+    
+    /** 
+    * @dev returns all operators as an array
+    */
+    function getOperators() view returns (address[] operators) {
+        return values(_operators);
+    }
+    
+    /** 
+    * @dev find out whether a given address can set the utility token
+    * @param operator the address to test
+    */
+    function canSetUtilityToken(address operator) external view returns (bool) {
+        if (owner) {
+            return true;
+        }
+        if (operators[operator]) {
+            return true;
+        }
     }
 
     /**
@@ -121,7 +161,7 @@ contract Factory is Ownable {
         string memory symbol
     ) internal returns (address instance) {
         
-        instance = createClone(implementation);
+        instance = _createClone(implementation);
         
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -133,7 +173,7 @@ contract Factory is Ownable {
         emit InstanceCreated(name, symbol, instance, instances.length);
     }
 
-    function createClone(address target) internal returns (address result) {
+    function _createClone(address target) internal returns (address result) {
         bytes20 targetBytes = bytes20(target);
         assembly {
         let clone := mload(0x40)
