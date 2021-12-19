@@ -20,9 +20,9 @@
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
-        <span class="strong">87.1% </span>
+        <span class="strong">87.5% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>27/31</span>
+        <span class='fraction'>28/32</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">87.5% </span>
@@ -35,9 +35,9 @@
         <span class='fraction'>8/11</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">87.5% </span>
+        <span class="strong">87.88% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>28/32</span>
+        <span class='fraction'>29/33</span>
       </div>
     </div>
   </div>
@@ -207,11 +207,7 @@
 162
 163
 164
-165
-166
-167
-168
-169</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+165</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -267,6 +263,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -277,8 +283,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -302,28 +309,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5×</span>
 <span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -336,6 +325,9 @@
 <span class="cline-any cline-yes">31×</span>
 <span class="cline-any cline-yes">31×</span>
 <span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-yes">31×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">31×</span>
 <span class="cline-any cline-yes">31×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -388,7 +380,7 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 import "./interfaces/IFactory.sol";
 &nbsp;
 interface IInstanceContract {
-    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address utilityToken_) external;
+    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address costManager_, address msgCaller_) external;
     function name() view external returns(string memory);
     function symbol() view external returns(string memory);
     function owner() view external returns(address);
@@ -397,11 +389,11 @@ interface IInstanceContract {
 contract Factory is Ownable, IFactory {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
-    address public utility;
+    address public costManager;
     address public implementation;
     mapping(bytes32 =&gt; address) public getInstance;
     address[] public instances;
-    EnumerableSetUpgradeable.AddressSet private _renouncedSetUtility;
+    EnumerableSetUpgradeable.AddressSet private _renouncedOverrideCostManager;
        
     struct InstanceInfo {
         string name;
@@ -411,12 +403,12 @@ contract Factory is Ownable, IFactory {
     mapping(address =&gt; InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    event RenouncedSetUtilityTokenForInstance(address indexed instance);
+    event RenouncedOverrideCostManagerForInstance(address indexed instance);
 &nbsp;
-    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address utilityToken) {
+    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address costManager_) {
         implementation = instance;
-        utility = utilityToken;
-        IInstanceContract(instance).initialize(name, symbol, contractURI_, utilityToken);
+        costManager = costManager_;
+        IInstanceContract(instance).initialize(name, symbol, contractURI_, costManager, _msgSender());
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -434,18 +426,30 @@ contract Factory is Ownable, IFactory {
         return instances.length;
     }
     
-<span class="fstat-no" title="function not covered" >    function renounceSetUtilityToken(address instance) external onlyOwner {</span>
-<span class="cstat-no" title="statement not covered" >        _renouncedSetUtility.add(instance)</span>;
-<span class="cstat-no" title="statement not covered" >        emit RenouncedSetUtilityTokenForInstance(instance);</span>
+    /**
+    * @dev set the costManager for all future calls to produce()
+    */
+<span class="fstat-no" title="function not covered" >    function setCostManager(address costManager_) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        costManager = costManager_</span>;
+    }
+    
+    /**
+    * @dev renounces ability to override cost manager on instances
+    */
+<span class="fstat-no" title="function not covered" >    function renounceOverrideCostManager(address instance) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        _renouncedOverrideCostManager.add(instance)</span>;
+<span class="cstat-no" title="statement not covered" >        emit RenouncedOverrideCostManagerForInstance(instance);</span>
     }
     
     /** 
-    * @dev find out whether a given address can set the utility token
+    * @dev instance can call this to find out whether a given address can set the cost manager contract
     * @param account the address to test
     */
-<span class="fstat-no" title="function not covered" >    function canSetUtilityToken(address account) external override view returns (bool) {</span>
+<span class="fstat-no" title="function not covered" >    function canOverrideCostManager(address account, address instance)</span>
+    external override view
+    returns (bool) {
         // here _msgSender - are contract that will check
-<span class="cstat-no" title="statement not covered" >        return (account == owner() &amp;&amp; !_renouncedSetUtility.contains(_msgSender()));</span>
+<span class="cstat-no" title="statement not covered" >        return (account == owner() &amp;&amp; !_renouncedOverrideCostManager.contains(instance));</span>
     }
 &nbsp;
     /**
@@ -462,28 +466,7 @@ contract Factory is Ownable, IFactory {
         public 
         returns (address instance) 
     {
-        // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol, contractURI, utility);
-    }
-&nbsp;
-    /**
-    * @dev produces new instance with defined name, symbol and utility token
-    * @param name name of new token
-    * @param symbol symbol of new token
-    * @param utilityToken address of utility token
-    * @return instance address of new contract
-    */
-<span class="fstat-no" title="function not covered" >    function produce(</span>
-        string memory name,
-        string memory symbol,
-        string memory contractURI,
-        address utilityToken
-    ) 
-        public 
-        returns (address instance) 
-    {
-        // 1% from LP tokens should move to owner while user try to redeem
-<span class="cstat-no" title="statement not covered" >        return _produce(name, symbol, contractURI, utilityToken);</span>
+        return _produce(name, symbol, contractURI);
     }
     
     function getInstanceInfo(
@@ -497,15 +480,20 @@ contract Factory is Ownable, IFactory {
     function _produce(
         string memory name,
         string memory symbol,
-        string memory contractURI,
-        address utilityToken
-    ) internal returns (address instance) {
+        string memory contractURI
+    ) 
+        internal 
+        returns (address instance) 
+    {
         _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         <span class="missing-if-branch" title="else path not taken" >E</span>require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        IInstanceContract(instanceCreated).initialize(name, symbol, contractURI, utilityToken);
-        Ownable(instanceCreated).transferOwnership(_msgSender());
-        instance = instanceCreated;        
+        address ms = _msgSender();
+        IInstanceContract(instanceCreated).initialize(
+            name, symbol, contractURI, costManager, ms
+        );
+        Ownable(instanceCreated).transferOwnership(ms);
+        instance = instanceCreated;
     }
     
     function _createInstanceValidate(
@@ -553,7 +541,7 @@ contract Factory is Ownable, IFactory {
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Sun Dec 19 2021 18:15:42 GMT+0200 (Восточная Европа, стандартное время)
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Mon Dec 20 2021 00:26:34 GMT+0200 (Восточная Европа, стандартное время)
 </div>
 </div>
 <script src="../prettify.js"></script>
