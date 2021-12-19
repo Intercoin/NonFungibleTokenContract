@@ -25,7 +25,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     // contract URI
     string internal _contractURI;
-	
+    
     // Utility token, if any, to manage during operations
     address public utilityToken;
 
@@ -52,17 +52,17 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     // Mapping from token id to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
-	
-	// Constants representing operations
-	uint8 internal constant OPERATION_BUY = 0x1;
-	uint8 internal constant OPERATION_SETSERIESINFO = 0x2;
-	uint8 internal constant OPERATION_SETOWNERCOMMISSION = 0x3;
-	uint8 internal constant OPERATION_SETCOMMISSION = 0x4;
-	uint8 internal constant OPERATION_REMOVECOMMISSION = 0x5;
-	uint8 internal constant OPERATION_LISTFORSALE = 0x6;
-	uint8 internal constant OPERATION_MINTANDDISTRIBUTE = 0x7;
-	uint8 internal constant OPERATION_SETSALEINFO = 0x8;
-	uint8 internal constant OPERATION_TRANSFER = 0x9;
+    
+    // Constants representing operations
+    uint8 internal constant OPERATION_BUY = 0x1;
+    uint8 internal constant OPERATION_SETSERIESINFO = 0x2;
+    uint8 internal constant OPERATION_SETOWNERCOMMISSION = 0x3;
+    uint8 internal constant OPERATION_SETCOMMISSION = 0x4;
+    uint8 internal constant OPERATION_REMOVECOMMISSION = 0x5;
+    uint8 internal constant OPERATION_LISTFORSALE = 0x6;
+    uint8 internal constant OPERATION_MINTANDDISTRIBUTE = 0x7;
+    uint8 internal constant OPERATION_SETSALEINFO = 0x8;
+    uint8 internal constant OPERATION_TRANSFER = 0x9;;
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
@@ -72,9 +72,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     uint256 internal constant DEFAULT_SERIES_ID = 0;
     uint256 internal constant FRACTION = 100000;
-	
-	string public baseURI;
-	string public suffix;
+    
+    string public baseURI;
+    string public suffix;
     
     mapping (uint256 => SaleInfo) public salesInfo;  // tokenId => saleInfo
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => seriesInfo
@@ -140,15 +140,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _;
     }
 
-    modifier onlyOwnerOrAuthor(uint64 seriesId) {
-        require(
-            seriesInfo[seriesId].author == _msgSender() || 
-            owner() == _msgSender(), 
-            "!onlyOwnerOrAuthor"
-        );
-        _;
-    }
-
     /**
     * @dev buys NFT for ETH with defined id. 
     * mint token if it doesn't exist and transfer token
@@ -185,7 +176,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         }
 
         _buy(tokenId, exists, data, owner, safe);
-		
+        
         uint64 seriesId = getSeriesId(tokenId); // `stack too deep` if put inside getOperationId
         _accountForOperation(
             getOperationId(OPERATION_BUY, seriesId), 
@@ -249,8 +240,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         ) 
     {
         uint64 seriesId = getSeriesId(tokenId);
-	length = 0;
-	
+    length = 0;
+    
         // contract owner commission
         if (
             commissionInfo.ownerCommission.recipient != address(0) && 
@@ -273,27 +264,27 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     }
 
-	/**
+    /**
     * @dev sets the default baseURI for the whole contract
     * @param baseURI the prefix to prepend to URIs
     */
     function setBaseURI(
         string calldata baseURI_
     ) {
-		baseURI = baseURI_;
-	}
-	
-	/**
+        baseURI = baseURI_;
+    }
+    
+    /**
     * @dev sets the default URI suffix for the whole contract
     * @param suffix the suffix to append to URIs
     */
     function setSuffix(
         string calldata suffix_
     ) {
-		suffix = suffix_;
-	}
+        suffix = suffix_;
+    }
 
-	/**
+    /**
     * @dev sets information for series with 'seriesId'. 
     * @param seriesId series ID
     * @param info new info to set
@@ -302,10 +293,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint64 seriesId, 
         SeriesInfo memory info 
     ) 
-        onlyOwnerOrAuthor(seriesId)
         external
     {
-        
+        _requireOnlyOwnerAuthorOrOperator(seriesId);
         if (info.saleInfo.onSaleUntil > seriesInfo[seriesId].saleInfo.onSaleUntil) {
             emit SeriesPutOnSale(seriesId, info.saleInfo.price, info.saleInfo.currency, info.saleInfo.onSaleUntil);
         } else if (info.saleInfo.onSaleUntil == 0 ) {
@@ -385,8 +375,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         CommissionData memory commissionData
     ) 
         external 
-        onlyOwnerOrAuthor(seriesId)
     {
+        _requireOnlyOwnerAuthorOrOperator(seriesId);
         require(
             (
                 commissionData.value <= commissionInfo.maxValue &&
@@ -397,7 +387,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         );
         require(commissionData.recipient!= address(0), "RECIPIENT_INVALID");
         seriesInfo[seriesId].commission = CommissionData(commissionData.value, commissionData.recipient);
-		
+        
         _accountForOperation(
             getOperationId(OPERATION_SETCOMMISSION,seriesId),
             commissionData.value,
@@ -414,10 +404,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint64 seriesId
     ) 
         external 
-        onlyOwnerOrAuthor(seriesId)
     {
+        _requireOnlyOwnerAuthorOrOperator(seriesId);
         delete seriesInfo[seriesId].commission;
-		
+        
         _accountForOperation(
             getOperationId(OPERATION_REMOVECOMMISSION, seriesId)
         );
@@ -440,8 +430,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         external 
     {
         (bool success, /*bool isExists*/, SaleInfo memory data, address owner) = _isOnSale(tokenId);
-        require(!success, "already in sale");
-        require(owner == _msgSender(), "invalid token owner");
+        require(!success, "already on sale");
+        require(_isApprovedOrOwner(ms, tokenId), "not authorized");
         require(duration > 0, "invalid duration");
 
         data.onSaleUntil = uint64(block.timestamp) + duration;
@@ -449,8 +439,42 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         data.currency = currency;
         setSaleInfo(tokenId, data);
 
-        emit TokenPutOnSale(tokenId, _msgSender(), data.price, data.currency, data.onSaleUntil);
-		
+        emit TokenPutOnSale(
+            tokenId, _msgSender(), data.price, data.currency, data.onSaleUntil
+        );
+        
+        _accountForOperation(
+            getOperationId(OPERATION_LISTFORSALE, getSeriesId(tokenId)),
+            uint256(uint160(currency)),
+            price
+        );
+        
+    }
+    
+    /**
+    * @dev removes from sale NFT with defined token ID
+    * @param tokenId token ID
+    */
+    function removeFromSale(
+        uint256 tokenId,
+    )
+        external 
+    {
+        (bool success, /*bool isExists*/, SaleInfo memory data, address owner) = _isOnSale(tokenId);
+        require(success, "token not on sale");
+        address ms = _msgSender();
+        require(_isApprovedOrOwner(ms, tokenId), "not authorized");
+        require(duration > 0, "invalid duration");
+
+        data.onSaleUntil = uint64(block.timestamp) + duration;
+        data.price = price;
+        data.currency = currency;
+        setSaleInfo(tokenId, data);
+
+        emit TokenPutOnSale(
+            tokenId, ms, data.price, data.currency, data.onSaleUntil
+        );
+        
         _accountForOperation(
             getOperationId(OPERATION_LISTFORSALE, getSeriesId(tokenId)),
             uint256(uint160(currency)),
@@ -494,13 +518,16 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param tokenIds list of NFT IDs t obe minted
     * @param addresses list of receiver addresses
     */
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external onlyOwner {
+    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses)
+    external {
         uint256 len = addresses.length;
         require(tokenIds.length == len, "lengths should be the same");
+        address ms = _msgSender();
         for(uint256 i = 0; i < len; i++) {
+            _requireOnlyOwnerAuthorOrOperator(tokenIds[i] >> SERIES_BITS);
             _mint(addresses[i], tokenIds[i]);
         }
-		
+        
         _accountForOperation(
             getOperationId(OPERATION_MINTANDDISTRIBUTE),
             len,
@@ -521,7 +548,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         public onlyTokenOwner(tokenId)
     {
         salesInfo[tokenId] = info;
-		
+        
         _accountForOperation(
             getOperationId(OPERATION_SETSALEINFO,getSeriesId(tokenId)),
             uint256(uint160(info.currency)),
@@ -618,25 +645,25 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         _setNameAndSymbol(newName, newSymbol);
     }
-	
+    
   
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
     function tokenURI(uint256 tokenId) 
-	public view virtual override
-	returns (string memory) {
-		require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
+    public view virtual override
+    returns (string memory) {
+        require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
         string memory _tokenIdHexString = tokenId.toHexString();
-	    uint64 seriesId = getSeriesId(tokenId);
+        uint64 seriesId = getSeriesId(tokenId);
         string memory baseURI_ = seriesInfo[seriesId].baseURI;
-	    string memory suffix_ = seriesInfo[seriesId].suffix;
-		if (bytes(baseURI_).length == 0) {
-			baseURI_ = baseURI;
-		}
-		if (bytes(suffix_).length == 0) {
-			suffix_ = suffix;
-		}
+        string memory suffix_ = seriesInfo[seriesId].suffix;
+        if (bytes(baseURI_).length == 0) {
+            baseURI_ = baseURI;
+        }
+        if (bytes(suffix_).length == 0) {
+            suffix_ = suffix;
+        }
         // If all are set, concatenate
         if (bytes(_tokenIdHexString).length > 0) {
             return string(abi.encodePacked(baseURI_, _tokenIdHexString, suffix_));
@@ -661,9 +688,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function approve(address to, uint256 tokenId) public virtual override {
         address owner = ownerOf(tokenId);
         require(to != owner, "ERC721: approval to current owner");
-
+        address ms = _msgSender();
         require(
-            _msgSender() == owner || isApprovedForAll(owner, _msgSender()),
+            ms == owner || isApprovedForAll(owner, ms),
             "ERC721: approve caller is not owner nor approved for all"
         );
 
@@ -831,24 +858,29 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _burn(tokenId);
     }
 
-    function _buy(uint256 tokenId, bool exists, SaleInfo memory data, address owner, bool safe) internal virtual {
+    function _buy(
+        uint256 tokenId, bool exists, SaleInfo memory data, address owner, bool safe
+    ) internal virtual {
+        address ms = _msgSender();
         if (exists) {
             if (safe) {
-                _safeTransfer(owner, _msgSender(), tokenId, new bytes(0));
+                _safeTransfer(owner, ms, tokenId, new bytes(0));
             } else {
-                _transfer(owner, _msgSender(), tokenId);
+                _transfer(owner, ms, tokenId);
             }
             salesInfo[tokenId].onSaleUntil = 0;
-            emit TokenBought(tokenId, owner, _msgSender(), data.currency, data.price);
-
+            emit TokenBought(tokenId, owner, ms, data.currency, data.price);
         } else {
             if (safe) {
-                _safeMint(_msgSender(), tokenId);
+                _safeMint(ms, tokenId);
             } else {
-                _mint(_msgSender(), tokenId);
+                _mint(ms, tokenId);
             }
-            emit Transfer(owner, _msgSender(), tokenId);
-            emit TokenBought(tokenId, seriesInfo[getSeriesId(tokenId)].author, _msgSender(), data.currency, data.price);
+            emit Transfer(owner, ms, tokenId);
+            emit TokenBought(
+                tokenId, seriesInfo[getSeriesId(tokenId)].author, 
+                ms, data.currency, data.price
+            );
         }
          
     }
@@ -869,7 +901,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             address owner
         ) 
     {
-        //success = false;
         data = salesInfo[tokenId];
         exists = _exists(tokenId);
         owner = _owners[tokenId];
@@ -1094,7 +1125,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         // and change implementation of _transfer() to simply replace tokenInfo[tokenId].owner without calling setSaleInfo. 
 
         emit Transfer(from, to, tokenId);
-		
+        
         _accountForOperation(
             getOperationId(OPERATION_TRANSFER,getSeriesId(tokenId)),
             uint256(uint160(from)),
@@ -1322,14 +1353,14 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         delete _allTokensIndex[tokenId];
         _allTokens.pop();
     }
-	
+    
     /**
      * @dev Private function that tells utility token contract to account for an operation
      * @param info uint256 The operation ID (first 8 bits), seriesId is last 8 bits
-	 * @param param1 uint256 Some more information, if any
-	 * @param param2 uint256 Some more information, if any
+     * @param param1 uint256 Some more information, if any
+     * @param param2 uint256 Some more information, if any
      */
-	function _accountForOperation(uint72 info, uint256 param1, uint256 param2) private {
+    function _accountForOperation(uint72 info, uint256 param1, uint256 param2) private {
         if (utilityToken != address(0)) {
             try IUtilityToken(utilityToken).accountForOperation(info, param1, param2)
             returns (uint256 /*spent*/, uint256 /*remaining*/) {
@@ -1341,9 +1372,19 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
                 revert("Insufficient Utility Token: Contact Owner");
             }
         }
-	}
+    }
     function _accountForOperation(uint72 info) private {
         _accountForOperation(info, uint256(0), uint256(0));
+    }
+    
+    function _requireOnlyOwnerAuthorOrOperator(uint64 seriesId) private {
+        address ms = _msgSender;
+        require(
+            owner() == ms
+            || seriesInfo[seriesId].author == ms
+            || isApprovedForAll(seriesInfo[seriesId].author, ms)
+            "!onlyOwnerAuthorOrOperator"
+        );
     }
     
 }
