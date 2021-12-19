@@ -11,6 +11,8 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeabl
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IUtilityToken.sol";
+import "./interfaces/IFactory.sol";
+
 
 abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
@@ -65,7 +67,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     uint8 internal constant OPERATION_LISTFORSALE = 0x6;
     uint8 internal constant OPERATION_REMOVEFROMSALE = 0x7;
     uint8 internal constant OPERATION_MINTANDDISTRIBUTE = 0x8;
-    uint8 internal constant OPERATION_TRANSFER = 0x9;;
+    uint8 internal constant OPERATION_TRANSFER = 0x9;
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
@@ -120,6 +122,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     event SeriesRemovedFromSale(
         uint64 indexed seriesId
+    );
+
+    event TokenRemovedFromSale(
+        uint256 indexed tokenId,
+        address account
     );
 
     event TokenPutOnSale(
@@ -264,21 +271,25 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     /**
     * @dev sets the default baseURI for the whole contract
-    * @param baseURI the prefix to prepend to URIs
+    * @param baseURI_ the prefix to prepend to URIs
     */
     function setBaseURI(
         string calldata baseURI_
-    ) {
+    ) 
+        external
+    {
         baseURI = baseURI_;
     }
     
     /**
     * @dev sets the default URI suffix for the whole contract
-    * @param suffix the suffix to append to URIs
+    * @param suffix_ the suffix to append to URIs
     */
     function setSuffix(
         string calldata suffix_
-    ) {
+    ) 
+        external
+    {
         suffix = suffix_;
     }
 
@@ -427,7 +438,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     )
         external 
     {
-        (bool success, /*bool isExists*/, SaleInfo memory data, address owner) = _isOnSale(tokenId);
+        (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _isOnSale(tokenId);
         require(!success, "already on sale");
         _requireOnlyTokenOwnerOrOperator(tokenId);
         require(duration > 0, "invalid duration");
@@ -440,11 +451,11 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         emit TokenPutOnSale(
             tokenId, _msgSender(), data.price, data.currency, data.onSaleUntil
         );
-        
+        uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
-            getOperationId(OPERATION_LISTFORSALE, tokenId),
+            getOperationId(OPERATION_LISTFORSALE, seriesId),
             price,
-            currency
+            uint256(uint160(currency))
         );
     }
     
@@ -453,25 +464,25 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param tokenId token ID
     */
     function removeFromSale(
-        uint256 tokenId,
+        uint256 tokenId
     )
         external 
     {
-        (bool success, /*bool isExists*/, SaleInfo memory data, address owner) = _isOnSale(tokenId);
+        (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _isOnSale(tokenId);
         require(success, "token not on sale");
         address ms = _msgSender();
         _requireOnlyTokenOwnerOrOperator(tokenId);
-        require(duration > 0, "invalid duration");
 
         data.onSaleUntil = 0;
         setSaleInfo(tokenId, data);
 
-        emit TokenRemoveFromSale(tokenId, ms);
+        emit TokenRemovedFromSale(tokenId, ms);
         
+        uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
-            getOperationId(OPERATION_REMOVEFROMSALE, tokenId),
-            data.currency,
-            data.price
+            getOperationId(OPERATION_REMOVEFROMSALE, seriesId),
+            data.price,
+            uint256(uint160(data.currency))
         );
     }
 
@@ -510,13 +521,17 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param tokenIds list of NFT IDs t obe minted
     * @param addresses list of receiver addresses
     */
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses)
-    external {
+    function mintAndDistribute(
+        uint256[] memory tokenIds, 
+        address[] memory addresses
+    )
+        external 
+    {
         uint256 len = addresses.length;
         require(tokenIds.length == len, "lengths should be the same");
-        address ms = _msgSender();
+        //address ms = _msgSender();
         for(uint256 i = 0; i < len; i++) {
-            _requireOnlyOwnerAuthorOrOperator(tokenIds[i] >> SERIES_BITS);
+            _requireOnlyOwnerAuthorOrOperator(getSeriesId(tokenIds[i] >> SERIES_BITS));
             _mint(addresses[i], tokenIds[i]);
         }
         
@@ -536,7 +551,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function setSaleInfo(
         uint256 tokenId, 
         SaleInfo memory info 
-    ) {
+    ) 
+        public 
+    {
         _requireOnlyTokenOwnerAuthorOrOperator(tokenId);
         salesInfo[tokenId] = info;
     }
@@ -917,7 +934,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         _setNameAndSymbol(name_, symbol_);
         utilityToken = utilityToken_;
-        factory = msg.caller;
+        factory = _msgSender();
     }
     
     /** 
@@ -925,8 +942,15 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     * @param utilityToken_ new address of utility token, or 0
     */
     function setUtilityToken(address utilityToken_) external {
+        // require factory owner or operator
+        // otherwise needed deployer(!!not contract owner) in cases if was deployed manually
         require (
-            Factory(factory).canSetUtilityToken(msg.caller),
+            (factory.isContract()) 
+                ?
+                    IFactory(factory).canSetUtilityToken(_msgSender()) == true
+                :
+                    factory == _msgSender()
+            ,
             "contact factory owner"
         );
         utilityToken = utilityToken_;
@@ -1360,25 +1384,43 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function _accountForOperation(uint72 info) private {
         _accountForOperation(info, uint256(0), uint256(0));
     }
-    
+              
     function _requireOnlyOwnerAuthorOrOperator(uint64 seriesId) internal view virtual {
         address ms = _msgSender();
         require(
             owner() == ms
             || seriesInfo[seriesId].author == ms
-            || isApprovedForAll(seriesInfo[seriesId].author, ms)
+            || isApprovedForAll(seriesInfo[seriesId].author, ms),
             "!onlyOwnerAuthorOrOperator"
         );
     }
+
+             
     function _requireOnlyTokenOwnerOrOperator(uint256 tokenId) internal view virtual {
         address ms = _msgSender();
+        address owner = ownerOf(tokenId);
         require(_exists(tokenId), "ERC721: operator query for nonexistent token");
         require(
-            owner == ms
-            || getApproved(tokenId) == ms
-            || isApprovedForAll(owner, ms)
+            (
+                ownerOf(tokenId) == ms
+                || getApproved(tokenId) == ms
+                || isApprovedForAll(owner, ms)
+            ),
             "!onlyTokenOwnerOrOperator"
         );
     }
     
+    function _requireOnlyTokenOwnerAuthorOrOperator(uint256 tokenId) internal view virtual {
+        address ms = _msgSender();
+        address owner = ownerOf(tokenId);
+        //require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+        require(
+            ownerOf(tokenId) == ms
+            || seriesInfo[getSeriesId(tokenId)].author == ms
+            || isApprovedForAll(owner, ms),
+            "!onlyTokenOwnerAuthorOrOperator"
+        );
+    }
+    
+
 }

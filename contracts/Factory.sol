@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "./interfaces/IFactory.sol";
 
 interface IInstanceContract {
     function initialize(string memory name_, string memory symbol_, string memory contractURI_, address utilityToken_) external;
@@ -12,7 +13,7 @@ interface IInstanceContract {
     function owner() view external returns(address);
 }
 
-contract Factory is Ownable {
+contract Factory is Ownable, IFactory {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
     address public utility;
@@ -54,7 +55,7 @@ contract Factory is Ownable {
     * @dev adds an operator address to factory
     * @param operator address of the operator
     */
-    function addOperator(address operator) external {
+    function addOperator(address operator) onlyOwner external {
         _operators.add(operator);
     }
 
@@ -62,23 +63,23 @@ contract Factory is Ownable {
     * @dev removes an operator address from factory
     * @param operator address of the operator
     */
-    function removeOperator(address operator) external {
+    function removeOperator(address operator) onlyOwner external {
         _operators.remove(operator);
     }
     
     /** 
     * @dev returns all operators as an array
     */
-    function getOperators() view returns (address[] operators) {
-        return values(_operators);
+    function getOperators() external view returns (address[] memory operators) {
+        return _operators.values();
     }
     
     /** 
     * @dev find out whether a given address can set the utility token
     * @param operator the address to test
     */
-    function canSetUtilityToken(address operator) external view returns (bool) {
-        return (operator == owner() || operators[operator]);
+    function canSetUtilityToken(address operator) external override view returns (bool) {
+        return (operator == owner() || _operators.contains(operator));
     }
 
     /**
