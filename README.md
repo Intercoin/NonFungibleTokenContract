@@ -4,7 +4,7 @@
 
 <p class="lead">
 
-NFTSafeHook is a non fungible token contract of the new standard. It is based on the ERC721 standard, but with significant changes. The basic idea is to represent the token ID in a special way, in which the ID is the concatenation of the series ID and the token itself in that series. 
+NFTSafeHook is a non fungible token contract of the new standard. It is based on the ERC721 standard, but with significant improvements. The basic idea is to represent the token ID in a special way, in which the ID is the concatenation of the series ID and the token itself in that series. 
 
 The contract allows to create a series of tokens, with certain properties and conditions of sale (custom baseURI, suffix, limit, currency, price and royalties). Thus, it is not only a token contract, but a platform for creating various NFT projects and selling tokens with different logic. 
 
