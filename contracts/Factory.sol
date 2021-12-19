@@ -20,7 +20,7 @@ contract Factory is Ownable, IFactory {
     address public implementation;
     mapping(bytes32 => address) public getInstance;
     address[] public instances;
-    EnumerableSetUpgradeable.AddressSet private instances4UtilityTokens;
+    EnumerableSetUpgradeable.AddressSet private _renouncedSetUtility;
        
     struct InstanceInfo {
         string name;
@@ -39,7 +39,6 @@ contract Factory is Ownable, IFactory {
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
-        instances4UtilityTokens.add(instance);
         _instanceInfos[instance] = InstanceInfo(
             name,
             symbol,
@@ -55,7 +54,7 @@ contract Factory is Ownable, IFactory {
     }
     
     function renounceSetUtilityToken(address instance) external onlyOwner {
-        instances4UtilityTokens.remove(instance);
+        _renouncedSetUtility.add(instance);
         emit RenouncedSetUtilityTokenForInstance(instance);
     }
     
@@ -65,7 +64,7 @@ contract Factory is Ownable, IFactory {
     */
     function canSetUtilityToken(address account) external override view returns (bool) {
         // here _msgSender - are contract that will check
-        return (account == owner() && instances4UtilityTokens.contains(_msgSender()));
+        return (account == owner() && !_renouncedSetUtility.contains(_msgSender()));
     }
 
     /**
