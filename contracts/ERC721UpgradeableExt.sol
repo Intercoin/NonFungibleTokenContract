@@ -59,6 +59,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     mapping(uint256 => uint256) private _allTokensIndex;
     
     // Constants representing operations
+    uint8 internal constant OPERATION_INITIALIZE = 0x0;
     uint8 internal constant OPERATION_SETMETADATA = 0x1;
     uint8 internal constant OPERATION_SETSERIESINFO = 0x2;
     uint8 internal constant OPERATION_SETOWNERCOMMISSION = 0x3;
@@ -439,7 +440,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         delete seriesInfo[seriesId].commission;
         
         _accountForOperation(
-            getOperationId(OPERATION_REMOVECOMMISSION, seriesId)
+            getOperationId(OPERATION_REMOVECOMMISSION, seriesId),
+            0,
+            0
         );
         
     }
@@ -949,6 +952,12 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _setNameAndSymbol(name_, symbol_);
         utilityToken = utilityToken_;
         factory = _msgSender();
+        
+        _accountForOperation(
+            getOperationId(OPERATION_INITIALIZE),
+            0,
+            0
+        );
     }
     
     /** 
@@ -1411,9 +1420,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
                 revert("Insufficient Utility Token: Contact Owner");
             }
         }
-    }
-    function _accountForOperation(uint72 info) private {
-        _accountForOperation(info, uint256(0), uint256(0));
     }
               
     function _requireOnlyOwnerAuthorOrOperator(uint64 seriesId) internal view virtual {
