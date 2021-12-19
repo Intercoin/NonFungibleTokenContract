@@ -20,7 +20,7 @@ contract Factory is Ownable, IFactory {
     address public implementation;
     mapping(bytes32 => address) public getInstance;
     address[] public instances;
-    EnumerableSetUpgradeable.AddressSet private _operators;
+    EnumerableSetUpgradeable.AddressSet private instances4UtilityTokens;
        
     struct InstanceInfo {
         string name;
@@ -30,6 +30,8 @@ contract Factory is Ownable, IFactory {
     mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
+    event RenounceSetUtilityTokenForInstance(address indexed instance);
+
     constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address utilityToken) {
         implementation = instance;
         utility = utilityToken;
@@ -37,6 +39,7 @@ contract Factory is Ownable, IFactory {
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
+        instances4UtilityTokens.add(instance);
         _instanceInfos[instance] = InstanceInfo(
             name,
             symbol,
@@ -51,35 +54,18 @@ contract Factory is Ownable, IFactory {
         return instances.length;
     }
     
-    /** 
-    * @dev adds an operator address to factory
-    * @param operator address of the operator
-    */
-    function addOperator(address operator) onlyOwner external {
-        _operators.add(operator);
-    }
-
-    /** 
-    * @dev removes an operator address from factory
-    * @param operator address of the operator
-    */
-    function removeOperator(address operator) onlyOwner external {
-        _operators.remove(operator);
-    }
-    
-    /** 
-    * @dev returns all operators as an array
-    */
-    function getOperators() external view returns (address[] memory operators) {
-        return _operators.values();
+    function renounceSetUtilityToken(address instance) external onlyOwner {
+        instances4UtilityTokens.remove(instance);
+        emit RenounceSetUtilityTokenForInstance(instance);
     }
     
     /** 
     * @dev find out whether a given address can set the utility token
-    * @param operator the address to test
+    * @param account the address to test
     */
-    function canSetUtilityToken(address operator) external override view returns (bool) {
-        return (operator == owner() || _operators.contains(operator));
+    function canSetUtilityToken(address account) external override view returns (bool) {
+        // here _msgSender - are contract that will check
+        return (account == owner() && instances4UtilityTokens.contains(_msgSender()));
     }
 
     /**
