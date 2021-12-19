@@ -35,7 +35,7 @@ contract Factory is Ownable, IFactory {
     constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address costManager_) {
         implementation = instance;
         costManager = costManager_;
-        IInstanceContract(instance).initialize(name, symbol, contractURI_, costManager);
+        IInstanceContract(instance).initialize(name, symbol, contractURI_, costManager, _msgSender());
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -56,7 +56,7 @@ contract Factory is Ownable, IFactory {
     /**
     * @dev set the costManager for all future calls to produce()
     */
-    fuction setCostManager(address costManager_) public onlyOwner {
+    function setCostManager(address costManager_) public onlyOwner {
         costManager = costManager_;
     }
     
@@ -65,7 +65,7 @@ contract Factory is Ownable, IFactory {
     */
     function renounceOverrideCostManager(address instance) public onlyOwner {
         _renouncedOverrideCostManager.add(instance);
-        emit RenouncedSetCostManagerForInstance(instance);
+        emit RenouncedOverrideCostManagerForInstance(instance);
     }
     
     /** 
@@ -93,7 +93,7 @@ contract Factory is Ownable, IFactory {
         public 
         returns (address instance) 
     {
-        return _produce(name, symbol, contractURI, costManager);
+        return _produce(name, symbol, contractURI);
     }
     
     function getInstanceInfo(
@@ -108,11 +108,14 @@ contract Factory is Ownable, IFactory {
         string memory name,
         string memory symbol,
         string memory contractURI
-    ) internal returns (address instance) {
+    ) 
+        internal 
+        returns (address instance) 
+    {
         _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        address ms; = _msgSender();
+        address ms = _msgSender();
         IInstanceContract(instanceCreated).initialize(
             name, symbol, contractURI, costManager, ms
         );

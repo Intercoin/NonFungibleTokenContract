@@ -6,10 +6,17 @@ import "../ERC721UpgradeableExt.sol";
 
 contract NFT is ERC721UpgradeableExt {
 
-    function initialize(string memory name_, string memory symbol_, address utilityToken_) public initializer {
+    function initialize(
+        string memory name_, 
+        string memory symbol_,
+        string memory contractURI_,
+        address costManager_,
+        address msgSender_
+
+    ) public initializer {
         __Ownable_init();
         __ReentrancyGuard_init();
-        __ERC721_init(name_, symbol_, utilityToken_);
+        __ERC721_init(name_, symbol_, costManager_, msgSender_);
     }
 
 }

@@ -294,7 +294,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         baseURI = baseURI_;
         _accountForOperation(
-            getOperationId(OPERATION_SETMETADATA)
+            getOperationId(OPERATION_SETMETADATA),
             0x100,
             0
         );
@@ -312,7 +312,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         suffix = suffix_;
         _accountForOperation(
-            getOperationId(OPERATION_SETMETADATA)
+            getOperationId(OPERATION_SETMETADATA),
             0x010,
             0
         );
@@ -354,7 +354,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function setContractURI(string memory newContractURI) external onlyOwner {
         _contractURI = newContractURI;
         _accountForOperation(
-            getOperationId(OPERATION_SETMETADATA)
+            getOperationId(OPERATION_SETMETADATA),
             0x001,
             0
         );
@@ -970,7 +970,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         require (
             (factory.isContract()) 
                 ?
-                    IFactory(factory).canOverrideCostManager(_msgCaller(), address(this)) == true
+                    IFactory(factory).canOverrideCostManager(_msgSender(), address(this)) == true
                 :
                     factory == _msgSender()
             ,
