@@ -60,8 +60,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     uint8 internal constant OPERATION_SETCOMMISSION = 0x4;
     uint8 internal constant OPERATION_REMOVECOMMISSION = 0x5;
     uint8 internal constant OPERATION_LISTFORSALE = 0x6;
-    uint8 internal constant OPERATION_MINTANDDISTRIBUTE = 0x7;
-    uint8 internal constant OPERATION_SETSALEINFO = 0x8;
+    uint8 internal constant OPERATION_REMOVEFROMSALE = 0x7;
+    uint8 internal constant OPERATION_MINTANDDISTRIBUTE = 0x8;
     uint8 internal constant OPERATION_TRANSFER = 0x9;;
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
@@ -134,11 +134,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         address currency, 
         uint256 price
     );
-
-    modifier onlyTokenOwner(uint256 tokenId) {
-        require(_ownerOf(tokenId) == _msgSender(), "can call only by owner");
-        _;
-    }
 
     /**
     * @dev buys NFT for ETH with defined id. 
@@ -431,7 +426,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         (bool success, /*bool isExists*/, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(!success, "already on sale");
-        require(_isApprovedOrOwner(ms, tokenId), "not authorized");
+        _requireOnlyTokenOwnerOrOperator(tokenId);
         require(duration > 0, "invalid duration");
 
         data.onSaleUntil = uint64(block.timestamp) + duration;
@@ -444,11 +439,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         );
         
         _accountForOperation(
-            getOperationId(OPERATION_LISTFORSALE, getSeriesId(tokenId)),
-            uint256(uint160(currency)),
-            price
+            getOperationId(OPERATION_LISTFORSALE, tokenId);
         );
-        
     }
     
     /**
@@ -463,24 +455,17 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         (bool success, /*bool isExists*/, SaleInfo memory data, address owner) = _isOnSale(tokenId);
         require(success, "token not on sale");
         address ms = _msgSender();
-        require(_isApprovedOrOwner(ms, tokenId), "not authorized");
+        _requireOnlyTokenOwnerOrOperator(tokenId);
         require(duration > 0, "invalid duration");
 
-        data.onSaleUntil = uint64(block.timestamp) + duration;
-        data.price = price;
-        data.currency = currency;
+        data.onSaleUntil = 0;
         setSaleInfo(tokenId, data);
 
-        emit TokenPutOnSale(
-            tokenId, ms, data.price, data.currency, data.onSaleUntil
-        );
+        emit TokenRemoveFromSale(tokenId, ms);
         
         _accountForOperation(
-            getOperationId(OPERATION_LISTFORSALE, getSeriesId(tokenId)),
-            uint256(uint160(currency)),
-            price
+            getOperationId(OPERATION_REMOVEFROMSALE, tokenId);
         );
-        
     }
 
     /**
@@ -544,17 +529,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function setSaleInfo(
         uint256 tokenId, 
         SaleInfo memory info 
-    ) 
-        public onlyTokenOwner(tokenId)
-    {
+    ) {
+        _requireOnlyTokenOwnerAuthorOrOperator(tokenId);
         salesInfo[tokenId] = info;
-        
-        _accountForOperation(
-            getOperationId(OPERATION_SETSALEINFO,getSeriesId(tokenId)),
-            uint256(uint160(info.currency)),
-            info.price
-        );
-        
     }
 
     /**
@@ -756,7 +733,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 tokenId
     ) public virtual override {
         //solhint-disable-next-line max-line-length
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _requireOnlyTokenOwnerOrOperator(tokenId);
 
         _transfer(from, to, tokenId);
     }
@@ -802,7 +779,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint256 tokenId,
         bytes memory _data
     ) public virtual override {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _requireOnlyTokenOwnerOrOperator(tokenId);
         _safeTransfer(from, to, tokenId, _data);
     }
 
@@ -822,7 +799,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         address to,
         uint256 tokenId
     ) public virtual {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _requireOnlyTokenOwnerOrOperator(tokenId);
         _transfer(_msgSender(), to, tokenId);
     }
 
@@ -841,7 +818,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         address to,
         uint256 tokenId
     ) public virtual {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
+        _requireOnlyTokenOwnerOrOperator(tokenId);
         _safeTransfer(_msgSender(), to, tokenId, "");
     }
 
@@ -854,7 +831,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
      */
     function burn(uint256 tokenId) public virtual {
         //solhint-disable-next-line max-line-length
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721Burnable: caller is not owner nor approved");
+        _requireOnlyTokenOwnerOrOperator(tokenId);
         _burn(tokenId);
     }
 
@@ -977,19 +954,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     function _ownerOf(uint256 tokenId) internal view virtual returns (address) {
         return _owners[tokenId];
-    }
-
-    /**
-     * @dev Returns whether `spender` is allowed to manage `tokenId`.
-     *
-     * Requirements:
-     *
-     * - `tokenId` must exist.
-     */
-    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual returns (bool) {
-        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
-        address owner = ownerOf(tokenId);
-        return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
     }
 
     /**
@@ -1377,13 +1341,23 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _accountForOperation(info, uint256(0), uint256(0));
     }
     
-    function _requireOnlyOwnerAuthorOrOperator(uint64 seriesId) private {
-        address ms = _msgSender;
+    function _requireOnlyOwnerAuthorOrOperator(uint64 seriesId) internal view virtual {
+        address ms = _msgSender();
         require(
             owner() == ms
             || seriesInfo[seriesId].author == ms
             || isApprovedForAll(seriesInfo[seriesId].author, ms)
             "!onlyOwnerAuthorOrOperator"
+        );
+    }
+    function _requireOnlyTokenOwnerOrOperator(uint256 tokenId) internal view virtual {
+        address ms = _msgSender();
+        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+        require(
+            owner == ms
+            || getApproved(tokenId) == ms
+            || isApprovedForAll(owner, ms)
+            "!onlyTokenOwnerOrOperator"
         );
     }
     
