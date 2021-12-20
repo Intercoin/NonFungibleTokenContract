@@ -75,6 +75,36 @@ To deploy a new instance of NFTSafeHooks contract user should call produce() met
 </table>
 
 
+
+<hr>
+
+
+<h3>SaleInfoToken TODO</h3>
+
+<p>Stores data about a token Sale</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>value</td>
+<td>uint64</td>
+<td>Amount of fractions (1/100000) to pay to receiver</td>
+</tr><tr>
+<td>recipient</td>
+<td>address</td>
+<td>Address of commission recipient </td>
+</tr>
+</tbody>
+</table>
+
+
  <hr>
 
 
@@ -184,6 +214,38 @@ To deploy a new instance of NFTSafeHooks contract user should call produce() met
 
 
 
+<h2> Factory </h2>
+
+<h3>InstanceInfo</h3>
+
+<p>Stores data about instance</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Name of the instance</td>
+</tr><tr>
+<td>symbol</td>
+<td>string</td>
+<td>Symbol of the instance</td>
+</tr><tr>
+<td>creator</td>
+<td>address</td>
+<td>Creator of the instance</td>
+</tr>
+</tbody>
+</table>
+
+
  <hr>
 <h1> Events </h1>
 
@@ -279,6 +341,35 @@ To deploy a new instance of NFTSafeHooks contract user should call produce() met
 
 
 
+<hr>
+<h3>TokenRemovedFromSale</h3>
+
+<p>Emitted when a token is removed from sale</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tokenId</td>
+<td>uint256 indexed</td>
+<td>ID of the token which was put on sale</td>
+</tr><tr>
+<td>account</td>
+<td>address</td>
+<td>address of the token owner</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
 
 <hr>
 <h3>TokenPutOnSale</h3>
@@ -361,10 +452,78 @@ To deploy a new instance of NFTSafeHooks contract user should call produce() met
 <All ERC721 standard events>
 
 
+<h2> Factory </h2>
+
+
+<hr>
+<h3>InstanceCreated</h3>
+
+<p>Emitted when a new instance is created</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Name of the new instance</td>
+</tr><tr>
+<td>symbol</td>
+<td>string</td>
+<td>Symbol of the new instance</td>
+</tr><tr>
+<td>instance</td>
+<td>address</td>
+<td>Address of the new instance </td>
+</tr><tr>
+<td>length</td>
+<td>uint256</td>
+<td>Total amount of instances</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+<hr>
+<h3>RenouncedOverrideCostManagerForInstance</h3>
+
+<p>Emitted when a cost manager overriding is renounced</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>instance</td>
+<td>address indexed</td>
+<td>Address of the instance</td>
+</tr>
+</tbody>
+</table>
+
+
+
 
 
 <br>
 <h2>Functions</h2>
+
+<h3> NFTSafeHooks </h3>
+
 
 
 
@@ -587,6 +746,91 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 </table>
 
 
+<hr>
+<h3>setBaseURI</h3>
+
+<p>Only owner. Sets default baseURI</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>baseURI_</td>
+<td>string</td>
+<td>New baseURI</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+<hr>
+<h3>setContractURI</h3>
+
+<p>Only owner. Sets contract URI</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>newContractURI</td>
+<td>string</td>
+<td>New contractURI</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+<hr>
+<h3>setSuffix</h3>
+
+<p>Only owner. Sets default suffix </p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>suffix_</td>
+<td>string</td>
+<td>New suffix</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+<hr>
+<h3>contractURI</h3>
+
+<p>Returns contractURI </p>
+
+
+
+
+
 
 <hr>
 <h3>getApproved</h3>
@@ -804,10 +1048,38 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 
 
 
+
+
+
+<hr>
+<h3>removeFromSale</h3>
+
+<p>Removes NFT with defined token ID from sale </p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tokenId</td>
+<td>uint256</td>
+<td>Token ID</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
 <hr>
 <h3>mintAndDistribute</h3>
 
-<p>Only owner. Mints and distributes NFTs with specified IDs to specified addresses</p>
+<p>Only owner or author. Mints and distributes NFTs with specified IDs to specified addresses</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1168,34 +1440,6 @@ caller. Emits an {ApprovalForAll} event.</p>
 
 
 
-
-<hr>
-<h3>setSaleInfo</h3>
-
-<p>Sets sale info for the NFT with 'tokenId'</p>
-
-<table class="table table-sm table-bordered table-striped">
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>tokenId</td>
-<td>uint256</td>
-<td>Token ID</td>
-</tr><tr>
-<td>info</td>
-<td>tuple</td>
-<td>Information about sale </td>
-</tr>
-</tbody>
-</table>
-
-
 <hr>
 <h3>setOwnerCommission</h3>
 
@@ -1303,7 +1547,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <hr>
 <h3>setSeriesInfo</h3>
 
-<p>Only owner. Sets information for series with 'seriesId'. </p>
+<p>Only author or owner. Sets information for series with 'seriesId'. </p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -1320,7 +1564,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <td>Series ID</td>
 </tr><tr>
 <td>info</td>
-<td>tuple</td>
+<td>SeriesInfo</td>
 <td>New info to set</td>
 </tr>
 </tbody>
@@ -1561,4 +1805,155 @@ either {approve} or {setApprovalForAll}. Emits a {Transfer} event.</p>
 </tr>
 </tbody>
 </table>
+
+
+
+<h2> Factory </h2>
+
+<h3>instancesCount</h3>
+
+<p>Returns the count of instances</p>
+
+<hr>
+<h3>setCostManager</h3>
+
+<p>Set the cost manager for all future calls to produce()</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>costManager_</td>
+<td>address</td>
+<td>Address of the new cost manager</td>
+</tr>
+</tbody>
+</table>
+
+
+
+<hr>
+<h3>renounceOverrideCostManager</h3>
+
+<p>Renounces ability to override cost manager on instances</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>instance</td>
+<td>address</td>
+<td>Address of the instance</td>
+</tr>
+</tbody>
+</table>
+
+
+<hr>
+<h3>canOverrideCostManager</h3>
+
+<p>Instance can call this to find out whether a given address can set the cost manager contract</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>account</td>
+<td>address</td>
+<td>Address of the instance</td>
+</tr><tr>
+<td>instance</td>
+<td>address</td>
+<td>Address of the instance</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+<hr>
+<h3>produce</h3>
+
+<p>Produces new instance with defined name and symbol</p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Name of the new instance</td>
+</tr><tr>
+<td>symbol</td>
+<td>string</td>
+<td>Symbol of the new instance</td>
+</tr><tr>
+<td>contractURI</td>
+<td>string</td>
+<td>Contract URI of the new instance</td>
+</tr>
+</tbody>
+</table>
+
+
+
+<hr>
+<h3>getInstanceInfo</h3>
+
+<p>Returns instance information (InstanceInfo) </p>
+
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>instanceId</td>
+<td>uint256</td>
+<td>Instance ID</td>
+</tr>
+</tbody>
+</table>
+
+
+<hr>
+<h3>costManager</h3>
+
+<p>Returns current cost manager </p>
+
+
+<hr>
+<h3>implementation</h3>
+
+<p>Returns address of implementation </p>
+
 
