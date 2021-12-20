@@ -37,17 +37,18 @@ describe("Factory tests", async() => {
 
         const name = "NFT Edition";
         const symbol = "NFT";
-        this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, contractURI, ZERO_ADDRESS);
+
+        this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, "", ZERO_ADDRESS);
     })
 
     it("should correct deploy instance and do usual buy test", async() => {
         
         const name = "NAME 1";
         const symbol = "SMBL1";
-        await this.factory["produce(string,string)"](name, symbol);
+        await this.factory["produce(string,string,string)"](name, symbol, "");
         const hash = ethers.utils.solidityKeccak256(["string", "string"], [name, symbol]);
         const instance = await this.factory.getInstance(hash);
-        console.log('instance = ', instance);
+        //console.log('instance = ', instance);
         expect(instance).to.not.be.equal(ZERO_ADDRESS);
 
         expect(await this.factory.instancesCount()).to.be.equal(TWO);
@@ -77,7 +78,9 @@ describe("Factory tests", async() => {
         const saleParams = [
             now + 100000, 
             ZERO_ADDRESS, 
-            price, 
+            price,
+            ZERO, //ownerCommissionValue;
+            ZERO  //authorCommissionValue;
         ];
         const commissions = [
             ZERO,
@@ -105,12 +108,14 @@ describe("Factory tests", async() => {
         const newOwner = await this.nft.ownerOf(id);
         expect(newOwner).to.be.equal(bob.address);
 
-        const saleInfo = await this.nft.getSaleInfo(id);
+        //const saleInfo = await this.nft.getSaleInfo(id); // replaced for call public variable
+        const saleInfo = await this.nft.salesInfo(id);
         expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
         expect(saleInfo.price).to.be.equal(ZERO);
         expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
 
-        const seriesInfo = await this.nft.getSeriesInfo(seriesId);
+        //const seriesInfo = await this.nft.getSeriesInfo(seriesId); // replaced for call public variable
+        const seriesInfo = await this.nft.seriesInfo(seriesId);
         expect(seriesInfo.author).to.be.equal(alice.address);
         expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
         expect(seriesInfo.saleInfo.price).to.be.equal(price);
@@ -124,9 +129,9 @@ describe("Factory tests", async() => {
     it("should correct several deploy instances", async() => {
         const names = ["NAME 1", "NAME 2", "NAME 3"];
         const symbols = ["SMBL1", "SMBL2", "SMBL3"];
-        await this.factory["produce(string,string)"](names[0], symbols[0]);
-        await this.factory["produce(string,string)"](names[1], symbols[1]);
-        await this.factory["produce(string,string)"](names[2], symbols[2]);
+        await this.factory["produce(string,string,string)"](names[0], symbols[0], "");
+        await this.factory["produce(string,string,string)"](names[1], symbols[1], "");
+        await this.factory["produce(string,string,string)"](names[2], symbols[2], "");
 
         expect(await this.factory.instancesCount()).to.be.equal(FOUR);
 
@@ -136,9 +141,9 @@ describe("Factory tests", async() => {
         const instance1 = await this.factory.getInstance(hash1);
         const instance2 = await this.factory.getInstance(hash2);
         const instance3 = await this.factory.getInstance(hash3);
-        console.log('instance1 = ', instance1);
-        console.log('instance2 = ', instance2);
-        console.log('instance3 = ', instance3);
+        // console.log('instance1 = ', instance1);
+        // console.log('instance2 = ', instance2);
+        // console.log('instance3 = ', instance3);
 
         expect(instance1).to.not.be.equal(ZERO_ADDRESS);
         expect(instance1).to.not.be.equal(instance2.address);
@@ -169,13 +174,13 @@ describe("Factory tests", async() => {
     })
 
     it("shouldn't deploy instance with the existing name and symbol", async() => {
-        await this.factory["produce(string,string)"]("NAME", "SMBL");
-        await expect(this.factory["produce(string,string)"]("NAME", "SMBL")).to.be.revertedWith("Factory: ALREADY_EXISTS");
-        await expect(this.factory["produce(string,string)"]("NFT Edition", "NFT")).to.be.revertedWith("Factory: ALREADY_EXISTS");
+        await this.factory["produce(string,string,string)"]("NAME", "SMBL", "");
+        await expect(this.factory["produce(string,string,string)"]("NAME", "SMBL", "")).to.be.revertedWith("Factory: ALREADY_EXISTS");
+        await expect(this.factory["produce(string,string,string)"]("NFT Edition", "NFT", "")).to.be.revertedWith("Factory: ALREADY_EXISTS");
     })
 
     it("shouldn't deploy instance with empty name or symbol", async() => {
-        await expect(this.factory["produce(string,string)"]("", "SMBL")).to.be.revertedWith("Factory: EMPTY NAME");
-        await expect(this.factory["produce(string,string)"]("NAME", "")).to.be.revertedWith("Factory: EMPTY SYMBOL");
+        await expect(this.factory["produce(string,string,string)"]("", "SMBL", "")).to.be.revertedWith("Factory: EMPTY NAME");
+        await expect(this.factory["produce(string,string,string)"]("NAME", "", "")).to.be.revertedWith("Factory: EMPTY SYMBOL");
     })
 })

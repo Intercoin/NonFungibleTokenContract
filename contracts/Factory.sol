@@ -3,19 +3,24 @@ pragma solidity ^0.8.0;
 
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "./interfaces/IFactory.sol";
 
 interface IInstanceContract {
-    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address utilityToken_) external;
+    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address costManager_, address msgCaller_) external;
     function name() view external returns(string memory);
     function symbol() view external returns(string memory);
     function owner() view external returns(address);
 }
 
-contract Factory is Ownable {
-    address public utility;
+contract Factory is Ownable, IFactory {
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    
+    address public costManager;
     address public implementation;
     mapping(bytes32 => address) public getInstance;
     address[] public instances;
+    EnumerableSetUpgradeable.AddressSet private _renouncedOverrideCostManager;
        
     struct InstanceInfo {
         string name;
@@ -25,10 +30,12 @@ contract Factory is Ownable {
     mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address utilityToken) {
+    event RenouncedOverrideCostManagerForInstance(address indexed instance);
+
+    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address costManager_) {
         implementation = instance;
-        utility = utilityToken;
-        IInstanceContract(instance).initialize(name, symbol, contractURI_, utilityToken);
+        costManager = costManager_;
+        IInstanceContract(instance).initialize(name, symbol, contractURI_, costManager, _msgSender());
         Ownable(instance).transferOwnership(_msgSender());
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -45,6 +52,32 @@ contract Factory is Ownable {
     function instancesCount() external view returns (uint256) {
         return instances.length;
     }
+    
+    /**
+    * @dev set the costManager for all future calls to produce()
+    */
+    function setCostManager(address costManager_) public onlyOwner {
+        costManager = costManager_;
+    }
+    
+    /**
+    * @dev renounces ability to override cost manager on instances
+    */
+    function renounceOverrideCostManager(address instance) public onlyOwner {
+        _renouncedOverrideCostManager.add(instance);
+        emit RenouncedOverrideCostManagerForInstance(instance);
+    }
+    
+    /** 
+    * @dev instance can call this to find out whether a given address can set the cost manager contract
+    * @param account the address to test
+    */
+    function canOverrideCostManager(address account, address instance)
+    external override view
+    returns (bool) {
+        // here _msgSender - are contract that will check
+        return (account == owner() && !_renouncedOverrideCostManager.contains(instance));
+    }
 
     /**
     * @dev produces new instance with defined name and symbol
@@ -60,28 +93,7 @@ contract Factory is Ownable {
         public 
         returns (address instance) 
     {
-        // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol, contractURI, utility);
-    }
-
-    /**
-    * @dev produces new instance with defined name, symbol and utility token
-    * @param name name of new token
-    * @param symbol symbol of new token
-    * @param utilityToken address of utility token
-    * @return instance address of new contract
-    */
-    function produce(
-        string memory name,
-        string memory symbol,
-        string memory contractURI,
-        address utilityToken
-    ) 
-        public 
-        returns (address instance) 
-    {
-        // 1% from LP tokens should move to owner while user try to redeem
-        return _produce(name, symbol, contractURI, utilityToken);
+        return _produce(name, symbol, contractURI);
     }
     
     function getInstanceInfo(
@@ -95,15 +107,20 @@ contract Factory is Ownable {
     function _produce(
         string memory name,
         string memory symbol,
-        string memory contractURI,
-        address utilityToken
-    ) internal returns (address instance) {
+        string memory contractURI
+    ) 
+        internal 
+        returns (address instance) 
+    {
         _createInstanceValidate(name, symbol);
         address payable instanceCreated = payable(_createInstance(name, symbol));
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        IInstanceContract(instanceCreated).initialize(name, symbol, contractURI, utilityToken);
-        Ownable(instanceCreated).transferOwnership(_msgSender());
-        instance = instanceCreated;        
+        address ms = _msgSender();
+        IInstanceContract(instanceCreated).initialize(
+            name, symbol, contractURI, costManager, ms
+        );
+        Ownable(instanceCreated).transferOwnership(ms);
+        instance = instanceCreated;
     }
     
     function _createInstanceValidate(
@@ -121,7 +138,7 @@ contract Factory is Ownable {
         string memory symbol
     ) internal returns (address instance) {
         
-        instance = createClone(implementation);
+        instance = _createClone(implementation);
         
         getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
         instances.push(instance);
@@ -133,7 +150,7 @@ contract Factory is Ownable {
         emit InstanceCreated(name, symbol, instance, instances.length);
     }
 
-    function createClone(address target) internal returns (address result) {
+    function _createClone(address target) internal returns (address result) {
         bytes20 targetBytes = bytes20(target);
         assembly {
         let clone := mload(0x40)

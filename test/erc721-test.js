@@ -42,7 +42,7 @@ describe("Standart ERC721 functional tests", function () {
     const saleParams = [
         now + 100000, 
         ZERO_ADDRESS, 
-        price, 
+        price,
       ];
     const commissions = [
         ZERO,
@@ -64,7 +64,7 @@ describe("Standart ERC721 functional tests", function () {
 
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.nft = await NFTFactory.deploy();
-        await this.nft.connect(owner).initialize("NFT Edition", "NFT", contractURI, ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS, ZERO_ADDRESS);
         await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
         const retval = '0x150b7a02';
         const error = ZERO;
@@ -78,7 +78,7 @@ describe("Standart ERC721 functional tests", function () {
     describe('transfer tests', async() => {
         it('check name, symbol and tokenURI', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            console.log("await this.nft.tokenURI(id) = ", await this.nft.tokenURI(id));
+            //console.log("await this.nft.tokenURI(id) = ", await this.nft.tokenURI(id));
             expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
             expect(await this.nft.name()).to.be.equal("NFT Edition");
             expect(await this.nft.symbol()).to.be.equal("NFT");
@@ -146,7 +146,7 @@ describe("Standart ERC721 functional tests", function () {
 
         it('shouldnt transfer token if not owner', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+            await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
         })
         it('shouldnt transfer token on zero address', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
@@ -217,7 +217,7 @@ describe("Standart ERC721 functional tests", function () {
               ];
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
             await this.nft.setSeriesInfo(seriesId, newSeriesParams);
-            expect(await this.nft.tokenURI(id)).to.be.equal(id.toHexString().substring(2));
+            expect(await this.nft.tokenURI(id)).to.be.equal(id.toHexString().substring(2).concat(suffix));
         })
         it('shouldnt approve to current owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
@@ -241,12 +241,21 @@ describe("Standart ERC721 functional tests", function () {
 
         it('shouldnt safeTransfer if not owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id)).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+            await expect(this.nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
         })
 
         it('shouldnt burn if not owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(alice).burn(id)).to.be.revertedWith("ERC721Burnable: caller is not owner nor approved");
+            await expect(this.nft.connect(alice).burn(id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
+        })
+
+        it('should burn if approved before', async() => {
+            await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+            await this.nft.connect(bob).approve(alice.address, id);
+            expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ZERO);
+            await this.nft.connect(alice).burn(id);
+            expect(await this.nft.balanceOf(DEAD_ADDRESS)).to.be.equal(ONE);
+            expect(await this.nft.ownerOf(id)).to.be.equal(DEAD_ADDRESS);
         })
 
         it('should correct safeTransfer to contract with data', async() => {

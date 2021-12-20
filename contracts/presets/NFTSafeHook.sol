@@ -15,11 +15,15 @@ contract NFTSafeHook is ERC721SafeHooksUpgradeable {
         string memory name_, 
         string memory symbol_, 
         string memory contractURI_,
-        address utilityToken_
-    ) public initializer {
+        address costManager_,
+        address msgSender_
+    ) 
+        public 
+        initializer 
+    {
         __Ownable_init();
         __ReentrancyGuard_init();
-        __ERC721SafeHook_init(name_, symbol_, utilityToken_);
+        __ERC721SafeHook_init(name_, symbol_, costManager_, msgSender_);
         _contractURI = contractURI_;
 
     }
