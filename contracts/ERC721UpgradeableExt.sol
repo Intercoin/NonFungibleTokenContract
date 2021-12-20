@@ -59,6 +59,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     // Mapping from token id to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
     
+    // Constants for shifts
+    uint8 internal constant SERIES_SHIFT_BITS = 192; // 256 - 64
+    uint8 internal constant OPERATION_SHIFT_BITS = 240;  // 256 - 16
+    
     // Constants representing operations
     uint8 internal constant OPERATION_INITIALIZE = 0x0;
     uint8 internal constant OPERATION_SETMETADATA = 0x1;
@@ -74,9 +78,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     uint8 internal constant OPERATION_TRANSFER = 0xB;
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
-    uint8 internal constant SERIES_BITS = 192;
-    uint8 internal constant SERIES_BITS_AMOUNT = 64; 
 
     uint256 internal constant FRACTION = 100000;
     
@@ -192,9 +193,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         _buy(tokenId, exists, data, owner, safe);
         
-        uint64 seriesId = getSeriesId(tokenId); // `stack too deep` if put inside getOperationId
+        uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
-            getOperationId(OPERATION_BUY, seriesId), 
+            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
             0,
             price
         );
@@ -228,9 +229,9 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
         _buy(tokenId, exists, data, owner, safe);
 
-        uint64 seriesId = getSeriesId(tokenId); // `stack too deep` if put inside getOperationId
+        uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
-            getOperationId(OPERATION_BUY, seriesId),
+            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
             uint256(uint160(currency)),
             price
         );
@@ -301,7 +302,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         baseURI = baseURI_;
         _accountForOperation(
-            getOperationId(OPERATION_SETMETADATA),
+            OPERATION_SETMETADATA << OPERATION_SHIFT_BITS,
             0x100,
             0
         );
@@ -319,7 +320,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     {
         suffix = suffix_;
         _accountForOperation(
-            getOperationId(OPERATION_SETMETADATA),
+            OPERATION_SETMETADATA << OPERATION_SHIFT_BITS,
             0x010,
             0
         );
@@ -346,7 +347,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         seriesInfo[seriesId] = info;
 
         _accountForOperation(
-            getOperationId(OPERATION_SETSERIESINFO,seriesId),
+            (OPERATION_SETSERIESINFO << OPERATION_SHIFT_BITS) | seriesId,
             uint256(uint160(info.saleInfo.currency)),
             info.saleInfo.price
         );
@@ -360,7 +361,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     function setContractURI(string memory newContractURI) external onlyOwner {
         _contractURI = newContractURI;
         _accountForOperation(
-            getOperationId(OPERATION_SETMETADATA),
+            OPERATION_SETMETADATA << OPERATION_SHIFT_BITS,
             0x001,
             0
         );
@@ -387,7 +388,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         commissionInfo = commission;
 
         _accountForOperation(
-            getOperationId(OPERATION_SETOWNERCOMMISSION),
+            OPERATION_SETOWNERCOMMISSION << OPERATION_SHIFT_BITS,
             uint256(uint160(commission.ownerCommission.recipient)),
             commission.ownerCommission.value
         );
@@ -417,7 +418,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         seriesInfo[seriesId].commission = CommissionData(commissionData.value, commissionData.recipient);
         
         _accountForOperation(
-            getOperationId(OPERATION_SETCOMMISSION,seriesId),
+            (OPERATION_SETCOMMISSION << OPERATION_SHIFT_BITS) | seriesId,
             commissionData.value,
             uint256(uint160(commissionData.recipient))
         );
@@ -437,7 +438,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         delete seriesInfo[seriesId].commission;
         
         _accountForOperation(
-            getOperationId(OPERATION_REMOVECOMMISSION, seriesId),
+            (OPERATION_REMOVECOMMISSION << OPERATION_SHIFT_BITS) | seriesId,
             0,
             0
         );
@@ -485,7 +486,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         );
         
         _accountForOperation(
-            getOperationId(OPERATION_LISTFORSALE, seriesId),
+            (OPERATION_LISTFORSALE << OPERATION_SHIFT_BITS) | seriesId,
             uint256(uint160(currency)),
             price
         );
@@ -518,7 +519,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         
         uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
-            getOperationId(OPERATION_REMOVEFROMSALE, seriesId),
+            (OPERATION_REMOVEFROMSALE << OPERATION_SHIFT_BITS) | seriesId,
             uint256(uint160(data.currency)),
             data.price
         );
@@ -574,7 +575,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         }
         
         _accountForOperation(
-            getOperationId(OPERATION_MINTANDDISTRIBUTE),
+            OPERATION_MINTANDDISTRIBUTE << OPERATION_SHIFT_BITS,
             len,
             0
         );
@@ -881,7 +882,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         _burn(tokenId);
         
         _accountForOperation(
-            getOperationId(OPERATION_BURN),
+            OPERATION_BURN << OPERATION_SHIFT_BITS,
             tokenId,
             0
         );
@@ -969,7 +970,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         factory = _msgSender();
         
         _accountForOperation(
-            getOperationId(OPERATION_INITIALIZE),
+            OPERATION_INITIALIZE << OPERATION_SHIFT_BITS,
             uint256(uint160(msgSender_)),
             0
         );
@@ -1173,7 +1174,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         emit Transfer(from, to, tokenId);
         
         _accountForOperation(
-            getOperationId(OPERATION_TRANSFER,getSeriesId(tokenId)),
+            (OPERATION_TRANSFER << OPERATION_SHIFT_BITS) | getSeriesId(tokenId),
             uint256(uint160(from)),
             uint256(uint160(to))
         );
@@ -1233,28 +1234,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         pure
         returns(uint64)
     {
-        return uint64(tokenId >> SERIES_BITS);
-    }
-
-    function getOperationId(
-        uint8 operation
-    )
-        internal
-        view
-        returns(uint72)
-    {
-        return getOperationId(operation, uint64(0));
-    }
-
-    function getOperationId(
-        uint8 operation,
-        uint64 seriesId
-    )
-        internal
-        view
-        returns(uint72)
-    {
-        return ((uint72(operation) << SERIES_BITS_AMOUNT) | uint72(seriesId));
+        return uint64(tokenId >> SERIES_SHIFT_BITS);
     }
     
     /** 
