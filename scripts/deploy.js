@@ -16,7 +16,8 @@ async function main() {
 
 	const name = "NFT ContractURI BSC";
 	const symbol = "NFTCUB";
-	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, ZERO_ADDRESS, {gasLimit: 3e6});
+	const contractURI = "https://pastebin.com/raw/armzdJZr";
+	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, contractURI, ZERO_ADDRESS, {gasLimit: 3e6});
 
 
 	console.log("NFT deployed at:", this.nft.address);

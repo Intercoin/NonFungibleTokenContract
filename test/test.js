@@ -8,6 +8,7 @@ const TOTALSUPPLY = ethers.utils.parseEther('1000000000');
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
+const contractURI = "https://contracturi";
 
 const ZERO = BigNumber.from('0');
 const ONE = BigNumber.from('1');
@@ -54,7 +55,7 @@ describe("NonFungibleToken tests", function () {
         this.buyer = await BuyerFactory.deploy(retval, error);
         this.badBuyer = await BadBuyerFactory.deploy();
         this.nft = await NFTFactory.deploy();
-        await this.nft.connect(owner).initialize("NFT Edition", "NFT", ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize("NFT Edition", "NFT", contractURI, ZERO_ADDRESS);
 
         await this.erc20.mint(owner.address, TOTALSUPPLY);
 

@@ -7,7 +7,7 @@ const TOTALSUPPLY = ethers.utils.parseEther('1000000000');
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
-
+const contractURI = "https://contracturi";
 
 const ZERO = BigNumber.from('0');
 const ONE = BigNumber.from('1');
@@ -68,7 +68,7 @@ describe("Tests with factory", function () {
         // this.nft = await NFTFactory.deploy();
         // await this.nft.connect(owner).initialize("NFT Edition", "NFT");
         this.nftimpl = await NFTFactory.deploy();
-        this.factory = await Factory.deploy(this.nftimpl.address, "NFT Edition0", "NFT0", ZERO_ADDRESS);
+        this.factory = await Factory.deploy(this.nftimpl.address, "NFT Edition0", "NFT0", contractURI, ZERO_ADDRESS);
         let tx = await this.factory.connect(owner)["produce(string,string)"]("NFT Edition", "NFT");
         let receipt = await tx.wait();
         let instanceAddr = receipt['events'][0].args.instance;
