@@ -20,6 +20,7 @@ const HUN = BigNumber.from('100');
 
 const SERIES_BITS = 192;
 
+
 chai.use(require('chai-bignumber')());
 
 describe("Factory tests", async() => {
@@ -32,6 +33,9 @@ describe("Factory tests", async() => {
     beforeEach("deployment", async() => {
         const FactoryFactory = await ethers.getContractFactory("Factory");
         const NftFactory = await ethers.getContractFactory("NFTSafeHook");
+        const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
+
+        this.costManager = await CostManagerFactory.deploy();
 
         this.nft = await NftFactory.deploy();
 
@@ -124,7 +128,7 @@ describe("Factory tests", async() => {
         expect(seriesInfo.limit).to.be.equal(10000);
 
         
-    })
+    });
 
     it("should correct several deploy instances", async() => {
         const names = ["NAME 1", "NAME 2", "NAME 3"];

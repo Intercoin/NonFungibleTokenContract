@@ -12,6 +12,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/ICostManager.sol";
 import "./interfaces/IFactory.sol";
+import "hardhat/console.sol";
+
 
 abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgradeable, IERC721EnumerableUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
@@ -73,9 +75,8 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
-    // tokenID is 64bit(series)+152bit(token)
-    uint8 internal constant SERIES_BITS = 192; // do not change this!! depended of hardcoded uint64 for seriesId (256-192=64)
-    uint8 internal constant SERIES_BITS_OPERATION = 72; // 192-64 = 128
+    uint8 internal constant SERIES_BITS = 192;
+    uint8 internal constant SERIES_BITS_AMOUNT = 64; 
 
     uint256 internal constant FRACTION = 100000;
     
@@ -84,7 +85,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
     
     mapping (uint256 => SaleInfoToken) public salesInfo;  // tokenId => saleInfo
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => seriesInfo
-    CommissionInfo public commissionInfo;  // seriesId => commissionInfo
+    CommissionInfo public commissionInfo;  
 
     mapping(uint256 => uint256) public mintedCountBySeries;
     
@@ -237,7 +238,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
 
     /**
     * @dev calculate commission for `tokenId`
-    *  if param exists equal true, then token is not exists yet. 
+    *  if param exists equal true, then token doesn't exists yet. 
     *  otherwise we should use snapshot parameters: ownerCommission/authorCommission, that hold during listForSale.
     *  used to prevent increasing commissions
     * @param tokenId token ID to calculate commission
@@ -511,7 +512,6 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             ownerCommissionValue: 0,
             authorCommissionValue: 0
         });
-        // data.onSaleUntil = 0;
         _setSaleInfo(tokenId, saleInfoToken);
 
         emit TokenRemovedFromSale(tokenId, ms);
@@ -1240,7 +1240,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint8 operation
     )
         internal
-        pure
+        view
         returns(uint72)
     {
         return getOperationId(operation, uint64(0));
@@ -1251,10 +1251,10 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
         uint64 seriesId
     )
         internal
-        pure
+        view
         returns(uint72)
     {
-        return ((uint72(operation) << SERIES_BITS_OPERATION) | seriesId);
+        return ((uint72(operation) << SERIES_BITS_AMOUNT) | uint72(seriesId));
     }
     
     /** 
@@ -1460,18 +1460,7 @@ abstract contract ERC721UpgradeableExt is ERC165Upgradeable, IERC721MetadataUpgr
             "!onlyTokenOwnerOrOperator"
         );
     }
-    
-    function _requireOnlyTokenOwnerAuthorOrOperator(uint256 tokenId) internal view virtual {
-        address ms = _msgSender();
-        address owner = _ownerOf(tokenId);
-        //require(_exists(tokenId), "ERC721: operator query for nonexistent token");
-        require(
-            owner == ms
-            || seriesInfo[getSeriesId(tokenId)].author == ms
-            || isApprovedForAll(owner, ms),
-            "!onlyTokenOwnerAuthorOrOperator"
-        );
-    }
+  
     
 
 }

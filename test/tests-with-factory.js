@@ -85,10 +85,6 @@ describe("Tests with factory", function () {
 
     })
 
-    describe('factory tests', async() => {
-        // 
-    });
-
     describe('produced instance tests', async() => {
         
         it('check name, symbol and tokenURI', async() => {

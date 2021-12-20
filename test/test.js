@@ -23,6 +23,19 @@ const FRACTION = BigNumber.from('100000');
 chai.use(require('chai-bignumber')());
 
 
+const OPERATION_INITIALIZE = 0;
+const OPERATION_SETMETADATA = 1;
+const OPERATION_SETSERIESINFO = 2;
+const OPERATION_SETOWNERCOMMISSION = 3;
+const OPERATION_SETCOMMISSION = 4;
+const OPERATION_REMOVECOMMISSION = 5;
+const OPERATION_LISTFORSALE = 6;
+const OPERATION_REMOVEFROMSALE = 7;
+const OPERATION_MINTANDDISTRIBUTE = 8;
+const OPERATION_BURN = 9;
+const OPERATION_BUY = 10;
+const OPERATION_TRANSFER = 11;
+
 
 describe("NonFungibleToken tests", function () {
     const accounts = waffle.provider.getWallets();
@@ -42,6 +55,8 @@ describe("NonFungibleToken tests", function () {
         const WithoutFunctionHookFactory = await ethers.getContractFactory("MockWithoutFunctionHook");
         const BuyerFactory = await ethers.getContractFactory("Buyer");
         const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
+        const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
+
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.hook1 = await HookFactory.deploy();
         this.hook2 = await HookFactory.deploy();
@@ -50,13 +65,16 @@ describe("NonFungibleToken tests", function () {
         this.falseHook = await FalseHookFactory.deploy();
         this.notSupportingHook = await NotSupportingHookFactory.deploy();
         this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
+
+        this.costManager = await CostManagerFactory.deploy();
+
         const retval = '0x150b7a02';
         const error = ZERO;
         this.buyer = await BuyerFactory.deploy(retval, error);
         this.badBuyer = await BadBuyerFactory.deploy();
         this.nft = await NFTFactory.deploy();
 
-        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", ZERO_ADDRESS, ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", this.costManager.address, ZERO_ADDRESS);
 
         await this.erc20.mint(owner.address, TOTALSUPPLY);
 
@@ -98,6 +116,9 @@ describe("NonFungibleToken tests", function () {
     expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
     expect(seriesInfo.baseURI).to.be.equal(baseURI);
     expect(seriesInfo.limit).to.be.equal(10000);
+    
+    expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETSERIESINFO);
+    expect(await this.costManager.lastSeriesId()).to.be.equal(1000);
 
 
   })
@@ -330,6 +351,25 @@ describe("NonFungibleToken tests", function () {
       await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith("token is not on sale");
     })
 
+    it("should correct set metadata", async() => {
+      const newBaseURI = "https://newBaseURI/";
+      const newSuffix = "newSuffix";
+      const newContractURI = "newContractURI";
+      await this.nft.setBaseURI(newBaseURI);
+      expect(await this.nft.baseURI()).to.be.equal(newBaseURI);
+      expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETMETADATA);
+      expect(await this.costManager.lastSeriesId()).to.be.equal(0);
+      await this.nft.setSuffix(newSuffix);
+      expect(await this.nft.suffix()).to.be.equal(newSuffix);
+      expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETMETADATA);
+      expect(await this.costManager.lastSeriesId()).to.be.equal(0);
+      await this.nft.setContractURI(newContractURI);
+      expect(await this.nft.contractURI()).to.be.equal(newContractURI);
+      expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETMETADATA);
+      expect(await this.costManager.lastSeriesId()).to.be.equal(0);
+
+  });
+
     it("shouldnt buy if token was burned (token)", async() => {
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       await this.nft.connect(bob).transferFrom(bob.address, DEAD_ADDRESS, id);
@@ -339,6 +379,19 @@ describe("NonFungibleToken tests", function () {
 
     it("shouldnt buy if token wasnt listed on sale", async() => {
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
+      await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith('token is not on sale');
+    })
+
+    it("shouldnt buy if token was removed from sale", async() => {
+      await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
+      const saleParams = [
+        now + 100000,
+        ZERO_ADDRESS, 
+        price.mul(TWO),
+      ];      
+
+      await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
+      await this.nft.connect(bob).removeFromSale(id);
       await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price})).to.be.revertedWith('token is not on sale');
     })
 
@@ -825,6 +878,11 @@ describe("NonFungibleToken tests", function () {
 
       });
 
+      it("shoud correct override cost manager", async() => {
+        await this.nft.overrideCostManager(charlie.address);
+        expect(await this.nft.costManager()).to.be.equal(charlie.address);
+      });
+
       it("shouldnt pay commissions for primary sale with ETH (mint)", async() => {
         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
@@ -916,6 +974,8 @@ describe("NonFungibleToken tests", function () {
   
       });
 
+      
+
       it("should correct buy minted NFT for ETH with commission", async() => {
         await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
         await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
@@ -960,7 +1020,6 @@ describe("NonFungibleToken tests", function () {
         expect(seriesInfo.commission.value).to.be.equal(ZERO);
         expect(seriesInfo.commission.recipient).to.be.equal(ZERO_ADDRESS);
 
-  
       });
 
       
