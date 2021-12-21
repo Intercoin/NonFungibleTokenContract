@@ -19,11 +19,10 @@ The list of basic features:
 
  <h3> Current version addresses: </h3>
 
-BSC: 0x7127206a49824D693932f9edCb77C53Fbb8443D7 (https://bscscan.com/address/0x7127206a49824D693932f9edCb77C53Fbb8443D7#code)
+Rinkeby: 0x78613Cc32ecA27DEC6f42BC08990CDB06D6b4Df6 (https://rinkeby.etherscan.io/address/0x78613Cc32ecA27DEC6f42BC08990CDB06D6b4Df6#code)
 
-Rinkeby: 0xe9cc267028e51EA0176222abFebBD4Bb91D6Ef64 (https://rinkeby.etherscan.io/address/0xe9cc267028e51EA0176222abFebBD4Bb91D6Ef64#code)
+Polygon: 0x159a0e4b698a21B7E50Ec5D06921d73dEFf89510 (not verified)
 
-Polygon: 0xf220eAd4222dD8a443C9591Fa1969E15Ca43E44c (not verified)
 
 <br>
 <h2> Factory </h2>
@@ -31,11 +30,11 @@ Factory contract for NFTSafeHooks. Allows gas-efficient deploy of copies of the 
 
 <h3> Current version addresses: </h3>
 
-BSC: 0x30aA8512f275AC3a0194F240572F8f9e5095A7D2 (https://bscscan.com/address/0x30aA8512f275AC3a0194F240572F8f9e5095A7D2#code)
+Rinkeby: 0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B (https://rinkeby.etherscan.io/address/0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B#code)
 
-Rinkeby: 0x165D223e3756f8E3E54dc3af0545d65E6B9aaBbF (https://rinkeby.etherscan.io/address/0x165D223e3756f8E3E54dc3af0545d65E6B9aaBbF)
+Polygon: 0xEd99D3bf50e76c257F1b197796c5df8B27F73986 (not verified)
 
-Polygon: 0x327033c8097B493072723233e494bA6579Ca2916 (not verified)
+
 
  <hr>
 <h1> Getting started </h1>
@@ -79,7 +78,7 @@ To deploy a new instance of NFTSafeHooks contract user should call produce() met
 <hr>
 
 
-<h3>SaleInfoToken TODO</h3>
+<h3>SaleInfoToken</h3>
 
 <p>Stores data about a token Sale</p>
 
@@ -93,6 +92,10 @@ To deploy a new instance of NFTSafeHooks contract user should call produce() met
 </thead>
 <tbody>
 <tr>
+<td>saleInfo</td>
+<td>SaleInfo</td>
+<td>Information about sale</td>
+</tr><tr>
 <td>value</td>
 <td>uint64</td>
 <td>Amount of fractions (1/100000) to pay to receiver</td>
@@ -1149,7 +1152,22 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 
 <p>Returns the owner of the `tokenId` token. Requirements: - `tokenId` must exist.</p>
 
-
+<table class="table table-sm table-bordered table-striped">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tokenId</td>
+<td>uint256</td>
+<td>Token ID</td>
+</tr>
+</tbody>
+</table>
 
 
 
