@@ -10,15 +10,12 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 * holds count of series hooks while token mint and buy
 */
 abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721UpgradeableExt {
+    
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
-    // hooks 
-    //      SERIESID => address SET
-    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) internal hooks;
+    mapping (uint256 => uint256) public hooksCountByToken; // token ID => hooks count
 
-    // stored hookscount
-    //      tokenId     count
-    mapping (uint256 => uint256) public hooksCountByToken;
+    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) internal hooks;    // series ID => hooks' addresses
 
     event NewHook(uint256 seriesId, address contractAddress);
 
@@ -31,9 +28,16 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * @param safe use safeMint and safeTransfer or not
     * @param hookCount number of hooks 
     */
-    function buy(uint256 tokenId, uint256 price, bool safe, uint256 hookCount) external payable {
-        uint256 seriesId = tokenId >> SERIES_BITS;
-        require(hookCount == hooksCount(seriesId), "wrong hookCount");
+    function buy(
+        uint256 tokenId, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        external
+        payable
+    {
+        validateHookCount(tokenId, hookCount);    
         super.buy(tokenId, price, safe);
     }
     /**
@@ -46,14 +50,21 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * @param safe use safeMint and safeTransfer or not
     * @param hookCount number of hooks 
     */
-    function buy(uint256 tokenId, address currency, uint256 price, bool safe, uint256 hookCount) external {
-        uint256 seriesId = tokenId >> SERIES_BITS;
-        require(hookCount == hooksCount(seriesId), "wrong hookCount");
+    function buy(
+        uint256 tokenId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        external
+    {
+        validateHookCount(tokenId, hookCount);    
         super.buy(tokenId, currency, price, safe);
     }
 
     /**
-    * @dev link safeHook contract to certain Series
+    * @dev link safeHook contract to certain series
     * @param seriesId series ID
     * @param contractAddress address of SafeHook contract
     */
@@ -80,8 +91,8 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-    * @dev gives the list of hooks for series with `seriesId`
-    * @param seriesId seriesId
+    * @dev returns the list of hooks for series with `seriesId`
+    * @param seriesId series ID
     */
     function getHookList(
         uint256 seriesId
@@ -99,7 +110,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-    * @dev gives count of hooks for series with `seriesId`
+    * @dev returns count of hooks for series with `seriesId`
     * @param seriesId series ID
     */
     function hooksCount(
@@ -110,6 +121,22 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         returns(uint256) 
     {
         return hooks[seriesId].length();
+    }
+
+    /**
+    * @dev validates hook count
+    * @param tokenId token ID
+    * @param hookCount hook count
+    */
+    function validateHookCount(
+        uint256 tokenId,
+        uint256 hookCount
+    ) 
+        internal 
+        view 
+    {
+        uint256 seriesId = tokenId >> SERIES_SHIFT_BITS;
+        require(hookCount == hooksCount(seriesId), "wrong hookCount");
     }
 
     /**
@@ -129,11 +156,8 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-     * @dev See {ERC721-_beforeTokenTransfer}.
-     *
-     * Requirements:
-     *
-     * - the contract must not be paused.
+     * @dev Overriden function _beforeTokenTransfer with
+     * hooks executing 
      */
     function _beforeTokenTransfer(
         address from,
@@ -144,7 +168,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         virtual 
         override 
     {
-        uint256 seriesId = tokenId >> SERIES_BITS;
+        uint256 seriesId = tokenId >> SERIES_SHIFT_BITS;
         for (uint256 i = 0; i < hooksCountByToken[tokenId]; i++) {
             try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
 			returns (bool success) {
@@ -207,6 +231,6 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     )
         internal
     {
-        hooksCountByToken[tokenId] = hooks[tokenId >> SERIES_BITS].length();
+        hooksCountByToken[tokenId] = hooks[tokenId >> SERIES_SHIFT_BITS].length();
     }
 }

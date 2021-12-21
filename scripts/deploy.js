@@ -12,12 +12,12 @@ async function main() {
 	const FactoryFactory = await ethers.getContractFactory("Factory");
 	const NftFactory = await ethers.getContractFactory("NFTSafeHook");
 
-	this.nft = await NftFactory.deploy({gasLimit: 5e6});
+	this.nft = await NftFactory.deploy({gasLimit: 15e6});
 
-	const name = "NFT ContractURI BSC";
-	const symbol = "NFTCUB";
+	const name = "NFT Video Test MATIC";
+	const symbol = "NFTVTM";
 	const contractURI = "https://pastebin.com/raw/armzdJZr";
-	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, contractURI, ZERO_ADDRESS, {gasLimit: 3e6});
+	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, contractURI, ZERO_ADDRESS, {gasLimit: 15e6});
 
 
 	console.log("NFT deployed at:", this.nft.address);

@@ -18,7 +18,8 @@ contract Factory is Ownable, IFactory {
     
     address public costManager;
     address public implementation;
-    mapping(bytes32 => address) public getInstance;
+    mapping(bytes32 => address) public getInstance; // keccak256("name", "symbol") => instance address
+    mapping(address => InstanceInfo) private _instanceInfos;
     address[] public instances;
     EnumerableSetUpgradeable.AddressSet private _renouncedOverrideCostManager;
        
@@ -27,12 +28,17 @@ contract Factory is Ownable, IFactory {
         string symbol;
         address creator;
     }
-    mapping(address => InstanceInfo) private _instanceInfos;
     
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
-    event RenouncedOverrideCostManagerForInstance(address indexed instance);
+    event RenouncedOverrideCostManagerForInstance(address instance);
 
-    constructor (address instance, string memory name, string memory symbol, string memory contractURI_, address costManager_) {
+    constructor (
+        address instance, 
+        string memory name, 
+        string memory symbol, 
+        string memory contractURI_, 
+        address costManager_
+    ) {
         implementation = instance;
         costManager = costManager_;
         IInstanceContract(instance).initialize(name, symbol, contractURI_, costManager, _msgSender());
@@ -47,7 +53,7 @@ contract Factory is Ownable, IFactory {
     }
 
     /**
-    * @dev gives the count of instances
+    * @dev returns the count of instances
     */
     function instancesCount() external view returns (uint256) {
         return instances.length;
@@ -71,11 +77,17 @@ contract Factory is Ownable, IFactory {
     /** 
     * @dev instance can call this to find out whether a given address can set the cost manager contract
     * @param account the address to test
+    * @param instance the instance to test
     */
-    function canOverrideCostManager(address account, address instance)
-    external override view
-    returns (bool) {
-        // here _msgSender - are contract that will check
+    function canOverrideCostManager(
+        address account, 
+        address instance
+    ) 
+        external 
+        override 
+        view
+        returns (bool) 
+    {
         return (account == owner() && !_renouncedOverrideCostManager.contains(instance));
     }
 
@@ -93,9 +105,25 @@ contract Factory is Ownable, IFactory {
         public 
         returns (address instance) 
     {
-        return _produce(name, symbol, contractURI);
+        _createInstanceValidate(name, symbol);
+        address instanceCreated = _createInstance(name, symbol);
+        require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
+        address ms = _msgSender();
+        IInstanceContract(instanceCreated).initialize(
+            name, 
+            symbol, 
+            contractURI, 
+            costManager, 
+            ms
+        );
+        Ownable(instanceCreated).transferOwnership(ms);
+        instance = instanceCreated;
     }
     
+     /**
+    * @dev returns instance info
+    * @param instanceId instance ID
+    */
     function getInstanceInfo(
         uint256 instanceId
     ) public view returns(InstanceInfo memory) {
@@ -104,24 +132,6 @@ contract Factory is Ownable, IFactory {
         return _instanceInfos[instance];
     }
     
-    function _produce(
-        string memory name,
-        string memory symbol,
-        string memory contractURI
-    ) 
-        internal 
-        returns (address instance) 
-    {
-        _createInstanceValidate(name, symbol);
-        address payable instanceCreated = payable(_createInstance(name, symbol));
-        require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
-        address ms = _msgSender();
-        IInstanceContract(instanceCreated).initialize(
-            name, symbol, contractURI, costManager, ms
-        );
-        Ownable(instanceCreated).transferOwnership(ms);
-        instance = instanceCreated;
-    }
     
     function _createInstanceValidate(
         string memory name,
@@ -145,7 +155,7 @@ contract Factory is Ownable, IFactory {
         _instanceInfos[instance] = InstanceInfo(
             name,
             symbol,
-            msg.sender
+            _msgSender()
         );
         emit InstanceCreated(name, symbol, instance, instances.length);
     }

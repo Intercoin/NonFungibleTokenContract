@@ -46,7 +46,6 @@ describe("Factory tests", async() => {
     })
 
     it("should correct deploy instance and do usual buy test", async() => {
-        
         const name = "NAME 1";
         const symbol = "SMBL1";
         await this.factory["produce(string,string,string)"](name, symbol, "");
@@ -113,10 +112,13 @@ describe("Factory tests", async() => {
         expect(newOwner).to.be.equal(bob.address);
 
         //const saleInfo = await this.nft.getSaleInfo(id); // replaced for call public variable
-        const saleInfo = await this.nft.salesInfo(id);
-        expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(saleInfo.price).to.be.equal(ZERO);
-        expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
+        const salesInfoToken = await this.nft.salesInfoToken(id);
+        expect(salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+        expect(salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+        expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+        expect(salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+        expect(salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+
 
         //const seriesInfo = await this.nft.getSeriesInfo(seriesId); // replaced for call public variable
         const seriesInfo = await this.nft.seriesInfo(seriesId);

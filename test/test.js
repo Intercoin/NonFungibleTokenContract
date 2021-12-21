@@ -84,6 +84,7 @@ describe("NonFungibleToken tests", function () {
     })
 
   it("should correct put series on sale for Alice", async() => {
+
     const seriesId = BigNumber.from('1000');
     const tokenId = ONE;
     const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
@@ -117,9 +118,6 @@ describe("NonFungibleToken tests", function () {
     expect(seriesInfo.baseURI).to.be.equal(baseURI);
     expect(seriesInfo.limit).to.be.equal(10000);
     
-    expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETSERIESINFO);
-    expect(await this.costManager.lastSeriesId()).to.be.equal(1000);
-
 
   })
 
@@ -190,10 +188,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
 
-      const saleInfo = await this.nft.salesInfo(id);
-      expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(saleInfo.price).to.be.equal(ZERO);
-      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
+      const salesInfoToken = await this.nft.salesInfoToken(id);
+      expect(salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+      expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+      expect(salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+      expect(salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
@@ -234,10 +234,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(bob.address);
       
-      const saleInfo = await this.nft.salesInfo(id);
-      expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(saleInfo.price).to.be.equal(ZERO);
-      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
+      const salesInfoToken = await this.nft.salesInfoToken(id);
+      expect(salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+      expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+      expect(salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+      expect(salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
@@ -273,10 +275,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(charlie.address);
 
-      const saleInfo = await this.nft.salesInfo(id);
-      expect(saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(saleInfo.price).to.be.equal(price.mul(TWO));
-      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
+      const salesInfoToken = await this.nft.salesInfoToken(id);
+      expect(salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+      expect(salesInfoToken.saleInfo.price).to.be.equal(price.mul(TWO));
+      expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+      expect(salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+      expect(salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
@@ -311,10 +315,12 @@ describe("NonFungibleToken tests", function () {
       const newOwner = await this.nft.ownerOf(id);
       expect(newOwner).to.be.equal(charlie.address);
 
-      const saleInfo = await this.nft.salesInfo(id);
-      expect(saleInfo.currency).to.be.equal(this.erc20.address);
-      expect(saleInfo.price).to.be.equal(price.mul(TWO));
-      expect(saleInfo.onSaleUntil).to.be.equal(ZERO);
+      const salesInfoToken = await this.nft.salesInfoToken(id);
+      expect(salesInfoToken.saleInfo.currency).to.be.equal(this.erc20.address);
+      expect(salesInfoToken.saleInfo.price).to.be.equal(price.mul(TWO));
+      expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+      expect(salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+      expect(salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
       const seriesInfo = await this.nft.seriesInfo(seriesId);
       expect(seriesInfo.author).to.be.equal(alice.address);
@@ -357,16 +363,10 @@ describe("NonFungibleToken tests", function () {
       const newContractURI = "newContractURI";
       await this.nft.setBaseURI(newBaseURI);
       expect(await this.nft.baseURI()).to.be.equal(newBaseURI);
-      expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETMETADATA);
-      expect(await this.costManager.lastSeriesId()).to.be.equal(0);
       await this.nft.setSuffix(newSuffix);
       expect(await this.nft.suffix()).to.be.equal(newSuffix);
-      expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETMETADATA);
-      expect(await this.costManager.lastSeriesId()).to.be.equal(0);
       await this.nft.setContractURI(newContractURI);
       expect(await this.nft.contractURI()).to.be.equal(newContractURI);
-      expect(await this.costManager.lastOperationId()).to.be.equal(OPERATION_SETMETADATA);
-      expect(await this.costManager.lastSeriesId()).to.be.equal(0);
 
   });
 
@@ -494,11 +494,11 @@ describe("NonFungibleToken tests", function () {
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
       await this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration);
-      const saleInfo = await this.nft.salesInfo(id);
-      expect(saleInfo.currency).to.be.equal(newCurrency);
-      expect(saleInfo.price).to.be.equal(newPrice);
+      const salesInfoToken = await this.nft.salesInfoToken(id);
+      expect(salesInfoToken.saleInfo.currency).to.be.equal(newCurrency);
+      expect(salesInfoToken.saleInfo.price).to.be.equal(newPrice);
       const lastTs = await time.latest();
-      expect(saleInfo.onSaleUntil).to.be.equal(+lastTs.toString() + duration);
+      expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(+lastTs.toString() + duration);
 
     })
 
@@ -626,7 +626,7 @@ describe("NonFungibleToken tests", function () {
     })
 
     it("shouldnt call setSeriesInfo as an owner of series", async() => {
-      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyOwnerAuthorOrOperator');
+      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyOwnerOrAuthor');
 
     })
 
@@ -850,7 +850,7 @@ describe("NonFungibleToken tests", function () {
       });
 
       it("shouldnt set series commission if not owner or author", async() => {
-        await expect(this.nft.connect(bob).setCommission(seriesId, seriesCommissions)).to.be.revertedWith("!onlyOwnerAuthorOrOperator");
+        await expect(this.nft.connect(bob).setCommission(seriesId, seriesCommissions)).to.be.revertedWith("!onlyOwnerOrAuthor");
       });
 
       it("shouldnt set series commission if it is not in the allowed range", async() => {
