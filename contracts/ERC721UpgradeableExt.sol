@@ -156,6 +156,29 @@ abstract contract ERC721UpgradeableExt is
         address currency, 
         uint256 price
     );
+    
+    /**
+    * @dev tells the caller whether they can set info for a series,
+    * manage amount of commissions for the series,
+    * mint and distribute tokens from it, etc.
+    * @param seriesId the id of the series being asked about
+    */
+    function canManageSeries(uint64 seriesId) public returns (boolean) {
+        address ms = _msgSender();
+        return owner() == ms || seriesInfo[seriesId].author == ms;
+    }
+
+    /**
+    * @dev tells the caller whether they can transfer an existing token,
+    * list it for sale and remove it from sale.
+    * @param seriesId the id of the series being asked about
+    */
+    function canManageToken(uint256 tokenId) public returns (boolean) {
+        address ms = _msgSender();
+        return owner == ms
+            || getApproved(tokenId) == ms
+            || isApprovedForAll(owner, ms);
+    }
 
     /**
     * @dev buys NFT for native coin with defined id. 
@@ -350,7 +373,7 @@ abstract contract ERC721UpgradeableExt is
     ) 
         external
     {
-        _requireOnlyOwnerOrAuthor(seriesId);
+        _requireCanManageSeries(seriesId);
         if (info.saleInfo.onSaleUntil > seriesInfo[seriesId].saleInfo.onSaleUntil && 
             info.saleInfo.onSaleUntil > block.timestamp
         ) {
@@ -360,7 +383,7 @@ abstract contract ERC721UpgradeableExt is
                 info.saleInfo.currency, 
                 info.saleInfo.onSaleUntil
             );
-        } else if (info.saleInfo.onSaleUntil == 0 ) {
+        } else if (info.saleInfo.onSaleUntil <= block.timestamp ) {
             emit SeriesRemovedFromSale(seriesId);
         }
         
@@ -411,7 +434,7 @@ abstract contract ERC721UpgradeableExt is
     ) 
         external 
     {
-        _requireOnlyOwnerOrAuthor(seriesId);
+        _requireCanManageSeries(seriesId);
         require(
             (
                 commissionData.value <= commissionInfo.maxValue &&
@@ -440,7 +463,7 @@ abstract contract ERC721UpgradeableExt is
     ) 
         external 
     {
-        _requireOnlyOwnerOrAuthor(seriesId);
+        _requireCanManageSeries(seriesId);
         delete seriesInfo[seriesId].commission;
         
         _accountForOperation(
@@ -468,7 +491,7 @@ abstract contract ERC721UpgradeableExt is
     {
         (bool success, /*bool isExists*/, /*SaleInfo memory data*/, /*address owner*/) = _isOnSale(tokenId);
         
-        _requireOnlyTokenOwnerOrOperator(tokenId);
+        _requireCanManageToken(tokenId);
         require(!success, "already on sale");
         require(duration > 0, "invalid duration");
 
@@ -511,7 +534,7 @@ abstract contract ERC721UpgradeableExt is
     {
         (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _isOnSale(tokenId);
         require(success, "token not on sale");
-        _requireOnlyTokenOwnerOrOperator(tokenId);
+        _requireCanManageToken(tokenId);
         clearOnSaleUntil(tokenId);
 
         emit TokenRemovedFromSale(tokenId, _msgSender());
@@ -568,7 +591,7 @@ abstract contract ERC721UpgradeableExt is
         uint256 len = addresses.length;
         require(tokenIds.length == len, "lengths should be the same");
         for(uint256 i = 0; i < len; i++) {
-            _requireOnlyOwnerOrAuthor(getSeriesId(tokenIds[i]));
+            _requireCanManageSeries(getSeriesId(tokenIds[i]));
             _mint(addresses[i], tokenIds[i]);
         }
         
@@ -784,7 +807,7 @@ abstract contract ERC721UpgradeableExt is
         uint256 tokenId
     ) public virtual override {
         //solhint-disable-next-line max-line-length
-        _requireOnlyTokenOwnerOrOperator(tokenId);
+        _requireCanManageToken(tokenId);
 
         _transfer(from, to, tokenId);
     }
@@ -830,7 +853,7 @@ abstract contract ERC721UpgradeableExt is
         uint256 tokenId,
         bytes memory _data
     ) public virtual override {
-        _requireOnlyTokenOwnerOrOperator(tokenId);
+        _requireCanManageToken(tokenId);
         _safeTransfer(from, to, tokenId, _data);
     }
 
@@ -850,7 +873,7 @@ abstract contract ERC721UpgradeableExt is
         address to,
         uint256 tokenId
     ) public virtual {
-        _requireOnlyTokenOwnerOrOperator(tokenId);
+        _requireCanManageToken(tokenId);
         _transfer(_msgSender(), to, tokenId);
     }
 
@@ -869,7 +892,7 @@ abstract contract ERC721UpgradeableExt is
         address to,
         uint256 tokenId
     ) public virtual {
-        _requireOnlyTokenOwnerOrOperator(tokenId);
+        _requireCanManageToken(tokenId);
         _safeTransfer(_msgSender(), to, tokenId, "");
     }
 
@@ -882,7 +905,7 @@ abstract contract ERC721UpgradeableExt is
      */
     function burn(uint256 tokenId) public virtual {
         //solhint-disable-next-line max-line-length
-        _requireOnlyTokenOwnerOrOperator(tokenId);
+        _requireCanManageToken(tokenId);
         _burn(tokenId);
         
         _accountForOperation(
@@ -1437,28 +1460,15 @@ abstract contract ERC721UpgradeableExt is
         if (salesInfoToken[tokenId].saleInfo.onSaleUntil > 0 ) salesInfoToken[tokenId].saleInfo.onSaleUntil = 0;
     }
 
-    function _requireOnlyOwnerOrAuthor(uint64 seriesId) internal view virtual {
-        address ms = _msgSender();
-        require(
-            owner() == ms
-            || seriesInfo[seriesId].author == ms,
-            "!onlyOwnerOrAuthor"
-        );
+    function _requireCanManageSeries(uint64 seriesId) internal view virtual {
+        require(canManageSeries(seriesId), "you can't manage this series");
     }
-
              
-    function _requireOnlyTokenOwnerOrOperator(uint256 tokenId) internal view virtual {
+    function _requireCanManageToken(uint256 tokenId) internal view virtual {
         address ms = _msgSender();
         address owner = _ownerOf(tokenId);
-        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
-        require(
-            (
-                owner == ms
-                || getApproved(tokenId) == ms
-                || isApprovedForAll(owner, ms)
-            ),
-            "!onlyTokenOwnerOrOperator"
-        );
+        require(_exists(tokenId), "token doesn't exist");
+        require(canManageToken(tokenId), "you can't manage this token");
     }
   
     
