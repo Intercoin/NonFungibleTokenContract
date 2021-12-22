@@ -171,6 +171,8 @@ abstract contract ERC721UpgradeableExt is
     /**
     * @dev tells the caller whether they can transfer an existing token,
     * list it for sale and remove it from sale.
+    * Tokens can be managed by their owner
+    * or approved accounts via {approve} or {setApprovalForAll}.
     * @param seriesId the id of the series being asked about
     */
     function canManageToken(uint256 tokenId) public returns (boolean) {
@@ -178,6 +180,16 @@ abstract contract ERC721UpgradeableExt is
         return owner == ms
             || getApproved(tokenId) == ms
             || isApprovedForAll(owner, ms);
+    }
+    
+    /**
+     * @dev Returns whether `tokenId` exists.
+     * Tokens start existing when they are minted (`_mint`),
+     * and stop existing when they are burned (`_burn`).
+     */
+    function exists(uint256 tokenId) internal public view virtual returns (bool) {
+        return _owners[tokenId] != address(0)
+            && _owners[tokenId] != DEAD_ADDRESS;
     }
 
     /**
@@ -704,7 +716,7 @@ abstract contract ERC721UpgradeableExt is
         override
         returns (string memory) 
     {
-        require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
+        require(exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
         string memory _tokenIdHexString = tokenId.toHexString();
         uint64 seriesId = getSeriesId(tokenId);
         string memory baseURI_ = seriesInfo[seriesId].baseURI;
@@ -977,7 +989,7 @@ abstract contract ERC721UpgradeableExt is
     {
         data = salesInfoToken[tokenId].saleInfo;
 
-        exists = _exists(tokenId);
+        exists = exists(tokenId);
         owner = _owners[tokenId];
 
         if (owner != address(0)) { 
@@ -1068,19 +1080,7 @@ abstract contract ERC721UpgradeableExt is
         bytes memory _data
     ) internal virtual {
         _transfer(from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, _data), "ERC721: transfer to non ERC721Receiver implementer");
-    }
-
-    /**
-     * @dev Returns whether `tokenId` exists.
-     *
-     * Tokens can be managed by their owner or approved accounts via {approve} or {setApprovalForAll}.
-     *
-     * Tokens start existing when they are minted (`_mint`),
-     * and stop existing when they are burned (`_burn`).
-     */
-    function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return _owners[tokenId] != address(0);
+        require(_checkOnERC721Received(from, to, tokenId, _data), "recipient must implement ERC721Receiver interface");
     }
 
     function _ownerOf(uint256 tokenId) internal view virtual returns (address) {
@@ -1136,8 +1136,8 @@ abstract contract ERC721UpgradeableExt is
         internal 
         virtual 
     {
-        require(to != address(0), "ERC721: mint to the zero address");
-        require(!_exists(tokenId), "ERC721: token already minted");
+        require(to != address(0), "can't mint to the zero address");
+        require(_owners[tokenId] != address(0), "token already minted");
 
         _beforeTokenTransfer(address(0), to, tokenId);
 
@@ -1148,7 +1148,10 @@ abstract contract ERC721UpgradeableExt is
         mintedCountBySeries[seriesId] += 1;
 
         if (seriesInfo[seriesId].limit != 0) {
-            require(mintedCountBySeries[seriesId] <= seriesInfo[seriesId].limit, "exceed series limit");
+            require(
+                mintedCountBySeries[seriesId] <= seriesInfo[seriesId].limit, 
+                "series token limit exceeded"
+            );
         }
         
 
@@ -1199,8 +1202,8 @@ abstract contract ERC721UpgradeableExt is
         address to,
         uint256 tokenId
     ) internal virtual {
-        require(ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
-        require(to != address(0), "ERC721: transfer to the zero address");
+        require(ownerOf(tokenId) == from, "token isn't owned by from address");
+        require(to != address(0), "can't transfer to the zero address");
 
         _beforeTokenTransfer(from, to, tokenId);
 
@@ -1469,7 +1472,7 @@ abstract contract ERC721UpgradeableExt is
     function _requireCanManageToken(uint256 tokenId) internal view virtual {
         address ms = _msgSender();
         address owner = _ownerOf(tokenId);
-        require(_exists(tokenId), "token doesn't exist");
+        require(exists(tokenId), "token doesn't exist");
         require(canManageToken(tokenId), "you can't manage this token");
     }
   
