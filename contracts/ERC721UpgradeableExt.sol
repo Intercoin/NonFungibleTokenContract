@@ -958,12 +958,14 @@ abstract contract ERC721UpgradeableExt is
     }
 
     /**
-    * @dev returns if token is on sale or not, does it exist or not, data about sale and it's owner
+    * @dev returns if token is on sale or not, 
+    * whether it exists or not,
+    * as well as data about the sale and its owner
     * @param tokenId token ID 
     */
     
-    function _isOnSale(uint256 tokenId) 
-        internal 
+    function isOnSale(uint256 tokenId) 
+        public 
         view 
         returns
         (
