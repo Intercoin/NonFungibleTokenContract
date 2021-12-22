@@ -202,7 +202,7 @@ abstract contract ERC721UpgradeableExt is
     */
 
     function buy(uint256 tokenId, uint256 price, bool safe) public payable nonReentrant {
-        (bool success, bool exists, SaleInfo memory data, address beneficiary) = _isOnSale(tokenId);
+        (bool success, bool exists, SaleInfo memory data, address beneficiary) = getTokenSaleInfo(tokenId);
         require(success, "token is not on sale");
         require(msg.value >= data.price && price >= data.price, "insufficient amount sent");
         require(address(0) == data.currency, "wrong currency for sale");
@@ -248,7 +248,7 @@ abstract contract ERC721UpgradeableExt is
     * @param safe use safeMint and safeTransfer or not
     */
     function buy(uint256 tokenId, address currency, uint256 price, bool safe) public nonReentrant {
-        (bool success, bool exists, SaleInfo memory data, address owner) = _isOnSale(tokenId);
+        (bool success, bool exists, SaleInfo memory data, address owner) = getTokenSaleInfo(tokenId);
         require(success, "token is not on sale");
         require(currency == data.currency, "wrong currency for sale");
         uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
@@ -501,7 +501,7 @@ abstract contract ERC721UpgradeableExt is
     )
         external 
     {
-        (bool success, /*bool isExists*/, /*SaleInfo memory data*/, /*address owner*/) = _isOnSale(tokenId);
+        (bool success, /*bool isExists*/, /*SaleInfo memory data*/, /*address owner*/) = getTokenSaleInfo(tokenId);
         
         _requireCanManageToken(tokenId);
         require(!success, "already on sale");
@@ -544,7 +544,7 @@ abstract contract ERC721UpgradeableExt is
     )
         external 
     {
-        (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _isOnSale(tokenId);
+        (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = getTokenSaleInfo(tokenId);
         require(success, "token not on sale");
         _requireCanManageToken(tokenId);
         clearOnSaleUntil(tokenId);
@@ -975,13 +975,12 @@ abstract contract ERC721UpgradeableExt is
     * as well as data about the sale and its owner
     * @param tokenId token ID 
     */
-    
-    function isOnSale(uint256 tokenId) 
+    function getTokenSaleInfo(uint256 tokenId) 
         public 
         view 
         returns
         (
-            bool success,
+            bool getTokenSaleInfo,
             bool exists, 
             SaleInfo memory data,
             address owner
@@ -994,13 +993,13 @@ abstract contract ERC721UpgradeableExt is
 
         if (owner != address(0)) { 
             if (data.onSaleUntil > block.timestamp) {
-                success = true;
+                isOnSale = true;
             } 
         } else {   
             uint64 seriesId = getSeriesId(tokenId);
             SeriesInfo memory seriesData = seriesInfo[seriesId];
             if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
-                success = true;
+                isOnSale = true;
                 data = seriesData.saleInfo;
                 owner = seriesData.author;
             }
