@@ -146,11 +146,11 @@ describe("Standart ERC721 functional tests", function () {
 
         it('shouldnt transfer token if not owner', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
+            await expect(this.nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWith("you can't manage this token");
         })
         it('shouldnt transfer token on zero address', async() => {
             await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(alice).transferFrom(alice.address, ZERO_ADDRESS, id)).to.be.revertedWith("ERC721: transfer to the zero address");
+            await expect(this.nft.connect(alice).transferFrom(alice.address, ZERO_ADDRESS, id)).to.be.revertedWith("can't transfer to the zero address");
         })
 
         it('should correct get token of owner by index', async() => {
@@ -241,12 +241,12 @@ describe("Standart ERC721 functional tests", function () {
 
         it('shouldnt safeTransfer if not owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
+            await expect(this.nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, this.buyer.address, id)).to.be.revertedWith("you can't manage this token");
         })
 
         it('shouldnt burn if not owner', async() => {
             await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
-            await expect(this.nft.connect(alice).burn(id)).to.be.revertedWith("!onlyTokenOwnerOrOperator");
+            await expect(this.nft.connect(alice).burn(id)).to.be.revertedWith("you can't manage this token");
         })
 
         it('should burn if approved before', async() => {

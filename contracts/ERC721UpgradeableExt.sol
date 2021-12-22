@@ -13,6 +13,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "./interfaces/ICostManager.sol";
 import "./interfaces/IFactory.sol";
 
+
 abstract contract ERC721UpgradeableExt is 
     ERC165Upgradeable, 
     IERC721MetadataUpgradeable,
@@ -157,174 +158,10 @@ abstract contract ERC721UpgradeableExt is
         uint256 price
     );
     
-    /**
-    * @dev tells the caller whether they can set info for a series,
-    * manage amount of commissions for the series,
-    * mint and distribute tokens from it, etc.
-    * @param seriesId the id of the series being asked about
-    */
-    function canManageSeries(uint64 seriesId) public returns (boolean) {
-        address ms = _msgSender();
-        return owner() == ms || seriesInfo[seriesId].author == ms;
-    }
-
-    /**
-    * @dev tells the caller whether they can transfer an existing token,
-    * list it for sale and remove it from sale.
-    * Tokens can be managed by their owner
-    * or approved accounts via {approve} or {setApprovalForAll}.
-    * @param seriesId the id of the series being asked about
-    */
-    function canManageToken(uint256 tokenId) public returns (boolean) {
-        address ms = _msgSender();
-        return owner == ms
-            || getApproved(tokenId) == ms
-            || isApprovedForAll(owner, ms);
-    }
+    /********************************************************************
+    ****** external section *********************************************
+    *********************************************************************/
     
-    /**
-     * @dev Returns whether `tokenId` exists.
-     * Tokens start existing when they are minted (`_mint`),
-     * and stop existing when they are burned (`_burn`).
-     */
-    function exists(uint256 tokenId) internal public view virtual returns (bool) {
-        return _owners[tokenId] != address(0)
-            && _owners[tokenId] != DEAD_ADDRESS;
-    }
-
-    /**
-    * @dev buys NFT for native coin with defined id. 
-    * mint token if it doesn't exist and transfer token
-    * if it exists and is on sale
-    * @param tokenId token ID to buy
-    * @param price amount of specified native coin to pay
-    * @param safe use safeMint and safeTransfer or not
-    */
-
-    function buy(uint256 tokenId, uint256 price, bool safe) public payable nonReentrant {
-        (bool success, bool exists, SaleInfo memory data, address beneficiary) = getTokenSaleInfo(tokenId);
-        require(success, "token is not on sale");
-        require(msg.value >= data.price && price >= data.price, "insufficient amount sent");
-        require(address(0) == data.currency, "wrong currency for sale");
-
-        bool transferSuccess;
-        uint256 left = data.price;
-        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
-       
-        // commissions payment
-        for(uint256 i = 0; i < length; i++) {
-            (transferSuccess, ) = addresses[i].call{gas: 3000, value: values[i]}(new bytes(0));
-            require(transferSuccess, "TRANSFER_COMMISSION_FAILED");
-            left -= values[i];
-        }
-        
-        (transferSuccess, ) = beneficiary.call{gas: 3000, value: left}(new bytes(0));
-        require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
-
-        uint256 refund = msg.value - data.price;
-
-        if (refund > 0) {
-            (transferSuccess, ) = msg.sender.call{gas: 3000, value: refund}(new bytes(0));
-            require(transferSuccess, "REFUND_FAILED");
-        }
-
-        _buy(tokenId, exists, data, beneficiary, safe);
-        
-        uint64 seriesId = getSeriesId(tokenId);
-        _accountForOperation(
-            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
-            0,
-            price
-        );
-        
-    }
-    /**
-    * @dev buys NFT for specified currency with defined id. 
-    * mint token if it doesn't exist and transfer token
-    * if it exists and is on sale
-    * @param tokenId token ID to buy
-    * @param currency address of token to pay with
-    * @param price amount of specified token to pay
-    * @param safe use safeMint and safeTransfer or not
-    */
-    function buy(uint256 tokenId, address currency, uint256 price, bool safe) public nonReentrant {
-        (bool success, bool exists, SaleInfo memory data, address owner) = getTokenSaleInfo(tokenId);
-        require(success, "token is not on sale");
-        require(currency == data.currency, "wrong currency for sale");
-        uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
-        require(allowance >= data.price && price >= data.price, "insufficient amount");
-
-        uint256 left = data.price;
-        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
-        // commissions payment
-        for(uint256 i = 0; i < length; i++) {
-            IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
-            left -= values[i];
-        }
-
-        IERC20Upgradeable(data.currency).transferFrom(_msgSender(), owner, left);
-        _buy(tokenId, exists, data, owner, safe);
-        uint64 seriesId = getSeriesId(tokenId);
-        _accountForOperation(
-            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
-            uint256(uint160(currency)),
-            price
-        );
-    }
-
-    /**
-    * @dev calculate commission for `tokenId`
-    *  if param exists equal true, then token doesn't exists yet. 
-    *  otherwise we should use snapshot parameters: ownerCommission/authorCommission, that hold during listForSale.
-    *  used to prevent increasing commissions
-    * @param tokenId token ID to calculate commission
-    * @param price amount of specified token to pay 
-    */
-    function calculateCommission(
-        uint256 tokenId,
-        uint256 price
-    ) 
-        internal 
-        view 
-        returns(
-            address[2] memory addresses, 
-            uint256[2] memory values,
-            uint256 length
-        ) 
-    {
-        uint64 seriesId = getSeriesId(tokenId);
-        length = 0;
-        uint256 sum;
-        // contract owner commission
-        if (commissionInfo.ownerCommission.recipient != address(0)) {
-            uint256 oc = salesInfoToken[tokenId].ownerCommissionValue;
-            if (commissionInfo.ownerCommission.value < oc)
-                oc = commissionInfo.ownerCommission.value;
-            if (oc != 0) {
-                addresses[length] = commissionInfo.ownerCommission.recipient;
-                sum += oc;
-                values[length] = oc * price / FRACTION;
-                length++;
-            }
-        }
-
-        // author commission
-        if (seriesInfo[seriesId].commission.recipient != address(0)) {
-            uint256 ac = salesInfoToken[tokenId].authorCommissionValue;
-            if (seriesInfo[seriesId].commission.value < ac) 
-                ac = seriesInfo[seriesId].commission.value;
-            if (ac != 0) {
-                addresses[length] = seriesInfo[seriesId].commission.recipient;
-                sum += ac;
-                values[length] = ac * price / FRACTION;
-                length++;
-            }
-        }
-
-        require(sum < FRACTION, "invalid commission");
-
-    }
-
     /**
     * @dev sets the default baseURI for the whole contract
     * @param baseURI_ the prefix to prepend to URIs
@@ -408,15 +245,7 @@ abstract contract ERC721UpgradeableExt is
         );
         
     }
-
-    /**
-    * @dev returns contract URI. 
-    */
-    function contractURI() public view returns(string memory){
-        return _contractURI;
-    }
-
-    /**
+/**
     * set commission paid to contract owner
     * @param commission new commission info
     */
@@ -613,6 +442,201 @@ abstract contract ERC721UpgradeableExt is
             0
         );
     }
+    
+    /** 
+    * @dev sets the utility token
+    * @param costManager_ new address of utility token, or 0
+    */
+    function overrideCostManager(address costManager_) external {
+        // require factory owner or operator
+        // otherwise needed deployer(!!not contract owner) in cases if was deployed manually
+        require (
+            (factory.isContract()) 
+                ?
+                    IFactory(factory).canOverrideCostManager(_msgSender(), address(this))
+                :
+                    factory == _msgSender()
+            ,
+            "cannot override"
+        );
+        costManager = costManager_;
+    }
+
+
+    /********************************************************************
+    ****** public section ***********************************************
+    *********************************************************************/
+    /**
+    * @dev tells the caller whether they can set info for a series,
+    * manage amount of commissions for the series,
+    * mint and distribute tokens from it, etc.
+    * @param seriesId the id of the series being asked about
+    */
+    function canManageSeries(uint64 seriesId) public view returns (bool) {
+        return owner() == _msgSender() || seriesInfo[seriesId].author == _msgSender();
+    }
+
+    /**
+    * @dev tells the caller whether they can transfer an existing token,
+    * list it for sale and remove it from sale.
+    * Tokens can be managed by their owner
+    * or approved accounts via {approve} or {setApprovalForAll}.
+    * @param tokenId the id of the tokens being asked about
+    */
+    function canManageToken(uint256 tokenId) public view returns (bool) {
+        return _canManageToken(tokenId);
+    }
+
+    /**
+     * @dev Returns whether `tokenId` exists.
+     * Tokens start existing when they are minted (`_mint`),
+     * and stop existing when they are burned (`_burn`).
+     */
+    function tokenExists(uint256 tokenId) public view virtual returns (bool) {
+        return _exists(tokenId);
+    }
+    
+    /**
+    * @dev buys NFT for native coin with defined id. 
+    * mint token if it doesn't exist and transfer token
+    * if it exists and is on sale
+    * @param tokenId token ID to buy
+    * @param price amount of specified native coin to pay
+    * @param safe use safeMint and safeTransfer or not
+    */
+
+    function buy(uint256 tokenId, uint256 price, bool safe) public payable nonReentrant {
+        (bool success, bool exists, SaleInfo memory data, address beneficiary) = getTokenSaleInfo(tokenId);
+        require(success, "token is not on sale");
+        require(msg.value >= data.price && price >= data.price, "insufficient amount sent");
+        require(address(0) == data.currency, "wrong currency for sale");
+
+        bool transferSuccess;
+        uint256 left = data.price;
+        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
+       
+        // commissions payment
+        for(uint256 i = 0; i < length; i++) {
+            (transferSuccess, ) = addresses[i].call{gas: 3000, value: values[i]}(new bytes(0));
+            require(transferSuccess, "TRANSFER_COMMISSION_FAILED");
+            left -= values[i];
+        }
+        
+        (transferSuccess, ) = beneficiary.call{gas: 3000, value: left}(new bytes(0));
+        require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
+
+        uint256 refund = msg.value - data.price;
+
+        if (refund > 0) {
+            (transferSuccess, ) = msg.sender.call{gas: 3000, value: refund}(new bytes(0));
+            require(transferSuccess, "REFUND_FAILED");
+        }
+
+        _buy(tokenId, exists, data, beneficiary, safe);
+        
+        uint64 seriesId = getSeriesId(tokenId);
+        _accountForOperation(
+            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
+            0,
+            price
+        );
+        
+    }
+    /**
+    * @dev buys NFT for specified currency with defined id. 
+    * mint token if it doesn't exist and transfer token
+    * if it exists and is on sale
+    * @param tokenId token ID to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    */
+    function buy(uint256 tokenId, address currency, uint256 price, bool safe) public nonReentrant {
+        (bool success, bool exists, SaleInfo memory data, address owner) = getTokenSaleInfo(tokenId);
+        require(success, "token is not on sale");
+        require(currency == data.currency, "wrong currency for sale");
+        uint256 allowance = IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this));
+        require(allowance >= data.price && price >= data.price, "insufficient amount");
+
+        uint256 left = data.price;
+        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
+        // commissions payment
+        for(uint256 i = 0; i < length; i++) {
+            IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
+            left -= values[i];
+        }
+
+        IERC20Upgradeable(data.currency).transferFrom(_msgSender(), owner, left);
+        _buy(tokenId, exists, data, owner, safe);
+        uint64 seriesId = getSeriesId(tokenId);
+        _accountForOperation(
+            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
+            uint256(uint160(currency)),
+            price
+        );
+    }
+
+    /**
+    * @dev calculate commission for `tokenId`
+    *  if param exists equal true, then token doesn't exists yet. 
+    *  otherwise we should use snapshot parameters: ownerCommission/authorCommission, that hold during listForSale.
+    *  used to prevent increasing commissions
+    * @param tokenId token ID to calculate commission
+    * @param price amount of specified token to pay 
+    */
+    function calculateCommission(
+        uint256 tokenId,
+        uint256 price
+    ) 
+        internal 
+        view 
+        returns(
+            address[2] memory addresses, 
+            uint256[2] memory values,
+            uint256 length
+        ) 
+    {
+        uint64 seriesId = getSeriesId(tokenId);
+        length = 0;
+        uint256 sum;
+        // contract owner commission
+        if (commissionInfo.ownerCommission.recipient != address(0)) {
+            uint256 oc = salesInfoToken[tokenId].ownerCommissionValue;
+            if (commissionInfo.ownerCommission.value < oc)
+                oc = commissionInfo.ownerCommission.value;
+            if (oc != 0) {
+                addresses[length] = commissionInfo.ownerCommission.recipient;
+                sum += oc;
+                values[length] = oc * price / FRACTION;
+                length++;
+            }
+        }
+
+        // author commission
+        if (seriesInfo[seriesId].commission.recipient != address(0)) {
+            uint256 ac = salesInfoToken[tokenId].authorCommissionValue;
+            if (seriesInfo[seriesId].commission.value < ac) 
+                ac = seriesInfo[seriesId].commission.value;
+            if (ac != 0) {
+                addresses[length] = seriesInfo[seriesId].commission.recipient;
+                sum += ac;
+                values[length] = ac * price / FRACTION;
+                length++;
+            }
+        }
+
+        require(sum < FRACTION, "invalid commission");
+
+    }
+
+    /**
+    * @dev returns contract URI. 
+    */
+    function contractURI() public view returns(string memory){
+        return _contractURI;
+    }
+
+    
 
     /**
      * @dev Returns a token ID owned by `owner` at a given `index` of its token list.
@@ -716,7 +740,7 @@ abstract contract ERC721UpgradeableExt is
         override
         returns (string memory) 
     {
-        require(exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
+        require(_exists(tokenId), "ERC721URIStorage: URI query for nonexistent token");
         string memory _tokenIdHexString = tokenId.toHexString();
         uint64 seriesId = getSeriesId(tokenId);
         string memory baseURI_ = seriesInfo[seriesId].baseURI;
@@ -927,6 +951,47 @@ abstract contract ERC721UpgradeableExt is
         );
     }
 
+    /**
+    * @dev returns if token is on sale or not, 
+    * whether it exists or not,
+    * as well as data about the sale and its owner
+    * @param tokenId token ID 
+    */
+    function getTokenSaleInfo(uint256 tokenId) 
+        public 
+        view 
+        returns
+        (
+            bool isOnSale,
+            bool exists, 
+            SaleInfo memory data,
+            address owner
+        ) 
+    {
+        data = salesInfoToken[tokenId].saleInfo;
+
+        exists = _exists(tokenId);
+        owner = _owners[tokenId];
+
+        if (owner != address(0)) { 
+            if (data.onSaleUntil > block.timestamp) {
+                isOnSale = true;
+            } 
+        } else {   
+            uint64 seriesId = getSeriesId(tokenId);
+            SeriesInfo memory seriesData = seriesInfo[seriesId];
+            if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
+                isOnSale = true;
+                data = seriesData.saleInfo;
+                owner = seriesData.author;
+            }
+        }
+        
+    }
+      
+    /********************************************************************
+    ****** internal section *********************************************
+    *********************************************************************/
     function _buy(
         uint256 tokenId, 
         bool exists, 
@@ -952,6 +1017,7 @@ abstract contract ERC721UpgradeableExt is
                 data.price
             );
         } else {
+
             if (safe) {
                 _safeMint(ms, tokenId);
             } else {
@@ -969,44 +1035,7 @@ abstract contract ERC721UpgradeableExt is
          
     }
 
-    /**
-    * @dev returns if token is on sale or not, 
-    * whether it exists or not,
-    * as well as data about the sale and its owner
-    * @param tokenId token ID 
-    */
-    function getTokenSaleInfo(uint256 tokenId) 
-        public 
-        view 
-        returns
-        (
-            bool isOnSale,
-            bool exists, 
-            SaleInfo memory data,
-            address owner
-        ) 
-    {
-        data = salesInfoToken[tokenId].saleInfo;
-
-        exists = exists(tokenId);
-        owner = _owners[tokenId];
-
-        if (owner != address(0)) { 
-            if (data.onSaleUntil > block.timestamp) {
-                isOnSale = true;
-            } 
-        } else {   
-            uint64 seriesId = getSeriesId(tokenId);
-            SeriesInfo memory seriesData = seriesInfo[seriesId];
-            if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
-                isOnSale = true;
-                data = seriesData.saleInfo;
-                owner = seriesData.author;
-            }
-        }
-        
-    }
-      
+    
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
@@ -1035,25 +1064,6 @@ abstract contract ERC721UpgradeableExt is
         );
     }
     
-    /** 
-    * @dev sets the utility token
-    * @param costManager_ new address of utility token, or 0
-    */
-    function overrideCostManager(address costManager_) external {
-        // require factory owner or operator
-        // otherwise needed deployer(!!not contract owner) in cases if was deployed manually
-        require (
-            (factory.isContract()) 
-                ?
-                    IFactory(factory).canOverrideCostManager(_msgSender(), address(this))
-                :
-                    factory == _msgSender()
-            ,
-            "cannot override"
-        );
-        costManager = costManager_;
-    }
-
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
      * are aware of the ERC721 protocol to prevent tokens from being forever locked.
@@ -1136,7 +1146,7 @@ abstract contract ERC721UpgradeableExt is
         virtual 
     {
         require(to != address(0), "can't mint to the zero address");
-        require(_owners[tokenId] != address(0), "token already minted");
+        require(_owners[tokenId] == address(0), "token already minted");
 
         _beforeTokenTransfer(address(0), to, tokenId);
 
@@ -1296,6 +1306,68 @@ abstract contract ERC721UpgradeableExt is
         _symbol = newSymbol;
     }
 
+    /**
+     * @dev Hook that is called before any token transfer. This includes minting
+     * and burning.
+     *
+     * Calling conditions:
+     *
+     * - When `from` and `to` are both non-zero, ``from``'s `tokenId` will be
+     * transferred to `to`.
+     * - When `from` is zero, `tokenId` will be minted for `to`.
+     * - When `to` is zero, ``from``'s `tokenId` will be burned.
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual {
+
+        if (from == address(0)) {
+            _addTokenToAllTokensEnumeration(tokenId);
+        } else if (from != to) {
+            _removeTokenFromOwnerEnumeration(from, tokenId);
+        }
+        if (to == address(0)) {
+            _removeTokenFromAllTokensEnumeration(tokenId);
+        } else if (to != from) {
+            _addTokenToOwnerEnumeration(to, tokenId);
+        }
+    }
+
+    function clearOnSaleUntil(uint256 tokenId) internal {
+        if (salesInfoToken[tokenId].saleInfo.onSaleUntil > 0 ) salesInfoToken[tokenId].saleInfo.onSaleUntil = 0;
+    }
+
+    function _requireCanManageSeries(uint64 seriesId) internal view virtual {
+        require(canManageSeries(seriesId), "you can't manage this series");
+    }
+             
+    function _requireCanManageToken(uint256 tokenId) internal view virtual {
+        
+        require(_exists(tokenId), "token doesn't exist");
+        require(_canManageToken(tokenId), "you can't manage this token");
+    }
+
+    function _exists(uint256 tokenId) internal view virtual returns (bool) {
+        return _owners[tokenId] != address(0)
+            && _owners[tokenId] != DEAD_ADDRESS;
+    }
+
+    function _canManageToken(uint256 tokenId) internal view returns (bool) {
+        return _ownerOf(tokenId) == _msgSender()
+            || getApproved(tokenId) == _msgSender()
+            || isApprovedForAll(_ownerOf(tokenId), _msgSender());
+    }
+    
+
+    /********************************************************************
+    ****** private section **********************************************
+    *********************************************************************/
 
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
@@ -1331,40 +1403,7 @@ abstract contract ERC721UpgradeableExt is
     }
 
 
-    /**
-     * @dev Hook that is called before any token transfer. This includes minting
-     * and burning.
-     *
-     * Calling conditions:
-     *
-     * - When `from` and `to` are both non-zero, ``from``'s `tokenId` will be
-     * transferred to `to`.
-     * - When `from` is zero, `tokenId` will be minted for `to`.
-     * - When `to` is zero, ``from``'s `tokenId` will be burned.
-     * - `from` cannot be the zero address.
-     * - `to` cannot be the zero address.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual {
-
-        if (from == address(0)) {
-            _addTokenToAllTokensEnumeration(tokenId);
-        } else if (from != to) {
-            _removeTokenFromOwnerEnumeration(from, tokenId);
-        }
-        if (to == address(0)) {
-            _removeTokenFromAllTokensEnumeration(tokenId);
-        } else if (to != from) {
-            _addTokenToOwnerEnumeration(to, tokenId);
-        }
-    }
-
-
+   
     /**
      * @dev Private function to add a token to this extension's ownership-tracking data structures.
      * @param to address representing the new owner of the given token ID
@@ -1460,21 +1499,6 @@ abstract contract ERC721UpgradeableExt is
         }
     }
 
-    function clearOnSaleUntil(uint256 tokenId) internal {
-        if (salesInfoToken[tokenId].saleInfo.onSaleUntil > 0 ) salesInfoToken[tokenId].saleInfo.onSaleUntil = 0;
-    }
-
-    function _requireCanManageSeries(uint64 seriesId) internal view virtual {
-        require(canManageSeries(seriesId), "you can't manage this series");
-    }
-             
-    function _requireCanManageToken(uint256 tokenId) internal view virtual {
-        address ms = _msgSender();
-        address owner = _ownerOf(tokenId);
-        require(exists(tokenId), "token doesn't exist");
-        require(canManageToken(tokenId), "you can't manage this token");
-    }
-  
     
 
 }

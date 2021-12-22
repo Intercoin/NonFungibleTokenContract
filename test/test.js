@@ -520,7 +520,7 @@ describe("NonFungibleToken tests", function () {
       const duration = 1000;
       const newPrice = price.mul(TWO);
       const newCurrency = this.erc20.address;
-      await expect(this.nft.connect(alice).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('!onlyTokenOwnerOrOperator');
+      await expect(this.nft.connect(alice).listForSale(id, newPrice, newCurrency, duration)).to.be.revertedWith('you can\'t manage this token');
 
     })
 
@@ -621,12 +621,12 @@ describe("NonFungibleToken tests", function () {
       await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
       await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       await this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
-      await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price})).to.be.revertedWith("exceed series limit");
+      await expect(this.nft.connect(charlie)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price})).to.be.revertedWith("series token limit exceeded");
   
     })
 
     it("shouldnt call setSeriesInfo as an owner of series", async() => {
-      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('!onlyOwnerOrAuthor');
+      await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('you can\'t manage this series');
 
     })
 
@@ -850,7 +850,7 @@ describe("NonFungibleToken tests", function () {
       });
 
       it("shouldnt set series commission if not owner or author", async() => {
-        await expect(this.nft.connect(bob).setCommission(seriesId, seriesCommissions)).to.be.revertedWith("!onlyOwnerOrAuthor");
+        await expect(this.nft.connect(bob).setCommission(seriesId, seriesCommissions)).to.be.revertedWith('you can\'t manage this series');
       });
 
       it("shouldnt set series commission if it is not in the allowed range", async() => {
