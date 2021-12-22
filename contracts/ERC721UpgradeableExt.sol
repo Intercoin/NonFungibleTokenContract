@@ -980,7 +980,7 @@ abstract contract ERC721UpgradeableExt is
         view 
         returns
         (
-            bool getTokenSaleInfo,
+            bool isOnSale,
             bool exists, 
             SaleInfo memory data,
             address owner
