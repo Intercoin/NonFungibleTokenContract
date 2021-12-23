@@ -34,22 +34,10 @@ contract Factory is Ownable, IFactory {
 
     constructor (
         address instance, 
-        string memory name, 
-        string memory symbol, 
-        string memory contractURI_, 
         address costManager_
     ) {
         implementation = instance;
         costManager = costManager_;
-        IInstanceContract(instance).initialize(name, symbol, contractURI_, costManager, _msgSender());
-        Ownable(instance).transferOwnership(_msgSender());
-        getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
-        instances.push(instance);
-        _instanceInfos[instance] = InstanceInfo(
-            name,
-            symbol,
-            _msgSender()
-        );
     }
 
     /**
