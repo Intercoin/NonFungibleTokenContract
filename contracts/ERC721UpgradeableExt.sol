@@ -30,12 +30,12 @@ abstract contract ERC721UpgradeableExt is
 
     // Token symbol
     string private _symbol;
+
+    // Contract URI
+    string internal _contractURI;    
     
     // Address of factory that produced this instance
     address public factory;
-
-    // Contract URI
-    string internal _contractURI;
     
     // Utility token, if any, to manage during operations
     address public costManager;
