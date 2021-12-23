@@ -6,7 +6,11 @@
 /metadata
 artifacts
 .env
-.deps
+/.deps
+/.debugger
 secret.*.json
 remix-compiler.config.js
 TODO.txt
+
+.DS_Store
+
