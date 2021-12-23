@@ -1,0 +1,8 @@
+Although this code is available for viewing on GitHub and Etherscan, it is NOT licensed to the general public.
+
+To prevent confusion and increase trust in the audited code bases of smart contracts we produce, we intend for there to be only ONE official Factory address on the blockchain producing these NFT smart contracts, and we are going to point a blockchain domain name at it.
+
+However, the general public is welcome to use this official Factory to produce instances for their use. We may begin requiring staking of ITR tokens in order to take actions (such as producing series and minting tokens). If you are looking to obtain ITR tokens or custom work done with your NFT projects, visit intercoin.org
+
+Copyright (c) Intercoin Inc. All rights reserved.
+
