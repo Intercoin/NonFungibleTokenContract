@@ -389,20 +389,6 @@ abstract contract ERC721UpgradeableExt is
     }
 
     /**
-    * @dev returns the list of all NFTs owned by 'account'
-    * @param account address of account
-    */
-    function tokensByOwner(
-        address account
-    ) 
-        external
-        view
-        returns (uint256[] memory ret)
-    {
-        return _tokensByOwner(account, 0);
-    }
-
-    /**
     * @dev returns the list of all NFTs owned by 'account' with limit
     * @param account address of account
     */
@@ -504,7 +490,6 @@ abstract contract ERC721UpgradeableExt is
     * @param price amount of specified native coin to pay
     * @param safe use safeMint and safeTransfer or not
     */
-
     function buy(uint256 tokenId, uint256 price, bool safe) public payable nonReentrant {
         (bool success, bool exists, SaleInfo memory data, address beneficiary) = getTokenSaleInfo(tokenId);
         require(success, "token is not on sale");
@@ -540,8 +525,8 @@ abstract contract ERC721UpgradeableExt is
             0,
             price
         );
-        
     }
+
     /**
     * @dev buys NFT for specified currency with defined id. 
     * mint token if it doesn't exist and transfer token
@@ -636,8 +621,6 @@ abstract contract ERC721UpgradeableExt is
         return _contractURI;
     }
 
-    
-
     /**
      * @dev Returns a token ID owned by `owner` at a given `index` of its token list.
      * Use along with {balanceOf} to enumerate all of ``owner``'s tokens.
@@ -662,8 +645,6 @@ abstract contract ERC721UpgradeableExt is
         require(index < totalSupply(), "ERC721Enumerable: global index out of bounds");
         return _allTokens[index];
     }
-      
- 
 
     /**
      * @dev See {IERC165-supportsInterface}.
@@ -757,7 +738,6 @@ abstract contract ERC721UpgradeableExt is
         }
         return "";
     }
-
 
     /**
      * @dev Gives permission to `to` to transfer `tokenId` token to another account.
@@ -985,8 +965,22 @@ abstract contract ERC721UpgradeableExt is
                 data = seriesData.saleInfo;
                 owner = seriesData.author;
             }
-        }
-        
+        }   
+    }
+
+    address public trustedForwarder;
+    function setTrustedForwarder(address trustedForwarder_) internal {
+        trustedForwarder = trustedForwarder_;
+    }
+
+    function _msgSender() internal view override
+    returns (address signer) {
+        signer = msg.sender;
+        if (msg.data.length >= 20 && trustedForwarder == signer) {
+            assembly {
+                signer := shr(96,calldataload(sub(calldatasize(),20)))
+            }
+        }    
     }
       
     /********************************************************************
