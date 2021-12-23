@@ -969,7 +969,9 @@ abstract contract ERC721UpgradeableExt is
     }
 
     address public trustedForwarder;
-    function setTrustedForwarder(address trustedForwarder_) internal {
+    function setTrustedForwarder(address trustedForwarder_)
+    onlyOwner
+    internal {
         trustedForwarder = trustedForwarder_;
     }
 
