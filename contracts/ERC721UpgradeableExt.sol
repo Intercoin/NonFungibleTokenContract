@@ -1015,7 +1015,7 @@ abstract contract ERC721UpgradeableExt is
         override
     {
         super._transferOwnership(newOwner);
-      //  _setTrustedForwarder(address(0));
+        _setTrustedForwarder(address(0));
     }
 
     function _buy(
