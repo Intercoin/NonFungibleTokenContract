@@ -19,7 +19,7 @@ async function main() {
 	const name = "NFT Video Test MATIC";
 	const symbol = "NFTVTM";
 	const contractURI = "https://pastebin.com/raw/armzdJZr";
-	this.factory = await FactoryFactory.deploy(this.nft.address, name, symbol, contractURI, ZERO_ADDRESS, {gasLimit: 8e6});
+	this.factory = await FactoryFactory.deploy(this.nft.address, ZERO_ADDRESS, {gasLimit: 8e6});
 
 
 	console.log("NFT deployed at:", this.nft.address);
