@@ -13,7 +13,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "./interfaces/ICostManager.sol";
 import "./interfaces/IFactory.sol";
 
-
 abstract contract ERC721UpgradeableExt is 
     ERC165Upgradeable, 
     IERC721MetadataUpgradeable,
@@ -1007,9 +1006,7 @@ abstract contract ERC721UpgradeableExt is
     {
         trustedForwarder = trustedForwarder_;
     }
-function getMsgSender() public view returns(address) {
-    return _msgSender();
-}
+
     function _transferOwnership(
         address newOwner
     ) 

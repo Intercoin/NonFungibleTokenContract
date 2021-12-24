@@ -177,6 +177,7 @@ describe("NonFungibleToken tests", function () {
     beforeEach("listing series on sale", async() => {
       await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
     })
+
     it("should correct mint NFT with ETH if ID doesn't exist", async() => {
       const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
       const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
@@ -368,7 +369,7 @@ describe("NonFungibleToken tests", function () {
       await this.nft.setContractURI(newContractURI);
       expect(await this.nft.contractURI()).to.be.equal(newContractURI);
 
-  });
+    });
 
     it("shouldnt buy if token was burned (token)", async() => {
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
@@ -649,29 +650,32 @@ describe("NonFungibleToken tests", function () {
 
     })
 
-    xit("shouldn correct list all tokens of user", async() => {
+    it("shouldn correct list all tokens of user", async() => {
+      const limit = ZERO;
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price});
-      const bobTokens = await this.nft.connect(bob)["tokensByOwner(address)"](bob.address);
+      const bobTokens = await this.nft.connect(bob).tokensByOwner(bob.address, limit);
       expect(bobTokens[0]).to.be.equal(id);
       expect(bobTokens[1]).to.be.equal(id.add(ONE));
       expect(bobTokens[2]).to.be.equal(id.add(TWO));
 
     })
 
-    xit("shouldn correct list null tokens if there is ", async() => {
+    it("shouldn correct list null tokens if there is ", async() => {
+      const limit = ZERO;
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price});
-      const bobTokens = await this.nft.connect(bob)["tokensByOwner(address)"](bob.address);
+      const bobTokens = await this.nft.connect(bob).tokensByOwner(bob.address,limit);
       expect(bobTokens[0]).to.be.equal(id);
       expect(bobTokens[1]).to.be.equal(id.add(ONE));
       expect(bobTokens[2]).to.be.equal(id.add(TWO));
     })
 
-    xit("shouldn correct list null tokens if there is ", async() => {
-      const bobTokens = await this.nft.connect(bob)["tokensByOwner(address)"](bob.address);
+    it("shouldn correct list null tokens if there is ", async() => {
+      const limit = ZERO;
+      const bobTokens = await this.nft.connect(bob).tokensByOwner(bob.address,limit);
       expect(bobTokens.length).to.be.equal(0);
     })
 
@@ -680,12 +684,12 @@ describe("NonFungibleToken tests", function () {
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(ONE), price, false, ZERO, {value: price});
       await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id.add(TWO), price, false, ZERO, {value: price});
       const limit = ONE;
-      const bobTokens = await this.nft.connect(bob)["tokensByOwner(address,uint32)"](bob.address,limit);
+      const bobTokens = await this.nft.connect(bob).tokensByOwner(bob.address,limit);
       expect(bobTokens[0]).to.be.equal(id);
       expect(bobTokens.length).to.be.equal(limit);
 
     })
-    
+ 
     describe("hooks tests", async() => {
       it("should correct set hook (ETH test)", async() => {
         await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
@@ -1028,6 +1032,9 @@ describe("NonFungibleToken tests", function () {
     })
 
     describe('transfer tests', async() => {
+      // beforeEach("deploying xdescribe", async() => {
+      //   console.log('deploying xdescribe');
+      // });
       it('should correct transfer token via transfer()', async() => {
         await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
         await this.nft.connect(bob).transfer(this.buyer.address, id);
@@ -1046,8 +1053,6 @@ describe("NonFungibleToken tests", function () {
 
   })
   
-
-
 });
 
 
