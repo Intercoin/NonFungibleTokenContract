@@ -40,6 +40,8 @@ abstract contract ERC721UpgradeableExt is
     // Utility token, if any, to manage during operations
     address public costManager;
 
+    address public trustedForwarder;
+
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
 
@@ -968,15 +970,28 @@ abstract contract ERC721UpgradeableExt is
         }   
     }
 
-    address public trustedForwarder;
-    function setTrustedForwarder(address trustedForwarder_)
-    onlyOwner
-    internal {
-        trustedForwarder = trustedForwarder_;
+    function setTrustedForwarder(
+        address trustedForwarder_
+    )
+        onlyOwner 
+        public 
+    {
+        _setTrustedForwarder(trustedForwarder_);
     }
 
-    function _msgSender() internal view override
-    returns (address signer) {
+    
+      
+    /********************************************************************
+    ****** internal section *********************************************
+    *********************************************************************/
+
+    function _msgSender(
+    ) 
+        internal 
+        view 
+        override
+        returns (address signer) 
+    {
         signer = msg.sender;
         if (msg.data.length >= 20 && trustedForwarder == signer) {
             assembly {
@@ -984,10 +999,28 @@ abstract contract ERC721UpgradeableExt is
             }
         }    
     }
-      
-    /********************************************************************
-    ****** internal section *********************************************
-    *********************************************************************/
+
+    function _setTrustedForwarder(
+        address trustedForwarder_
+    )
+        internal 
+    {
+        trustedForwarder = trustedForwarder_;
+    }
+function getMsgSender() public view returns(address) {
+    return _msgSender();
+}
+    function _transferOwnership(
+        address newOwner
+    ) 
+        internal 
+        virtual 
+        override
+    {
+        super._transferOwnership(newOwner);
+      //  _setTrustedForwarder(address(0));
+    }
+
     function _buy(
         uint256 tokenId, 
         bool exists, 

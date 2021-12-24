@@ -68,7 +68,7 @@ describe("Tests with factory", function () {
         // this.nft = await NFTFactory.deploy();
         // await this.nft.connect(owner).initialize("NFT Edition", "NFT");
         this.nftimpl = await NFTFactory.deploy();
-        this.factory = await Factory.deploy(this.nftimpl.address, "NFT Edition0", "NFT0", "", ZERO_ADDRESS);
+        this.factory = await Factory.deploy(this.nftimpl.address, ZERO_ADDRESS);
         let tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
         let receipt = await tx.wait();
         let instanceAddr = receipt['events'][0].args.instance;
