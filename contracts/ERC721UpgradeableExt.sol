@@ -94,7 +94,7 @@ abstract contract ERC721UpgradeableExt is
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
     CommissionInfo public commissionInfo; // Global commission data 
 
-    mapping(uint64 => uint256) public mintedCountBySeries;
+    mapping(uint256 => uint256) public mintedCountBySeries;
     
     struct SaleInfoToken { 
         SaleInfo saleInfo;
