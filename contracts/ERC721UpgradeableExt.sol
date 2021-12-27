@@ -94,7 +94,7 @@ abstract contract ERC721UpgradeableExt is
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
     CommissionInfo public commissionInfo; // Global commission data 
 
-    mapping(uint256 => uint256) public mintedCountBySeries;
+    mapping(uint64 => uint256) public mintedCountBySeries;
     
     struct SaleInfoToken { 
         SaleInfo saleInfo;
@@ -969,6 +969,10 @@ abstract contract ERC721UpgradeableExt is
         }   
     }
 
+   /**
+    * @dev the owner should be absolutely sure they trust the trustedForwarder
+    * @param trustedForwarder_ must be a smart contract that was audited
+    */
     function setTrustedForwarder(
         address trustedForwarder_
     )
