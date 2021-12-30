@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: MIT
 
 /**
+*********************
+NFT TEMPLATE CONTRACT
+*********************
+
 Although this code is available for viewing on GitHub and Etherscan, it is NOT licensed to the general public.
 
 To prevent confusion and increase trust in the audited code bases of smart contracts we produce, we intend for there to be only ONE official Factory address on the blockchain producing these NFT smart contracts, and we are going to point a blockchain domain name at it.
 
 Copyright (c) Intercoin Inc. All rights reserved.
 
-However, the general public is welcome to use this official Factory to produce instances for their use. We may begin requiring staking of ITR tokens in order to take actions (such as producing series and minting tokens). If you are looking to obtain ITR tokens or custom work done with your NFT projects, visit intercoin.org
+However, the general public is welcome to interact with the official Factory Contract at the address 0x22222e0849704b754be0A372fFcDb9B22e4D7147 to produce instances for their use. We may begin requiring staking of ITR tokens in order to take actions (such as producing series and minting tokens). If you are looking to obtain ITR tokens or custom work done with your NFT projects, visit intercoin.org
 
-Any user of software powered by this code must agree to the following, in order to use it. If you do not agree, refrain from using the software:
+Any user of software powered by this code MUST agree to the following, in order to use it. If you do not agree, refrain from using the software:
 
 DISCLAIMERS AND DISCLOSURES.
 
