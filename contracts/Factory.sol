@@ -6,13 +6,15 @@ pragma solidity ^0.8.0;
 NFT FACTORY CONTRACT
 ********************
 
-Although this code is available for viewing on GitHub and Etherscan, it is NOT licensed to the general public.
+Although this code is available for viewing on GitHub and Etherscan, the general public is NOT given a license to freely deploy smart contracts based on this code, on any blockchains.
 
 To prevent confusion and increase trust in the audited code bases of smart contracts we produce, we intend for there to be only ONE official Factory address on the blockchain producing these NFT smart contracts, and we are going to point a blockchain domain name at it.
 
 Copyright (c) Intercoin Inc. All rights reserved.
 
-However, the general public is welcome to interact with the official Factory Contract at the address 0x22222e0849704b754be0A372fFcDb9B22e4D7147 to produce instances for their use. We may begin requiring staking of ITR tokens in order to take actions (such as producing series and minting tokens). If you are looking to obtain ITR tokens or custom work done with your NFT projects, visit intercoin.org
+ALLOWED USAGE.
+
+Provided they agree to all the conditions of this Agreement listed below, anyone is welcome to interact with the official Factory Contract at the address 0x22222e0849704b754be0A372fFcDb9B22e4D7147 to produce smart contract instances, or to interact with instances produced in this manner by others.
 
 Any user of software powered by this code MUST agree to the following, in order to use it. If you do not agree, refrain from using the software:
 
@@ -35,6 +37,23 @@ THE SOFTWARE IS PROVIDED “AS IS” WITHOUT WARRANTY. DEVELOPER SHALL NOT BE LI
 LIMITATION OF LIABILITY. 
 
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL DEVELOPER BE LIABLE UNDER ANY THEORY OF LIABILITY FOR ANY CONSEQUENTIAL, INDIRECT, INCIDENTAL, SPECIAL, PUNITIVE OR EXEMPLARY DAMAGES OF ANY KIND, INCLUDING, WITHOUT LIMITATION, DAMAGES ARISING FROM LOSS OF PROFITS, REVENUE, DATA OR USE, OR FROM INTERRUPTED COMMUNICATIONS OR DAMAGED DATA, OR FROM ANY DEFECT OR ERROR OR IN CONNECTION WITH CUSTOMER'S ACQUISITION OF SUBSTITUTE GOODS OR SERVICES OR MALFUNCTION OF THE SOFTWARE, OR ANY SUCH DAMAGES ARISING FROM BREACH OF CONTRACT OR WARRANTY OR FROM NEGLIGENCE OR STRICT LIABILITY, EVEN IF DEVELOPER OR ANY OTHER PERSON HAS BEEN ADVISED OR SHOULD KNOW OF THE POSSIBILITY OF SUCH DAMAGES, AND NOTWITHSTANDING THE FAILURE OF ANY REMEDY TO ACHIEVE ITS INTENDED PURPOSE. WITHOUT LIMITING THE FOREGOING OR ANY OTHER LIMITATION OF LIABILITY HEREIN, REGARDLESS OF THE FORM OF ACTION, WHETHER FOR BREACH OF CONTRACT, WARRANTY, NEGLIGENCE, STRICT LIABILITY IN TORT OR OTHERWISE, CUSTOMER'S EXCLUSIVE REMEDY AND THE TOTAL LIABILITY OF DEVELOPER OR ANY SUPPLIER OF SERVICES TO DEVELOPER FOR ANY CLAIMS ARISING IN ANY WAY IN CONNECTION WITH OR RELATED TO THIS AGREEMENT, THE SOFTWARE, FOR ANY CAUSE WHATSOEVER, SHALL NOT EXCEED 1,000 USD.
+
+TRADEMARKS.
+
+This Agreement does not grant you any right in any trademark or logo of Developer or its affiliates.
+
+LINK REQUIREMENTS.
+
+Operators of any Websites and Apps which make use of smart contracts based on this code must conspicuously include the following phrase in their website, featuring a clickable link that takes users to nftremix.com:
+"Visit https://nftremix.com to release your own NFT collection."
+
+STAKING REQUIREMENTS.
+
+In the future, Developer may begin requiring staking of ITR tokens in order to take further actions (such as producing series and minting tokens). Any staking requirements will first be announced on Developer's website (intercoin.org) four weeks in advance. Staking requirements will not apply to any actions already taken before they are put in place.
+
+CUSTOM ARRANGEMENTS.
+
+Reach out to us at intercoin.org if you are looking to obtain ITR tokens in bulk, remove link requirements forever, remove staking requirements forever, or get custom work done with your NFT projects.
 
 ENTIRE AGREEMENT
 
