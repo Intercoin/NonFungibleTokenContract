@@ -1082,7 +1082,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <hr>
 <h3>mintAndDistribute</h3>
 
-<p>Only owner or author. Mints and distributes NFTs with specified IDs to specified addresses</p>
+<p>Mints and distributes NFTs with specified IDs to specified addresses, msg sender must be able to manage series for each NFT listed</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
