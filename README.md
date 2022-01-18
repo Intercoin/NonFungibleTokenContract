@@ -1516,7 +1516,7 @@ caller. Emits an {ApprovalForAll} event.</p>
 <hr>
 <h3>removeCommission</h3>
 
-<p>Only owner. Removes commission for the series</p>
+<p>If msg sender canManageSeries. Removes commission for the series</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
