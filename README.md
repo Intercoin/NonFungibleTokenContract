@@ -613,7 +613,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <hr>
 <h3>buy</h3>
 
-<p>Buys NFT for specified currency with defined id. Mint token if it doesn't exist and transfer token if it exists and is on sale. Has hook front-running defence</p>
+<p>Buys NFT for specified currency with defined id. If token doesn't exist, mint it and pay the seriesData.author . Otherwise, if token is on sale, pay the owner and transfer the token to msg caller. Has hook front-running defence</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
@@ -654,7 +654,7 @@ the token or be an approved operator. - `tokenId` must exist. Emits an
 <hr>
 <h3>buy</h3>
 
-<p>Buys NFT for ETH with defined id. Mint token if it doesn't exist and transfer token if it exists and is on sale</p>
+<p>Buys NFT for ETH with defined id. If token doesn't exist, mint it and pay the seriesData.author . Otherwise, if token is on sale, pay the owner and transfer the token to msg caller. Has hook front-running defence</p>
 
 <table class="table table-sm table-bordered table-striped">
 <thead>
