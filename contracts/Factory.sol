@@ -71,13 +71,8 @@ All disputes related to this agreement shall be governed by and interpreted in a
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "./interfaces/IFactory.sol";
+import "./interfaces/IInstanceContract.sol";
 
-interface IInstanceContract {
-    function initialize(string memory name_, string memory symbol_, string memory contractURI_, address costManager_, address msgCaller_) external;
-    function name() view external returns(string memory);
-    function symbol() view external returns(string memory);
-    function owner() view external returns(address);
-}
 
 contract Factory is Ownable, IFactory {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -149,6 +144,7 @@ contract Factory is Ownable, IFactory {
     * @dev produces new instance with defined name and symbol
     * @param name name of new token
     * @param symbol symbol of new token
+    * @param contractURI contract URI
     * @return instance address of new contract
     */
     function produce(
@@ -159,6 +155,54 @@ contract Factory is Ownable, IFactory {
         public 
         returns (address instance) 
     {
+        return _produce(
+            name,
+            symbol,
+            contractURI,
+            "",
+            ""
+        );
+    }
+
+    /**
+    * @dev produces new instance with defined name and symbol
+    * @param name name of new token
+    * @param symbol symbol of new token
+    * @param contractURI contract URI
+    * @param baseURI base URI
+    * @param suffixURI suffix URI
+    * @return instance address of new contract
+    */
+    function produce(
+        string memory name,
+        string memory symbol,
+        string memory contractURI,
+        string memory baseURI,
+        string memory suffixURI
+    ) 
+        public 
+        returns (address instance) 
+    {
+        return _produce(
+            name,
+            symbol,
+            contractURI,
+            baseURI,
+            suffixURI
+        );
+    }
+
+    function _produce(
+        string memory name,
+        string memory symbol,
+        string memory contractURI,
+        string memory baseURI,
+        string memory suffixURI
+
+    ) 
+        internal 
+        returns (address instance) 
+    {
         _createInstanceValidate(name, symbol);
         address instanceCreated = _createInstance(name, symbol);
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
@@ -167,12 +211,15 @@ contract Factory is Ownable, IFactory {
             name, 
             symbol, 
             contractURI, 
+            baseURI,
+            suffixURI,
             costManager, 
             ms
         );
         Ownable(instanceCreated).transferOwnership(ms);
         instance = instanceCreated;
     }
+
     
      /**
     * @dev returns instance info

@@ -1934,6 +1934,14 @@ either {approve} or {setApprovalForAll}. Emits a {Transfer} event.</p>
 <td>contractURI</td>
 <td>string</td>
 <td>Contract URI of the new instance</td>
+</tr><tr>
+<td>baseURI</td>
+<td>string</td>
+<td>Base URI of the new instance (optional)</td>
+</tr><tr>
+<td>suffixURI</td>
+<td>string</td>
+<td>suffix URI of the new instance (optional)</td>
 </tr>
 </tbody>
 </table>

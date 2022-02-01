@@ -70,10 +70,11 @@ All disputes related to this agreement shall be governed by and interpreted in a
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 import "../extensions/ERC721SafeHooksUpgradeable.sol";
+import "../interfaces/IInstanceContract.sol";
 /**
 * NFT with safe hooks support
 */
-contract NFTSafeHook is ERC721SafeHooksUpgradeable {
+contract NFTSafeHook is ERC721SafeHooksUpgradeable, IInstanceContract {
 
     /**
     * @notice initializes contract
@@ -81,17 +82,22 @@ contract NFTSafeHook is ERC721SafeHooksUpgradeable {
     function initialize(
         string memory name_, 
         string memory symbol_, 
-        string memory contractURI_,
+        string memory contractURI_, 
+        string memory baseURI_, 
+        string memory suffixURI_, 
         address costManager_,
         address producedBy_
     ) 
         public 
+        override
         initializer 
     {
         __Ownable_init();
         __ReentrancyGuard_init();
         __ERC721SafeHook_init(name_, symbol_, costManager_, producedBy_);
         _contractURI = contractURI_;
-
+        baseURI = baseURI_;
+        suffix = suffixURI_;
+ 
     }
 }
