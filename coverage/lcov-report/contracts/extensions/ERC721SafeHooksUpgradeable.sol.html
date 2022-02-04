@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Code coverage report for contracts/extensions/ERC721SafeHooksUpgradeable.sol</title>
+    <title>Code coverage report for contracts\extensions\ERC721SafeHooksUpgradeable.sol</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -27,12 +27,12 @@
       <div class='fl pad1y space-right2'>
         <span class="strong">100% </span>
         <span class="quiet">Branches</span>
-        <span class='fraction'>8/8</span>
+        <span class='fraction'>6/6</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">100% </span>
         <span class="quiet">Functions</span>
-        <span class='fraction'>10/10</span>
+        <span class='fraction'>11/11</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">96.88% </span>
@@ -255,7 +255,31 @@
 210
 211
 212
-213</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -289,7 +313,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">110×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">110×</span>
 <span class="cline-any cline-yes">109×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -304,7 +332,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">11×</span>
 <span class="cline-any cline-yes">10×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -381,11 +416,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-yes">121×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">205×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">116×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -469,7 +517,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
 &nbsp;
-pragma solidity ^0.8.0;
+pragma solidity 0.8.11;
 &nbsp;
 import "../ERC721UpgradeableExt.sol";
 import "../interfaces/ISafeHook.sol";
@@ -479,15 +527,12 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 * holds count of series hooks while token mint and buy
 */
 abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721UpgradeableExt {
+    
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 &nbsp;
-    // hooks 
-    //      SERIESID =&gt; address SET
-    mapping(uint256 =&gt; EnumerableSetUpgradeable.AddressSet) internal hooks;
+    mapping (uint256 =&gt; uint256) public hooksCountByToken; // token ID =&gt; hooks count
 &nbsp;
-    // stored hookscount
-    //      tokenId     count
-    mapping (uint256 =&gt; uint256) public hooksCountByToken;
+    mapping(uint256 =&gt; EnumerableSetUpgradeable.AddressSet) internal hooks;    // series ID =&gt; hooks' addresses
 &nbsp;
     event NewHook(uint256 seriesId, address contractAddress);
 &nbsp;
@@ -500,9 +545,16 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * @param safe use safeMint and safeTransfer or not
     * @param hookCount number of hooks 
     */
-    function buy(uint256 tokenId, uint256 price, bool safe, uint256 hookCount) external payable {
-        uint256 seriesId = tokenId &gt;&gt; SERIES_BITS;
-        require(hookCount == hooksCount(seriesId), "wrong hookCount");
+    function buy(
+        uint256 tokenId, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        external
+        payable
+    {
+        validateHookCount(tokenId, hookCount);    
         super.buy(tokenId, price, safe);
     }
     /**
@@ -515,14 +567,21 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     * @param safe use safeMint and safeTransfer or not
     * @param hookCount number of hooks 
     */
-    function buy(uint256 tokenId, address currency, uint256 price, bool safe, uint256 hookCount) external {
-        uint256 seriesId = tokenId &gt;&gt; SERIES_BITS;
-        require(hookCount == hooksCount(seriesId), "wrong hookCount");
+    function buy(
+        uint256 tokenId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        external
+    {
+        validateHookCount(tokenId, hookCount);    
         super.buy(tokenId, currency, price, safe);
     }
 &nbsp;
     /**
-    * @dev link safeHook contract to certain Series
+    * @dev link safeHook contract to certain series
     * @param seriesId series ID
     * @param contractAddress address of SafeHook contract
     */
@@ -549,8 +608,8 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 &nbsp;
     /**
-    * @dev gives the list of hooks for series with `seriesId`
-    * @param seriesId seriesId
+    * @dev returns the list of hooks for series with `seriesId`
+    * @param seriesId series ID
     */
     function getHookList(
         uint256 seriesId
@@ -568,7 +627,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 &nbsp;
     /**
-    * @dev gives count of hooks for series with `seriesId`
+    * @dev returns count of hooks for series with `seriesId`
     * @param seriesId series ID
     */
     function hooksCount(
@@ -579,6 +638,22 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         returns(uint256) 
     {
         return hooks[seriesId].length();
+    }
+&nbsp;
+    /**
+    * @dev validates hook count
+    * @param tokenId token ID
+    * @param hookCount hook count
+    */
+    function validateHookCount(
+        uint256 tokenId,
+        uint256 hookCount
+    ) 
+        internal 
+        view 
+    {
+        uint256 seriesId = tokenId &gt;&gt; SERIES_SHIFT_BITS;
+        require(hookCount == hooksCount(seriesId), "wrong hookCount");
     }
 &nbsp;
     /**
@@ -598,11 +673,8 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 &nbsp;
     /**
-     * @dev See {ERC721-_beforeTokenTransfer}.
-     *
-     * Requirements:
-     *
-     * - the contract must not be paused.
+     * @dev Overriden function _beforeTokenTransfer with
+     * hooks executing 
      */
     function _beforeTokenTransfer(
         address from,
@@ -613,7 +685,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         virtual 
         override 
     {
-        uint256 seriesId = tokenId &gt;&gt; SERIES_BITS;
+        uint256 seriesId = tokenId &gt;&gt; SERIES_SHIFT_BITS;
         for (uint256 i = 0; i &lt; hooksCountByToken[tokenId]; i++) {
             try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
 			returns (bool success) {
@@ -676,7 +748,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     )
         internal
     {
-        hooksCountByToken[tokenId] = hooks[tokenId &gt;&gt; SERIES_BITS].length();
+        hooksCountByToken[tokenId] = hooks[tokenId &gt;&gt; SERIES_SHIFT_BITS].length();
     }
 }
 &nbsp;</pre></td></tr>
@@ -685,7 +757,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Mon Dec 20 2021 20:21:49 GMT+0300 (Moscow Standard Time)
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Fri Feb 04 2022 12:29:04 GMT+0200 (Восточная Европа, стандартное время)
 </div>
 </div>
 <script src="../../prettify.js"></script>

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.11;
 pragma abicoder v2;
 import "../ERC721UpgradeableExt.sol";
 import "../interfaces/IInstanceContract.sol";
