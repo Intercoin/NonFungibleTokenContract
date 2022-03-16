@@ -8,18 +8,22 @@ async function main() {
 	"Deploying contracts with the account:",
 	deployer.address
 	);
+var options = {
+    gasPrice: ethers.utils.parseUnits('50', 'gwei'), 
+    gasLimit: 8e6
+  };
 
 	console.log("Account balance:", (await deployer.getBalance()).toString());
 
 	const FactoryFactory = await ethers.getContractFactory("Factory");
 	const NftFactory = await ethers.getContractFactory("NFTSafeHook");
 
-	this.nft = await NftFactory.deploy({gasLimit: 8e6});
+	this.nft = await NftFactory.connect(deployer).deploy(options);
 
-	const name = "NFT Video Test MATIC";
-	const symbol = "NFTVTM";
-	const contractURI = "https://pastebin.com/raw/armzdJZr";
-	this.factory = await FactoryFactory.deploy(this.nft.address, ZERO_ADDRESS, {gasLimit: 8e6});
+	const name = "NFT Video Test Rinkeby";
+	const symbol = "NFTVTR";
+	const contractURI = "https://pastebin.com/raw/XWrnD2Ve";
+	this.factory = await FactoryFactory.connect(deployer).deploy(this.nft.address, ZERO_ADDRESS, options);
 
 
 	console.log("NFT deployed at:", this.nft.address);
