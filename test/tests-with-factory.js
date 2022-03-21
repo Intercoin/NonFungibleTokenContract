@@ -60,7 +60,7 @@ describe("Tests with factory", function () {
     beforeEach("deploying", async() => {
 
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
-        const NFTFactory = await ethers.getContractFactory("NFTSafeHook");
+        const NFTFactory = await ethers.getContractFactory("NFT");
         const BuyerFactory = await ethers.getContractFactory("Buyer");
         const Factory = await ethers.getContractFactory("Factory");
 

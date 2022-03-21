@@ -32,7 +32,7 @@ describe("Factory tests", async() => {
 
     beforeEach("deployment", async() => {
         const FactoryFactory = await ethers.getContractFactory("Factory");
-        const NftFactory = await ethers.getContractFactory("NFTSafeHook");
+        const NftFactory = await ethers.getContractFactory("NFT");
         const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
 
         this.costManager = await CostManagerFactory.deploy();
@@ -62,7 +62,7 @@ describe("Factory tests", async() => {
         expect(instanceInfo0.symbol).to.be.equal(symbol);
         expect(instanceInfo0.creator).to.be.equal(owner.address);
 
-        const contract = await ethers.getContractAt("NFTSafeHook", instance);
+        const contract = await ethers.getContractAt("NFT", instance);
         expect(await contract.name()).to.be.equal(name);
         expect(await contract.symbol()).to.be.equal(symbol);
         expect(await contract.owner()).to.be.equal(owner.address);
@@ -102,7 +102,7 @@ describe("Factory tests", async() => {
 
         beforeEach("listing series on sale", async() => {
             
-            const NftFactory = await ethers.getContractFactory("NFTSafeHook");
+            const NftFactory = await ethers.getContractFactory("NFT");
             await this.factory["produce(string,string,string)"](name, symbol, "");
             const hash = ethers.utils.solidityKeccak256(["string", "string"], [name, symbol]);
             const instance = await this.factory.getInstance(hash);
@@ -152,12 +152,12 @@ describe("Factory tests", async() => {
             const newOwner = await this.nftCreatedByFactory.ownerOf(id);
             expect(newOwner).to.be.equal(bob.address);
 
-            const salesInfoToken = await this.nftCreatedByFactory.salesInfoToken(id);
-            expect(salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-            expect(salesInfoToken.saleInfo.price).to.be.equal(ZERO);
-            expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-            expect(salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-            expect(salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+            const tokenInfo = await this.nftCreatedByFactory.tokenInfo(id);
+            expect(tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+            expect(tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+            expect(tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+            expect(tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+            expect(tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
             const seriesInfo = await this.nftCreatedByFactory.seriesInfo(seriesId);
             expect(seriesInfo.author).to.be.equal(alice.address);

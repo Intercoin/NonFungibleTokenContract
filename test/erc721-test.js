@@ -59,7 +59,7 @@ describe("Standart ERC721 functional tests", function () {
 
     beforeEach("deploying", async() => {
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
-        const NFTFactory = await ethers.getContractFactory("NFTSafeHook");
+        const NFTFactory = await ethers.getContractFactory("NFT");
         const BuyerFactory = await ethers.getContractFactory("Buyer");
 
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
