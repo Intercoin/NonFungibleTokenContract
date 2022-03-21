@@ -83,6 +83,12 @@ abstract contract ERC721UpgradeableExt is
     uint8 internal constant OPERATION_BUY = 0xA;
     uint8 internal constant OPERATION_TRANSFER = 0xB;
 
+    //uint8[12] internal constant operations = [1,2,3,4,5,6,7,8,9,10,11,12];
+    // function operations(uint8 i) internal pure returns (uint8) {
+    //     uint8[12] memory x = [0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB];
+    //     return x[i];
+    // }
+
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     uint256 internal constant FRACTION = 100000;
@@ -90,7 +96,19 @@ abstract contract ERC721UpgradeableExt is
     string public baseURI;
     string public suffix;
     
-    mapping (uint256 => SaleInfoToken) public salesInfoToken;  // tokenId => SaleInfoToken
+//    mapping (uint256 => SaleInfoToken) public salesInfoToken;  // tokenId => SaleInfoToken
+
+struct FreezeInfo {
+    bool exists;
+    string baseURI;
+    string suffix;
+}
+struct TokenInfo {
+    SaleInfoToken salesInfoToken;
+    FreezeInfo freezeInfo;
+}
+mapping (uint256 => TokenInfo) public tokenInfo;  // tokenId => tokenInfo
+    
     mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
     CommissionInfo public commissionInfo; // Global commission data 
 
@@ -587,7 +605,7 @@ abstract contract ERC721UpgradeableExt is
         uint256 sum;
         // contract owner commission
         if (commissionInfo.ownerCommission.recipient != address(0)) {
-            uint256 oc = salesInfoToken[tokenId].ownerCommissionValue;
+            uint256 oc = tokenInfo[tokenId].salesInfoToken.ownerCommissionValue;
             if (commissionInfo.ownerCommission.value < oc)
                 oc = commissionInfo.ownerCommission.value;
             if (oc != 0) {
@@ -600,7 +618,7 @@ abstract contract ERC721UpgradeableExt is
 
         // author commission
         if (seriesInfo[seriesId].commission.recipient != address(0)) {
-            uint256 ac = salesInfoToken[tokenId].authorCommissionValue;
+            uint256 ac = tokenInfo[tokenId].salesInfoToken.authorCommissionValue;
             if (seriesInfo[seriesId].commission.value < ac) 
                 ac = seriesInfo[seriesId].commission.value;
             if (ac != 0) {
@@ -949,7 +967,7 @@ abstract contract ERC721UpgradeableExt is
             address owner
         ) 
     {
-        data = salesInfoToken[tokenId].saleInfo;
+        data = tokenInfo[tokenId].salesInfoToken.saleInfo;
 
         exists = _exists(tokenId);
         owner = _owners[tokenId];
@@ -1276,7 +1294,8 @@ abstract contract ERC721UpgradeableExt is
     ) 
         internal 
     {
-        salesInfoToken[tokenId] = info;
+        //salesInfoToken[tokenId] = info;
+        tokenInfo[tokenId].salesInfoToken = info;
     }
 
     /**
@@ -1370,7 +1389,7 @@ abstract contract ERC721UpgradeableExt is
     }
 
     function clearOnSaleUntil(uint256 tokenId) internal {
-        if (salesInfoToken[tokenId].saleInfo.onSaleUntil > 0 ) salesInfoToken[tokenId].saleInfo.onSaleUntil = 0;
+        if (tokenInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil > 0 ) tokenInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil = 0;
     }
 
     function _requireCanManageSeries(uint64 seriesId) internal view virtual {
