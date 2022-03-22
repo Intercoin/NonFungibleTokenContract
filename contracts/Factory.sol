@@ -99,6 +99,8 @@ contract Factory is Ownable, IFactory {
     ) {
         implementation = instance;
         costManager = costManager_;
+
+        
     }
 
     /**
