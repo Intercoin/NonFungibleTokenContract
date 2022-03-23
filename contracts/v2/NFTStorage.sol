@@ -18,6 +18,25 @@ import "../interfaces/ISafeHook.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 
+/**
+* @dev
+* Storage for any separated parts of NFT: NFTState, NFTView, etc. For all parts storage must be the same. 
+* So need to extend by common contrtacts  like Ownable, Reentrancy, ERC721.
+* that's why we have to leave stubs. we will implement only in certain contracts. 
+* for example "name()", "symbol()" in NFTView.sol and "transfer()", "transferFrom()"  in NFTState.sol
+*
+* Another way are to decompose Ownable, Reentrancy, ERC721 to single flat contract and implement interface methods only for NFTMain.sol
+* Or make like this 
+* NFTStorage->NFTBase->NFTStubs->NFTMain, 
+* NFTStorage->NFTBase->NFTState
+* NFTStorage->NFTBase->NFTView
+* 
+* Here:
+* NFTStorage - only state variables
+* NFTBase - common thing that used in all contracts(for state and for view) like _ownerOf(), or can manageSeries,...
+* NFTStubs - implemented stubs to make NFTMain are fully ERC721, ERC165, etc
+* NFTMain - contract entry point
+*/
 contract NFTStorage  is 
     ERC165Upgradeable, 
     IERC721MetadataUpgradeable,
@@ -179,22 +198,23 @@ contract NFTStorage  is
     );
     
     //stubs
-    function approve(address to, uint256 tokenId) public virtual override {revert("stub");}
-    function getApproved(uint256 tokenId) public view virtual override returns (address) {revert("stub");}
-    function setApprovalForAll(address operator, bool approved) public virtual override {revert("stub");}
-    function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {revert("stub");}
-    function transferFrom(address from,address to,uint256 tokenId) public virtual override {revert("stub");}
-    function safeTransferFrom(address from,address to,uint256 tokenId) public virtual override {revert("stub");}
-    function safeTransferFrom(address from,address to,uint256 tokenId,bytes memory _data) public virtual override {revert("stub");}
-    function safeTransfer(address to,uint256 tokenId) public virtual {revert("stub");}
-    function balanceOf(address owner) public view virtual override returns (uint256) {revert("stub");}
-    function ownerOf(uint256 tokenId) public view virtual override returns (address) {revert("stub");}
+
+    function approve(address/* to*/, uint256/* tokenId*/) public virtual override {revert("stub");}
+    function getApproved(uint256/* tokenId*/) public view virtual override returns (address) {revert("stub");}
+    function setApprovalForAll(address/* operator*/, bool/* approved*/) public virtual override {revert("stub");}
+    function isApprovedForAll(address /*owner*/, address /*operator*/) public view virtual override returns (bool) {revert("stub");}
+    function transferFrom(address /*from*/,address /*to*/,uint256 /*tokenId*/) public virtual override {revert("stub");}
+    function safeTransferFrom(address /*from*/,address /*to*/,uint256 /*tokenId*/) public virtual override {revert("stub");}
+    function safeTransferFrom(address /*from*/,address /*to*/,uint256 /*tokenId*/,bytes memory/* _data*/) public virtual override {revert("stub");}
+    function safeTransfer(address /*to*/,uint256 /*tokenId*/) public virtual {revert("stub");}
+    function balanceOf(address /*owner*/) public view virtual override returns (uint256) {revert("stub");}
+    function ownerOf(uint256 /*tokenId*/) public view virtual override returns (address) {revert("stub");}
     function name() public view virtual override returns (string memory) {revert("stub");}
     function symbol() public view virtual override returns (string memory) {revert("stub");}
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {revert("stub");}
-    function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual override returns (uint256) {revert("stub");}
+    function tokenURI(uint256 /*tokenId*/) public view virtual override returns (string memory) {revert("stub");}
+    function tokenOfOwnerByIndex(address /*owner*/, uint256 /*index*/) public view virtual override returns (uint256) {revert("stub");}
     function totalSupply() public view virtual override returns (uint256) {revert("stub");}
-    function tokenByIndex(uint256 index) public view virtual override returns (uint256) {revert("stub");}
+    function tokenByIndex(uint256 /*index*/) public view virtual override returns (uint256) {revert("stub");}
 
     // Base
     function _getApproved(uint256 tokenId) internal view virtual returns (address) {
@@ -227,14 +247,22 @@ contract NFTStorage  is
             string memory suffix_
         ) 
     {
-        uint64 seriesId = getSeriesId(tokenId);
-        baseURI_ = seriesInfo[seriesId].baseURI;
-        suffix_ = seriesInfo[seriesId].suffix;
-        if (bytes(baseURI_).length == 0) {
-            baseURI_ = baseURI;
-        }
-        if (bytes(suffix_).length == 0) {
-            suffix_ = suffix;
+        
+        if (tokenInfo[tokenId].freezeInfo.exists) {
+            baseURI_ = tokenInfo[tokenId].freezeInfo.baseURI;
+            suffix_ = tokenInfo[tokenId].freezeInfo.suffix;
+        } else {
+
+            uint64 seriesId = getSeriesId(tokenId);
+            baseURI_ = seriesInfo[seriesId].baseURI;
+            suffix_ = seriesInfo[seriesId].suffix;
+
+            if (bytes(baseURI_).length == 0) {
+                baseURI_ = baseURI;
+            }
+            if (bytes(suffix_).length == 0) {
+                suffix_ = suffix;
+            }
         }
     }
     

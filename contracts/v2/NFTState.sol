@@ -624,18 +624,34 @@ contract NFTState is NFTStorage {
 
     }
 
-    function freeze(uint256 tokenId) public {
-        string memory baseURI_;
-        string memory suffix_;
-        (baseURI_, suffix_) = _baseURIAndSuffix(tokenId);
+    function freeze(
+        uint256 tokenId
+    ) 
+        public 
+    {
+        string memory baseURI;
+        string memory suffix;
+        (baseURI, suffix) = _baseURIAndSuffix(tokenId);
         _freeze(tokenId, baseURI, suffix);
     }
 
-    function freeze(uint256 tokenId, string memory baseURI_, string memory suffix_) public 
+    function freeze(
+        uint256 tokenId, 
+        string memory baseURI, 
+        string memory suffix
+    ) 
+        public 
     {
-        _freeze(tokenId, baseURI_, suffix_);
+        _freeze(tokenId, baseURI, suffix);
     }
-    function unFreeze(uint256 tokenId) public {}
+
+    function unFreeze(
+        uint256 tokenId
+    ) 
+        public 
+    {
+        tokenInfo[tokenId].freezeInfo.exists = false;
+    }
       
     /********************************************************************
     ****** internal section *********************************************

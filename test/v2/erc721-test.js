@@ -96,6 +96,44 @@ describe("v2 tests", function () {
                 expect(await this.nft.name()).to.be.equal("NEW NFT Edition");
                 expect(await this.nft.symbol()).to.be.equal("NEW NFT");
             })
+            it('shoudnt freeze if not owner', async() => {
+                const newURI = 'newURI';
+                const newSuffix = 'newSuffix';
+                await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+                await expect(this.nft.connect(bob)["freeze(uint256)"](id)).to.be.revertedWith("token isn't owned by sender");
+                await expect(this.nft.connect(bob)["freeze(uint256,string,string)"](id, newURI, newSuffix)).to.be.revertedWith("token isn't owned by sender");
+                
+            })
+            it('check new tokenURI after freeze', async() => {
+                await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+
+                const newURI = 'newURI';
+                const newSuffix = 'newSuffix';
+                expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
+                await this.nft.connect(alice)["freeze(uint256,string,string)"](id, newURI, newSuffix);
+
+                expect(await this.nft.tokenURI(id)).not.to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
+
+                expect(await this.nft.tokenURI(id)).to.be.equal(newURI.concat(id.toHexString().substring(2)).concat(newSuffix));
+
+            })
+            it('check holding current tokenURI after freeze', async() => {
+                await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
+                const newURI = 'newURI';
+                const newSuffix = 'newSuffix';
+                expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
+
+                await this.nft.connect(alice)["freeze(uint256)"](id);
+
+                await this.nft.setBaseURI(newURI);
+                expect(await this.nft.baseURI()).to.be.equal(newURI);
+                await this.nft.setSuffix(newSuffix);
+                expect(await this.nft.suffix()).to.be.equal(newSuffix);
+
+                expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
+                expect(await this.nft.tokenURI(id)).not.to.be.equal(newURI.concat(id.toHexString().substring(2)).concat(newSuffix));
+
+            })
             it('should transfer token to user', async() => {
                 await this.nft.connect(alice)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price}); 
                 const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);
