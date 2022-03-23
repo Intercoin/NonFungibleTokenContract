@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.11;
 
-import "../ERC721UpgradeableExt.sol";
+import "../v1/ERC721UpgradeableExt.sol";
 import "../interfaces/ISafeHook.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
@@ -150,7 +150,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
         address msgSender_
     ) 
         internal 
-        initializer 
+        onlyInitializing 
     {
         __ERC721_init(name_, symbol_, costManager_, msgSender_);
     }

@@ -1,9 +1,10 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.11;
 
 /**
-*********************
-NFT TEMPLATE CONTRACT
-*********************
+********************
+NFT FACTORY CONTRACT
+********************
 
 Although this code is available for viewing on GitHub and Etherscan, the general public is NOT given a license to freely deploy smart contracts based on this code, on any blockchains.
 
@@ -67,37 +68,209 @@ ARBITRATION
 All disputes related to this agreement shall be governed by and interpreted in accordance with the laws of New York, without regard to principles of conflict of laws. The parties to this agreement will submit all disputes arising under this agreement to arbitration in New York City, New York before a single arbitrator of the American Arbitration Association (“AAA”). The arbitrator shall be selected by application of the rules of the AAA, or by mutual agreement of the parties, except that such arbitrator shall be an attorney admitted to practice law New York. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section.
 **/
 
-pragma solidity 0.8.11;
-pragma abicoder v2;
-import "../extensions/ERC721SafeHooksUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "../interfaces/IFactory.sol";
 import "../interfaces/IInstanceContract.sol";
-/**
-* NFT with safe hooks support
-*/
-contract NFTSafeHook is ERC721SafeHooksUpgradeable, IInstanceContract {
+
+contract FactoryV1 is Ownable, IFactory {
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    
+    address public costManager;
+    address public implementation;
+    mapping(bytes32 => address) public getInstance; // keccak256("name", "symbol") => instance address
+    mapping(address => InstanceInfo) private _instanceInfos;
+    address[] public instances;
+    EnumerableSetUpgradeable.AddressSet private _renouncedOverrideCostManager;
+       
+    struct InstanceInfo {
+        string name;
+        string symbol;
+        address creator;
+    }
+    
+    event InstanceCreated(string name, string symbol, address instance, uint256 length);
+    event RenouncedOverrideCostManagerForInstance(address instance);
+
+    constructor (
+        address instance, 
+        address costManager_
+    ) {
+        implementation = instance;
+        costManager = costManager_;
+
+        
+    }
 
     /**
-    * @notice initializes contract
+    * @dev returns the count of instances
     */
-    function initialize(
-        string memory name_, 
-        string memory symbol_, 
-        string memory contractURI_, 
-        string memory baseURI_, 
-        string memory suffixURI_, 
-        address costManager_,
-        address producedBy_
+    function instancesCount() external view returns (uint256) {
+        return instances.length;
+    }
+    
+    /**
+    * @dev set the costManager for all future calls to produce()
+    */
+    function setCostManager(address costManager_) public onlyOwner {
+        costManager = costManager_;
+    }
+    
+    /**
+    * @dev renounces ability to override cost manager on instances
+    */
+    function renounceOverrideCostManager(address instance) public onlyOwner {
+        _renouncedOverrideCostManager.add(instance);
+        emit RenouncedOverrideCostManagerForInstance(instance);
+    }
+    
+    /** 
+    * @dev instance can call this to find out whether a given address can set the cost manager contract
+    * @param account the address to test
+    * @param instance the instance to test
+    */
+    function canOverrideCostManager(
+        address account, 
+        address instance
+    ) 
+        external 
+        override 
+        view
+        returns (bool) 
+    {
+        return (account == owner() && !_renouncedOverrideCostManager.contains(instance));
+    }
+
+    /**
+    * @dev produces new instance with defined name and symbol
+    * @param name name of new token
+    * @param symbol symbol of new token
+    * @param contractURI contract URI
+    * @return instance address of new contract
+    */
+    function produce(
+        string memory name,
+        string memory symbol,
+        string memory contractURI
     ) 
         public 
-        override
-        initializer 
+        returns (address instance) 
     {
-        __Ownable_init();
-        __ReentrancyGuard_init();
-        __ERC721SafeHook_init(name_, symbol_, costManager_, producedBy_);
-        _contractURI = contractURI_;
-        baseURI = baseURI_;
-        suffix = suffixURI_;
- 
+        return _produce(
+            name,
+            symbol,
+            contractURI,
+            "",
+            ""
+        );
     }
+
+    /**
+    * @dev produces new instance with defined name and symbol
+    * @param name name of new token
+    * @param symbol symbol of new token
+    * @param contractURI contract URI
+    * @param baseURI base URI
+    * @param suffixURI suffix URI
+    * @return instance address of new contract
+    */
+    function produce(
+        string memory name,
+        string memory symbol,
+        string memory contractURI,
+        string memory baseURI,
+        string memory suffixURI
+    ) 
+        public 
+        returns (address instance) 
+    {
+        return _produce(
+            name,
+            symbol,
+            contractURI,
+            baseURI,
+            suffixURI
+        );
+    }
+
+    function _produce(
+        string memory name,
+        string memory symbol,
+        string memory contractURI,
+        string memory baseURI,
+        string memory suffixURI
+
+    ) 
+        internal 
+        returns (address instance) 
+    {
+        _createInstanceValidate(name, symbol);
+        address instanceCreated = _createInstance(name, symbol);
+        require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
+        address ms = _msgSender();
+        IInstanceContract(instanceCreated).initialize(
+            name, 
+            symbol, 
+            contractURI, 
+            baseURI,
+            suffixURI,
+            costManager, 
+            ms
+        );
+        Ownable(instanceCreated).transferOwnership(ms);
+        instance = instanceCreated;
+    }
+
+    
+     /**
+    * @dev returns instance info
+    * @param instanceId instance ID
+    */
+    function getInstanceInfo(
+        uint256 instanceId
+    ) public view returns(InstanceInfo memory) {
+        
+        address instance = instances[instanceId];
+        return _instanceInfos[instance];
+    }
+    
+    
+    function _createInstanceValidate(
+        string memory name,
+        string memory symbol
+    ) internal view {
+        require((bytes(name)).length != 0, "Factory: EMPTY NAME");
+        require((bytes(symbol)).length != 0, "Factory: EMPTY SYMBOL");
+        address instance = getInstance[keccak256(abi.encodePacked(name, symbol))];
+        require(instance == address(0), "Factory: ALREADY_EXISTS");
+    }
+
+    function _createInstance(
+        string memory name,
+        string memory symbol
+    ) internal returns (address instance) {
+        
+        instance = _createClone(implementation);
+        
+        getInstance[keccak256(abi.encodePacked(name, symbol))] = instance;
+        instances.push(instance);
+        _instanceInfos[instance] = InstanceInfo(
+            name,
+            symbol,
+            _msgSender()
+        );
+        emit InstanceCreated(name, symbol, instance, instances.length);
+    }
+
+    function _createClone(address target) internal returns (address result) {
+        bytes20 targetBytes = bytes20(target);
+        assembly {
+        let clone := mload(0x40)
+        mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+        mstore(add(clone, 0x14), targetBytes)
+        mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+        result := create(0, clone, 0x37)
+        }
+    }
+        
 }
