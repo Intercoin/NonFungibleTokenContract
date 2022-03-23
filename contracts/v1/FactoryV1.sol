@@ -70,11 +70,10 @@ All disputes related to this agreement shall be governed by and interpreted in a
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
-import "./interfaces/IFactory.sol";
-import "./interfaces/IInstanceContract.sol";
+import "../interfaces/IFactory.sol";
+import "../interfaces/IInstanceContract.sol";
 
-
-contract Factory is Ownable, IFactory {
+contract FactoryV1 is Ownable, IFactory {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     
     address public costManager;

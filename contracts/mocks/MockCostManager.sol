@@ -5,7 +5,6 @@ pragma solidity 0.8.11;
 import "../interfaces/ICostManager.sol";
 import "../lib/StringsW0x.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
-import "hardhat/console.sol";
 
 contract MockCostManager is ICostManager, ERC165Upgradeable {
     using StringsW0x for uint256;

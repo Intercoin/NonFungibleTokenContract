@@ -22,7 +22,7 @@ contract NFTState is NFTStorage {
     ) 
         public 
         //override
-        initializer 
+        onlyInitializing
     {
         __Ownable_init();
         __ReentrancyGuard_init();
@@ -739,7 +739,7 @@ contract NFTState is NFTStorage {
         address producedBy_
     ) 
         internal 
-        initializer 
+        onlyInitializing
     {
         __Context_init();
         __ERC165_init();
