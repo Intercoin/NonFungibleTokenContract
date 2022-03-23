@@ -603,7 +603,7 @@ contract NFTState is NFTStorage {
     * @param contractAddress address of SafeHook contract
     */
     function pushTokenTransferHook(
-        uint256 seriesId, 
+        uint64 seriesId, 
         address contractAddress
     )
         public 
@@ -1005,7 +1005,7 @@ contract NFTState is NFTStorage {
     ) internal virtual {
 
         //safe hook
-        uint256 seriesId = tokenId >> SERIES_SHIFT_BITS;
+        uint64 seriesId = uint64(tokenId >> SERIES_SHIFT_BITS);
         for (uint256 i = 0; i < tokenInfo[tokenId].hooksCountByToken; i++) {
             try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
 			returns (bool success) {
@@ -1062,7 +1062,7 @@ contract NFTState is NFTStorage {
     * @param seriesId series ID
     */
     function hooksCount(
-        uint256 seriesId
+        uint64 seriesId
     ) 
         internal 
         view 
@@ -1094,7 +1094,7 @@ contract NFTState is NFTStorage {
     )
         internal
     {
-        tokenInfo[tokenId].hooksCountByToken = hooks[tokenId >> SERIES_SHIFT_BITS].length();
+        tokenInfo[tokenId].hooksCountByToken = hooks[uint64(tokenId >> SERIES_SHIFT_BITS)].length();
     }
 
     /**

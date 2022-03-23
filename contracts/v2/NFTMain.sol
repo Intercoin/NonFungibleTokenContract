@@ -250,7 +250,11 @@ contract NFTMain is NFTStorage {
     * @dev sets the utility token
     * @param costManager_ new address of utility token, or 0
     */
-    function overrideCostManager(address costManager_) external {
+    function overrideCostManager(
+        address costManager_
+    ) 
+        external 
+    {
 
         _functionDelegateCall(
             address(implNFTState), 
@@ -299,7 +303,7 @@ contract NFTMain is NFTStorage {
     * @param seriesId series ID
     */
     function getHookList(
-        uint256 seriesId
+        uint64 seriesId
     ) 
         external 
         view 
@@ -639,7 +643,7 @@ contract NFTMain is NFTStorage {
     * @param contractAddress address of SafeHook contract
     */
     function pushTokenTransferHook(
-        uint256 seriesId, 
+        uint64 seriesId, 
         address contractAddress
     )
         public 

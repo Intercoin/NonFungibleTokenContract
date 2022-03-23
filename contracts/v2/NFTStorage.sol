@@ -77,7 +77,7 @@ contract NFTStorage  is
     // Array with all token ids, used for enumeration
     uint256[] internal _allTokens;
     
-    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) internal hooks;    // series ID => hooks' addresses
+    mapping(uint64 => EnumerableSetUpgradeable.AddressSet) internal hooks;    // series ID => hooks' addresses
 
     // Constants for shifts
     uint8 internal constant SERIES_SHIFT_BITS = 192; // 256 - 64
@@ -123,11 +123,11 @@ contract NFTStorage  is
     }
     mapping (uint256 => TokenInfo) public tokenInfo;  // tokenId => tokenInfo
     
-    mapping (uint256 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
+    mapping (uint64 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
 
     CommissionInfo public commissionInfo; // Global commission data 
 
-    mapping(uint256 => uint256) public mintedCountBySeries;
+    mapping(uint64 => uint256) public mintedCountBySeries;
     
     struct SaleInfoToken { 
         SaleInfo saleInfo;
@@ -193,7 +193,7 @@ contract NFTStorage  is
     );
 
     event NewHook(
-        uint256 seriesId, 
+        uint64 seriesId, 
         address contractAddress
     );
     

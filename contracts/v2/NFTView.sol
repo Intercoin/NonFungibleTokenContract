@@ -33,7 +33,7 @@ contract NFTView is NFTStorage {
     * @param seriesId series ID
     */
     function getHookList(
-        uint256 seriesId
+        uint64 seriesId
     ) 
         external 
         view 
@@ -257,7 +257,7 @@ contract NFTView is NFTStorage {
     * @param seriesId series ID
     */
     function hooksCount(
-        uint256 seriesId
+        uint64 seriesId
     ) 
         internal 
         view 
