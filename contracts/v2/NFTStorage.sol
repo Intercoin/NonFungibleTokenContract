@@ -121,7 +121,13 @@ contract NFTStorage  is
         address owner; //owner address
         address tokenApproval; // approved address
     }
-    mapping (uint256 => TokenInfo) public tokenInfo;  // tokenId => tokenInfo
+
+    struct TokenData {
+        TokenInfo tokenInfo;
+        SeriesInfo seriesInfo;
+    }
+
+    mapping (uint256 => TokenInfo) internal tokensInfo;  // tokenId => tokensInfo
     
     mapping (uint64 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
 
@@ -219,7 +225,7 @@ contract NFTStorage  is
     // Base
     function _getApproved(uint256 tokenId) internal view virtual returns (address) {
         require(_ownerOf(tokenId) != address(0), "ERC721: approved query for nonexistent token");
-        return tokenInfo[tokenId].tokenApproval;
+        return tokensInfo[tokenId].tokenApproval;
     }
     function _ownerOf(uint256 tokenId) internal view virtual returns (address) {
         address owner = __ownerOf(tokenId);
@@ -227,14 +233,14 @@ contract NFTStorage  is
         return owner;
     }
     function __ownerOf(uint256 tokenId) internal view virtual returns (address) {
-        return tokenInfo[tokenId].owner;
+        return tokensInfo[tokenId].owner;
     }
     function _isApprovedForAll(address owner, address operator) public view virtual returns (bool) {
         return _operatorApprovals[owner][operator];
     }
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
-        return tokenInfo[tokenId].owner != address(0)
-            && tokenInfo[tokenId].owner != DEAD_ADDRESS;
+        return tokensInfo[tokenId].owner != address(0)
+            && tokensInfo[tokenId].owner != DEAD_ADDRESS;
     }
 
     function _baseURIAndSuffix(
@@ -248,9 +254,9 @@ contract NFTStorage  is
         ) 
     {
         
-        if (tokenInfo[tokenId].freezeInfo.exists) {
-            baseURI_ = tokenInfo[tokenId].freezeInfo.baseURI;
-            suffix_ = tokenInfo[tokenId].freezeInfo.suffix;
+        if (tokensInfo[tokenId].freezeInfo.exists) {
+            baseURI_ = tokensInfo[tokenId].freezeInfo.baseURI;
+            suffix_ = tokensInfo[tokenId].freezeInfo.suffix;
         } else {
 
             uint64 seriesId = getSeriesId(tokenId);
@@ -287,10 +293,10 @@ contract NFTStorage  is
             address owner
         ) 
     {
-        data = tokenInfo[tokenId].salesInfoToken.saleInfo;
+        data = tokensInfo[tokenId].salesInfoToken.saleInfo;
 
         exists = _exists(tokenId);
-        owner = tokenInfo[tokenId].owner;
+        owner = tokensInfo[tokenId].owner;
 
         if (owner != address(0)) { 
             if (data.onSaleUntil > block.timestamp) {

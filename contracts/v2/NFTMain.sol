@@ -1017,6 +1017,31 @@ contract NFTMain is NFTStorage {
         );  
     }
 
+    /**
+    * @dev returns info for token and series that belong to
+    * @param tokenId token ID 
+    */
+    function tokenInfo(
+        uint256 tokenId
+    )
+        public 
+        view
+        returns(TokenData memory )
+    {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.tokenInfo.selector,
+                    tokenId
+                ), 
+                ""
+            ), 
+            (TokenData)
+        );  
+
+    }
+      
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     function _verifyCallResult(

@@ -226,6 +226,21 @@ contract NFTView is NFTStorage {
         return _getTokenSaleInfo(tokenId);
     }
 
+    /**
+    * @dev returns info for token and series that belong to
+    * @param tokenId token ID 
+    */
+    function tokenInfo(
+        uint256 tokenId
+    )
+        public 
+        view
+        returns(TokenData memory)
+    {
+        uint64 seriesId = getSeriesId(tokenId);
+        return TokenData(tokensInfo[tokenId], seriesInfo[seriesId]);
+    }
+
     /********************************************************************
     ****** internal section *********************************************
     *********************************************************************/
