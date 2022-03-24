@@ -1,4 +1,3 @@
-![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) `readme.md is out of date.`
 <h1> Contracts overview </h1>
 <h2> NFT </h2>
 
@@ -20,12 +19,14 @@ The list of basic features:
 - Name and symbol can be changed by owner
 
 <h3> Current version addresses implementation: </h3>
-Rinkeby: 0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87 (https://rinkeby.etherscan.io/address/0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87#code)<br>
+
+Rinkeby: [0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87](https://rinkeby.etherscan.io/address/0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87#code)<br>
 <br>
 <details>
 <summary><b><i>Previous versions implementation</i></b></summary>
 ------------------------------<br>
-Rinkeby: 0x78613Cc32ecA27DEC6f42BC08990CDB06D6b4Df6 (https://rinkeby.etherscan.io/address/0x78613Cc32ecA27DEC6f42BC08990CDB06D6b4Df6#code)<br>
+
+Rinkeby: [0x78613Cc32ecA27DEC6f42BC08990CDB06D6b4Df6](https://rinkeby.etherscan.io/address/0x78613Cc32ecA27DEC6f42BC08990CDB06D6b4Df6#code)<br>
 Polygon: 0x159a0e4b698a21B7E50Ec5D06921d73dEFf89510 (not verified)<br>
 ------------------------------<br>
 </details>
@@ -36,12 +37,13 @@ Factory contract for NFTs. Allows gas-efficient deploy of copies of the NFTs con
 
 <h3> Current version addresses: </h3>
 
-Rinkeby: 0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B (https://rinkeby.etherscan.io/address/0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B#code)<br>
+Rinkeby: [0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B](https://rinkeby.etherscan.io/address/0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B#code)<br>
 <br>
 <details>
 <summary><b><i>Previous versions</i></b></summary>
 ------------------------------<br>
-Rinkeby: 0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B (https://rinkeby.etherscan.io/address/0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B#code)<br>
+
+Rinkeby: [0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B](https://rinkeby.etherscan.io/address/0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B#code)<br>
 Polygon: 0xEd99D3bf50e76c257F1b197796c5df8B27F73986 (not verified)<br>
 ------------------------------<br>
 </details>
@@ -58,4 +60,4 @@ To create the new series of tokens, function setSeriesInfo() must be called with
 <hr>
 
 ## Contracts MD
-[NFT.md](docs/contracts/NFTMain.md)<br>
+[NFT.md](docs/contracts/v2/NFTMain.md)<br>
