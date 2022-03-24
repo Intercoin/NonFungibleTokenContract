@@ -194,12 +194,12 @@ describe("v2 tests", function () {
         const newOwner = await this.nft.ownerOf(id);
         expect(newOwner).to.be.equal(bob.address);
 
-        const tokenInfo = await this.nft.tokenInfo(id);
-        expect(tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+        const tokenInfoData = await this.nft.tokenInfo(id);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
         const seriesInfo = await this.nft.seriesInfo(seriesId);
         expect(seriesInfo.author).to.be.equal(alice.address);
@@ -210,7 +210,7 @@ describe("v2 tests", function () {
         expect(seriesInfo.limit).to.be.equal(10000);
 
         expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
-    
+
       });
 
     
@@ -240,12 +240,12 @@ describe("v2 tests", function () {
         const newOwner = await this.nft.ownerOf(id);
         expect(newOwner).to.be.equal(bob.address);
         
-        const tokenInfo = await this.nft.tokenInfo(id);
-        expect(tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+        const tokenInfoData = await this.nft.tokenInfo(id);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
         const seriesInfo = await this.nft.seriesInfo(seriesId);
         expect(seriesInfo.author).to.be.equal(alice.address);
@@ -285,12 +285,19 @@ describe("v2 tests", function () {
 
         expect(newOwner).to.be.equal(charlie.address);
 
-        const tokenInfo = await this.nft.tokenInfo(id);
-        expect(tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(price.mul(TWO));
-        expect(tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+        const tokenInfoData = await this.nft.tokenInfo(id);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(price.mul(TWO));
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+        // check the same but for method series
+        expect(tokenInfoData.seriesInfo.author).to.be.equal(alice.address);
+        expect(tokenInfoData.seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+        expect(tokenInfoData.seriesInfo.saleInfo.price).to.be.equal(price);
+        expect(tokenInfoData.seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
+        expect(tokenInfoData.seriesInfo.baseURI).to.be.equal(baseURI);
+        expect(tokenInfoData.seriesInfo.limit).to.be.equal(10000);
 
         const seriesInfo = await this.nft.seriesInfo(seriesId);
         expect(seriesInfo.author).to.be.equal(alice.address);
@@ -300,6 +307,7 @@ describe("v2 tests", function () {
         expect(seriesInfo.baseURI).to.be.equal(baseURI);
         expect(seriesInfo.limit).to.be.equal(10000);
 
+        
       });
 
       it("should correct buy minted NFT for token", async() => {
@@ -325,12 +333,12 @@ describe("v2 tests", function () {
         const newOwner = await this.nft.ownerOf(id);
         expect(newOwner).to.be.equal(charlie.address);
 
-        const tokenInfo = await this.nft.tokenInfo(id);
-        expect(tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(this.erc20.address);
-        expect(tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(price.mul(TWO));
-        expect(tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-        expect(tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+        const tokenInfoData = await this.nft.tokenInfo(id);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(this.erc20.address);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(price.mul(TWO));
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
         const seriesInfo = await this.nft.seriesInfo(seriesId);
         expect(seriesInfo.author).to.be.equal(alice.address);
@@ -504,11 +512,12 @@ describe("v2 tests", function () {
         const newPrice = price.mul(TWO);
         const newCurrency = this.erc20.address;
         await this.nft.connect(bob).listForSale(id, newPrice, newCurrency, duration);
-        const tokenInfo = await this.nft.tokenInfo(id);
-        expect(tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(newCurrency);
-        expect(tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(newPrice);
+
+        const tokenInfoData = await this.nft.tokenInfo(id);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(newCurrency);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(newPrice);
         const lastTs = await time.latest();
-        expect(tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(+lastTs.toString() + duration);
+        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(+lastTs.toString() + duration);
 
       })
 
@@ -703,8 +712,9 @@ describe("v2 tests", function () {
         it("should correct set hook (ETH test)", async() => {
           await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
           await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ONE, {value: price});
-          let tokenInfo = await this.nft.tokenInfo(id);
-          expect(tokenInfo.hooksCountByToken).to.be.equal(ONE);
+
+          const tokenInfoData = await this.nft.tokenInfo(id);
+          expect(tokenInfoData.tokenInfo.hooksCountByToken).to.be.equal(ONE);
           const hooks = await this.nft.getHookList(seriesId);
           expect(hooks[0]).to.be.equal(this.hook1.address);
           expect(await this.hook1.numberOfCalls()).to.be.equal(ONE);
@@ -734,8 +744,9 @@ describe("v2 tests", function () {
           await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
           await this.erc20.connect(bob).approve(this.nft.address, price);
           await this.nft.connect(bob)["buy(uint256,address,uint256,bool,uint256)"](id, this.erc20.address, price, false, ONE);
-          let tokenInfo = await this.nft.tokenInfo(id);
-          expect(tokenInfo.hooksCountByToken).to.be.equal(ONE);
+
+          const tokenInfoData = await this.nft.tokenInfo(id);
+          expect(tokenInfoData.tokenInfo.hooksCountByToken).to.be.equal(ONE);
           const hooks = await this.nft.getHookList(seriesId);
           expect(hooks[0]).to.be.equal(this.hook1.address);
           expect(await this.hook1.numberOfCalls()).to.be.equal(ONE);
@@ -769,8 +780,9 @@ describe("v2 tests", function () {
           await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
           await this.nft.pushTokenTransferHook(seriesId, this.hook2.address);
           await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, TWO, {value: price});
-          let tokenInfo = await this.nft.tokenInfo(id);
-          expect(tokenInfo.hooksCountByToken).to.be.equal(TWO);
+          
+          const tokenInfoData = await this.nft.tokenInfo(id);
+          expect(tokenInfoData.tokenInfo.hooksCountByToken).to.be.equal(TWO);
           const hooks = await this.nft.getHookList(seriesId);
           expect(hooks[0]).to.be.equal(this.hook1.address);
           expect(hooks[1]).to.be.equal(this.hook2.address);
@@ -793,11 +805,11 @@ describe("v2 tests", function () {
           expect(await this.hook2.numberOfCalls()).to.be.equal(THREE);
           expect(await this.hook3.numberOfCalls()).to.be.equal(ONE);
 
-          let tokenInfo = await this.nft.tokenInfo(id);
-          expect(tokenInfo.hooksCountByToken).to.be.equal(TWO);
+          const tokenInfoData = await this.nft.tokenInfo(id);
+          expect(tokenInfoData.tokenInfo.hooksCountByToken).to.be.equal(TWO);
 
-          let tokenInfoPlusOne = await this.nft.tokenInfo(id.add(ONE));
-          expect(tokenInfoPlusOne.hooksCountByToken).to.be.equal(THREE);
+          const tokenInfoDataPlusOne = await this.nft.tokenInfo(id.add(ONE));
+          expect(tokenInfoDataPlusOne.tokenInfo.hooksCountByToken).to.be.equal(THREE);
 
           const hooks = await this.nft.getHookList(seriesId);
           expect(hooks[0]).to.be.equal(this.hook1.address);

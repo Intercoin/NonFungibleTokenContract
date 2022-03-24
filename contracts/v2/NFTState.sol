@@ -650,9 +650,10 @@ contract NFTState is NFTStorage {
     ) 
         public 
     {
-        tokenInfo[tokenId].freezeInfo.exists = false;
+        tokensInfo[tokenId].freezeInfo.exists = false;
     }
-      
+    
+
     /********************************************************************
     ****** internal section *********************************************
     *********************************************************************/
@@ -660,9 +661,9 @@ contract NFTState is NFTStorage {
     function _freeze(uint256 tokenId, string memory baseURI_, string memory suffix_) internal 
     {
         require(_ownerOf(tokenId) == _msgSender(), "token isn't owned by sender");
-        tokenInfo[tokenId].freezeInfo.exists = true;
-        tokenInfo[tokenId].freezeInfo.baseURI = baseURI_;
-        tokenInfo[tokenId].freezeInfo.suffix = suffix_;
+        tokensInfo[tokenId].freezeInfo.exists = true;
+        tokensInfo[tokenId].freezeInfo.baseURI = baseURI_;
+        tokensInfo[tokenId].freezeInfo.suffix = suffix_;
         
     }
     function _msgSender(
@@ -853,12 +854,12 @@ contract NFTState is NFTStorage {
         _storeHookCount(tokenId);
 
         require(to != address(0), "can't mint to the zero address");
-        require(tokenInfo[tokenId].owner == address(0), "token already minted");
+        require(tokensInfo[tokenId].owner == address(0), "token already minted");
 
         _beforeTokenTransfer(address(0), to, tokenId);
 
         _balances[to] += 1;
-        tokenInfo[tokenId].owner = to;
+        tokensInfo[tokenId].owner = to;
 
         uint64 seriesId = getSeriesId(tokenId);
         mintedCountBySeries[seriesId] += 1;
@@ -896,7 +897,7 @@ contract NFTState is NFTStorage {
         _balances[owner] -= 1;
         
         _balances[DEAD_ADDRESS] += 1;
-        tokenInfo[tokenId].owner = DEAD_ADDRESS;
+        tokensInfo[tokenId].owner = DEAD_ADDRESS;
         clearOnSaleUntil(tokenId);
         emit Transfer(owner, DEAD_ADDRESS, tokenId);
 
@@ -929,7 +930,7 @@ contract NFTState is NFTStorage {
 
         _balances[from] -= 1;
         _balances[to] += 1;
-        tokenInfo[tokenId].owner = to;
+        tokensInfo[tokenId].owner = to;
 
         clearOnSaleUntil(tokenId);
 
@@ -955,7 +956,7 @@ contract NFTState is NFTStorage {
         internal 
     {
         //salesInfoToken[tokenId] = info;
-        tokenInfo[tokenId].salesInfoToken = info;
+        tokensInfo[tokenId].salesInfoToken = info;
     }
 
     /**
@@ -964,7 +965,7 @@ contract NFTState is NFTStorage {
      * Emits a {Approval} event.
      */
     function _approve(address to, uint256 tokenId) internal virtual {
-        tokenInfo[tokenId].tokenApproval = to;
+        tokensInfo[tokenId].tokenApproval = to;
         emit Approval(_ownerOf(tokenId), to, tokenId);
     }
     
@@ -1006,7 +1007,7 @@ contract NFTState is NFTStorage {
 
         //safe hook
         uint64 seriesId = uint64(tokenId >> SERIES_SHIFT_BITS);
-        for (uint256 i = 0; i < tokenInfo[tokenId].hooksCountByToken; i++) {
+        for (uint256 i = 0; i < tokensInfo[tokenId].hooksCountByToken; i++) {
             try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
 			returns (bool success) {
                 if (!success) {
@@ -1035,7 +1036,7 @@ contract NFTState is NFTStorage {
     }
 
     function clearOnSaleUntil(uint256 tokenId) internal {
-        if (tokenInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil > 0 ) tokenInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil = 0;
+        if (tokensInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil > 0 ) tokensInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil = 0;
     }
 
     function _requireCanManageSeries(uint64 seriesId) internal view virtual {
@@ -1094,7 +1095,7 @@ contract NFTState is NFTStorage {
     )
         internal
     {
-        tokenInfo[tokenId].hooksCountByToken = hooks[uint64(tokenId >> SERIES_SHIFT_BITS)].length();
+        tokensInfo[tokenId].hooksCountByToken = hooks[uint64(tokenId >> SERIES_SHIFT_BITS)].length();
     }
 
     /**
@@ -1180,7 +1181,7 @@ contract NFTState is NFTStorage {
         uint256 sum;
         // contract owner commission
         if (commissionInfo.ownerCommission.recipient != address(0)) {
-            uint256 oc = tokenInfo[tokenId].salesInfoToken.ownerCommissionValue;
+            uint256 oc = tokensInfo[tokenId].salesInfoToken.ownerCommissionValue;
             if (commissionInfo.ownerCommission.value < oc)
                 oc = commissionInfo.ownerCommission.value;
             if (oc != 0) {
@@ -1193,7 +1194,7 @@ contract NFTState is NFTStorage {
 
         // author commission
         if (seriesInfo[seriesId].commission.recipient != address(0)) {
-            uint256 ac = tokenInfo[tokenId].salesInfoToken.authorCommissionValue;
+            uint256 ac = tokensInfo[tokenId].salesInfoToken.authorCommissionValue;
             if (seriesInfo[seriesId].commission.value < ac) 
                 ac = seriesInfo[seriesId].commission.value;
             if (ac != 0) {
@@ -1256,7 +1257,7 @@ contract NFTState is NFTStorage {
     function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
         uint256 length = _balanceOf(to);
         _ownedTokens[to][length] = tokenId;
-        tokenInfo[tokenId].ownedTokensIndex = length;
+        tokensInfo[tokenId].ownedTokensIndex = length;
     }
 
     /**
@@ -1264,7 +1265,7 @@ contract NFTState is NFTStorage {
      * @param tokenId uint256 ID of the token to be added to the tokens list
      */
     function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
-        tokenInfo[tokenId].allTokensIndex = _allTokens.length;
+        tokensInfo[tokenId].allTokensIndex = _allTokens.length;
         _allTokens.push(tokenId);
     }
 
@@ -1277,18 +1278,18 @@ contract NFTState is NFTStorage {
         // then delete the last slot (swap and pop).
 
         uint256 lastTokenIndex = _balanceOf(from) - 1;
-        uint256 tokenIndex = tokenInfo[tokenId].ownedTokensIndex;
+        uint256 tokenIndex = tokensInfo[tokenId].ownedTokensIndex;
 
         // When the token to delete is the last token, the swap operation is unnecessary
         if (tokenIndex != lastTokenIndex) {
             uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
 
             _ownedTokens[from][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
-            tokenInfo[lastTokenId].ownedTokensIndex = tokenIndex; // Update the moved token's index
+            tokensInfo[lastTokenId].ownedTokensIndex = tokenIndex; // Update the moved token's index
         }
 
         // This also deletes the contents at the last position of the array
-        tokenInfo[tokenId].ownedTokensIndex = 0;
+        tokensInfo[tokenId].ownedTokensIndex = 0;
         delete _ownedTokens[from][lastTokenIndex];
     }
 
@@ -1302,7 +1303,7 @@ contract NFTState is NFTStorage {
         // then delete the last slot (swap and pop).
 
         uint256 lastTokenIndex = _allTokens.length - 1;
-        uint256 tokenIndex = tokenInfo[tokenId].allTokensIndex;
+        uint256 tokenIndex = tokensInfo[tokenId].allTokensIndex;
 
         // When the token to delete is the last token, the swap operation is unnecessary. However, since this occurs so
         // rarely (when the last minted token is burnt) that we still do the swap here to avoid the gas cost of adding
@@ -1310,10 +1311,10 @@ contract NFTState is NFTStorage {
         uint256 lastTokenId = _allTokens[lastTokenIndex];
 
         _allTokens[tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
-        tokenInfo[lastTokenId].allTokensIndex = tokenIndex; // Update the moved token's index
+        tokensInfo[lastTokenId].allTokensIndex = tokenIndex; // Update the moved token's index
 
         // This also deletes the contents at the last position of the array
-        tokenInfo[tokenId].allTokensIndex = 0;
+        tokensInfo[tokenId].allTokensIndex = 0;
         _allTokens.pop();
     }
     

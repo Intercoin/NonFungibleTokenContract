@@ -153,12 +153,12 @@ describe("v2 tests", function () {
                 const newOwner = await this.nftCreatedByFactory.ownerOf(id);
                 expect(newOwner).to.be.equal(bob.address);
 
-                const tokenInfo = await this.nftCreatedByFactory.tokenInfo(id);
-                expect(tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-                expect(tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
-                expect(tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-                expect(tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-                expect(tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+                const tokenInfoData = await this.nftCreatedByFactory.tokenInfo(id);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
                 const seriesInfo = await this.nftCreatedByFactory.seriesInfo(seriesId);
                 expect(seriesInfo.author).to.be.equal(alice.address);
