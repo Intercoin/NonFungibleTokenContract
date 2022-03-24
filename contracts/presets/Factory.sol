@@ -68,14 +68,14 @@ ARBITRATION
 All disputes related to this agreement shall be governed by and interpreted in accordance with the laws of New York, without regard to principles of conflict of laws. The parties to this agreement will submit all disputes arising under this agreement to arbitration in New York City, New York before a single arbitrator of the American Arbitration Association (“AAA”). The arbitrator shall be selected by application of the rules of the AAA, or by mutual agreement of the parties, except that such arbitrator shall be an attorney admitted to practice law New York. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section.
 **/
 
-import "../v1/FactoryV1.sol";
+import "../v2/NFTFactory.sol";
 
-contract Factory is FactoryV1 {
+contract Factory is NFTFactory {
 
     constructor (
         address instance, 
         address costManager_
-    ) FactoryV1(instance, costManager_) {
+    ) NFTFactory(instance, costManager_) {
         
     }
 }

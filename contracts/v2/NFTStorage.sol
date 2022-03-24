@@ -235,7 +235,7 @@ contract NFTStorage  is
     function __ownerOf(uint256 tokenId) internal view virtual returns (address) {
         return tokensInfo[tokenId].owner;
     }
-    function _isApprovedForAll(address owner, address operator) public view virtual returns (bool) {
+    function _isApprovedForAll(address owner, address operator) internal view virtual returns (bool) {
         return _operatorApprovals[owner][operator];
     }
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
@@ -312,7 +312,14 @@ contract NFTStorage  is
             }
         }   
     }
-    function _balanceOf(address owner) public view virtual returns (uint256) {
+    function _balanceOf(
+        address owner
+    ) 
+        internal 
+        view 
+        virtual 
+        returns (uint256) 
+    {
         require(owner != address(0), "ERC721: balance query for the zero address");
         return _balances[owner];
     }

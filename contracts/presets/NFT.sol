@@ -70,9 +70,9 @@ All disputes related to this agreement shall be governed by and interpreted in a
 pragma solidity 0.8.11;
 pragma abicoder v2;
 
-import "../v1/NFTV1.sol";
+import "../v2/NFTMain.sol";
 
-contract NFT is NFTV1 {
+contract NFT is NFTMain {
 
 
 }
