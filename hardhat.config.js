@@ -1,7 +1,10 @@
 require('dotenv').config()
 
 require("@nomiclabs/hardhat-ethers")
-require('hardhat-docgen')
+require("hardhat-docgen")
+require("@hardhat-docgen/core")
+//require("@hardhat-docgen/markdown")
+require("./docgen-custom-markdown")
 require('hardhat-deploy')
 require("@nomiclabs/hardhat-waffle")
 require("@nomiclabs/hardhat-web3")
@@ -72,7 +75,9 @@ module.exports = {
   docgen: {
     path: './docs',
     clear: true,
-    runOnCompile: true,
+    only: ['contracts/v2'],
+    theme: '../../docgen-custom-markdown',
+    runOnCompile: false,
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

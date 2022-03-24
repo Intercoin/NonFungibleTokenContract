@@ -43,6 +43,11 @@ contract NFTMain is NFTStorage {
 
     }
 
+    /**
+    * @param baseURI_ baseURI
+    * @custom:calledby owner
+    * @custom:shortd set default baseURI
+    */
     function setBaseURI(
         string calldata baseURI_
     ) 
@@ -63,6 +68,8 @@ contract NFTMain is NFTStorage {
     /**
     * @dev sets the default URI suffix for the whole contract
     * @param suffix_ the suffix to append to URIs
+    * @custom:calledby owner
+    * @custom:shortd set default suffix
     */
     function setSuffix(
         string calldata suffix_
@@ -82,6 +89,8 @@ contract NFTMain is NFTStorage {
     /**
     * @dev sets contract URI. 
     * @param newContractURI new contract URI
+    * @custom:calledby owner
+    * @custom:shortd set default contract URI
     */
     function setContractURI(
         string memory newContractURI
@@ -103,6 +112,8 @@ contract NFTMain is NFTStorage {
     * @dev sets information for series with 'seriesId'. 
     * @param seriesId series ID
     * @param info new info to set
+    * @custom:calledby owner or series author
+    * @custom:shortd set series Info
     */
     function setSeriesInfo(
         uint64 seriesId, 
@@ -110,7 +121,6 @@ contract NFTMain is NFTStorage {
     ) 
         external
     {
-
         _functionDelegateCall(
             address(implNFTState), 
             abi.encodeWithSelector(
@@ -124,6 +134,8 @@ contract NFTMain is NFTStorage {
     /**
     * set commission paid to contract owner
     * @param commission new commission info
+    * @custom:calledby owner
+    * @custom:shortd set owner commission
     */
     function setOwnerCommission(
         CommissionInfo memory commission
@@ -142,8 +154,11 @@ contract NFTMain is NFTStorage {
     }
 
     /**
-    * set commission for series
+    * @dev set commission for series
+    * @param seriesId seriesId
     * @param commissionData new commission data
+    * @custom:calledby owner or series author
+    * @custom:shortd set new commission
     */
     function setCommission(
         uint64 seriesId, 
@@ -163,6 +178,8 @@ contract NFTMain is NFTStorage {
     /**
     * clear commission for series
     * @param seriesId seriesId
+    * @custom:calledby owner or series author
+    * @custom:shortd remove commission
     */
     function removeCommission(
         uint64 seriesId
@@ -185,6 +202,8 @@ contract NFTMain is NFTStorage {
     * @param price price for sale 
     * @param currency currency of sale 
     * @param duration duration of sale 
+    * @custom:calledby token owner
+    * @custom:shortd list on sale
     */
     function listForSale(
         uint256 tokenId,
@@ -207,6 +226,8 @@ contract NFTMain is NFTStorage {
     /**
     * @dev removes from sale NFT with defined token ID
     * @param tokenId token ID
+    * @custom:calledby token owner
+    * @custom:shortd remove from sale
     */
     function removeFromSale(
         uint256 tokenId
@@ -229,6 +250,8 @@ contract NFTMain is NFTStorage {
     * to specified addresses
     * @param tokenIds list of NFT IDs t obe minted
     * @param addresses list of receiver addresses
+    * @custom:calledby owner or series author
+    * @custom:shortd mint and distribute new tokens
     */
     function mintAndDistribute(
         uint256[] memory tokenIds, 
@@ -249,6 +272,8 @@ contract NFTMain is NFTStorage {
     /** 
     * @dev sets the utility token
     * @param costManager_ new address of utility token, or 0
+    * @custom:calledby owner or factory that produced instance
+    * @custom:shortd set cost manager address
     */
     function overrideCostManager(
         address costManager_
@@ -274,6 +299,8 @@ contract NFTMain is NFTStorage {
     /**
     * @dev returns the list of all NFTs owned by 'account' with limit
     * @param account address of account
+    * @custom:calledby everyone
+    * @custom:shortd returns the list of all NFTs owned by 'account' with limit
     */
     function tokensByOwner(
         address account,
@@ -283,7 +310,6 @@ contract NFTMain is NFTStorage {
         view
         returns (uint256[] memory ret)
     {
-
         return abi.decode(
             _functionDelegateCallView(
                 address(implNFTView), 
@@ -301,6 +327,8 @@ contract NFTMain is NFTStorage {
     /**
     * @dev returns the list of hooks for series with `seriesId`
     * @param seriesId series ID
+    * @custom:calledby everyone
+    * @custom:shortd returns the list of hooks for series
     */
     function getHookList(
         uint64 seriesId
@@ -335,6 +363,8 @@ contract NFTMain is NFTStorage {
     * @param price amount of specified native coin to pay
     * @param safe use safeMint and safeTransfer or not, 
     * @param hookCount number of hooks 
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for native coin
     */
     function buy(
         uint256 tokenId, 
@@ -351,7 +381,6 @@ contract NFTMain is NFTStorage {
             abi.encodeWithSelector(
                 //NFTState.buy.selector,
                 bytes4(keccak256(bytes("buy(uint256,uint256,bool,uint256)"))),
-
                 tokenId, price, safe, hookCount
             )
         );
@@ -368,6 +397,8 @@ contract NFTMain is NFTStorage {
     * @param price amount of specified token to pay
     * @param safe use safeMint and safeTransfer or not
     * @param hookCount number of hooks 
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for specified currency
     */
     function buy(
         uint256 tokenId, 
@@ -395,6 +426,8 @@ contract NFTMain is NFTStorage {
     * @dev sets name and symbol for contract
     * @param newName new name 
     * @param newSymbol new symbol 
+    * @custom:calledby owner
+    * @custom:shortd sets name and symbol for contract
     */
     function setNameAndSymbol(
         string memory newName, 
@@ -426,6 +459,9 @@ contract NFTMain is NFTStorage {
      * - `tokenId` must exist.
      *
      * Emits an {Approval} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function approve(address to, uint256 tokenId) public virtual override {
         _functionDelegateCall(
@@ -447,6 +483,9 @@ contract NFTMain is NFTStorage {
      * - The `operator` cannot be the caller.
      *
      * Emits an {ApprovalForAll} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
         _functionDelegateCall(
@@ -471,6 +510,9 @@ contract NFTMain is NFTStorage {
      * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
      *
      * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function transferFrom(
         address from,
@@ -500,6 +542,9 @@ contract NFTMain is NFTStorage {
      * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
      *
      * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function safeTransferFrom(
         address from,
@@ -529,6 +574,9 @@ contract NFTMain is NFTStorage {
      * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
      *
      * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function safeTransferFrom(
         address from,
@@ -558,6 +606,9 @@ contract NFTMain is NFTStorage {
      * - `tokenId` token must be owned by sender.
      *
      * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function transfer(
         address to,
@@ -583,6 +634,9 @@ contract NFTMain is NFTStorage {
      * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
      *
      * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function safeTransfer(
         address to,
@@ -600,11 +654,14 @@ contract NFTMain is NFTStorage {
     }
 
     /**
-     * @dev Burns `tokenId`. See {ERC721-_burn}.
-     *
+     * @dev Burns `tokenId`. See {ERC721-burn}.
+     * @param tokenId tokenId
      * Requirements:
      *
      * - The caller must own `tokenId` or be an approved operator.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
     function burn(uint256 tokenId) public virtual {
         _functionDelegateCall(
@@ -620,6 +677,9 @@ contract NFTMain is NFTStorage {
     /**
     * @dev the owner should be absolutely sure they trust the trustedForwarder
     * @param trustedForwarder_ must be a smart contract that was audited
+    *
+    * @custom:calledby owner 
+    * @custom:shortd set trustedForwarder address 
     */
     function setTrustedForwarder(
         address trustedForwarder_
@@ -641,6 +701,8 @@ contract NFTMain is NFTStorage {
     * @dev link safeHook contract to certain series
     * @param seriesId series ID
     * @param contractAddress address of SafeHook contract
+    * @custom:calledby owner 
+    * @custom:shortd link safeHook contract to series
     */
     function pushTokenTransferHook(
         uint64 seriesId, 
@@ -659,7 +721,17 @@ contract NFTMain is NFTStorage {
 
     }
 
-    function freeze(uint256 tokenId) public {
+    /**
+    * @dev hold baseURI and suffix as values as in current series that token belong
+    * @param tokenId token ID to freeze
+    * @custom:calledby token owner 
+    * @custom:shortd hold series URI and suffix for token
+    */
+    function freeze(
+        uint256 tokenId
+    ) 
+        public 
+    {
         _functionDelegateCall(
             address(implNFTState), 
             abi.encodeWithSelector(
@@ -671,7 +743,20 @@ contract NFTMain is NFTStorage {
 
     }
 
-    function freeze(uint256 tokenId, string memory baseURI_, string memory suffix_) public 
+    /**
+    * @dev hold baseURI and suffix as values baseURI_ and suffix_
+    * @param tokenId token ID to freeze
+    * @param baseURI_ baseURI to hold
+    * @param suffix_ suffixto hold
+    * @custom:calledby token owner 
+    * @custom:shortd hold URI and suffix for token
+    */
+    function freeze(
+        uint256 tokenId, 
+        string memory baseURI_, 
+        string memory suffix_
+    ) 
+        public 
     {
         _functionDelegateCall(
             address(implNFTState), 
@@ -683,7 +768,18 @@ contract NFTMain is NFTStorage {
         );
         
     }
-    function unFreeze(uint256 tokenId) public {
+
+    /**
+    * @dev unhold token
+    * @param tokenId token ID to unhold
+    * @custom:calledby token owner 
+    * @custom:shortd unhold URI and suffix for token
+    */
+    function unFreeze(
+        uint256 tokenId
+    ) 
+        public 
+    {
         _functionDelegateCall(
             address(implNFTState), 
             abi.encodeWithSelector(
@@ -702,6 +798,8 @@ contract NFTMain is NFTStorage {
     * manage amount of commissions for the series,
     * mint and distribute tokens from it, etc.
     * @param seriesId the id of the series being asked about
+    * @custom:calledby everyone
+    * @custom:shortd tells the caller whether they can ьфтпу a series
     */
     function canManageSeries(uint64 seriesId) public view returns (bool) {
         return abi.decode(
@@ -724,6 +822,8 @@ contract NFTMain is NFTStorage {
     * Tokens can be managed by their owner
     * or approved accounts via {approve} or {setApprovalForAll}.
     * @param tokenId the id of the tokens being asked about
+    * @custom:calledby everyone
+    * @custom:shortd tells the caller whether they can transfer an existing token
     */
     function canManageToken(uint256 tokenId) public view returns (bool) {
         return abi.decode(
@@ -744,6 +844,8 @@ contract NFTMain is NFTStorage {
      * @dev Returns whether `tokenId` exists.
      * Tokens start existing when they are minted (`_mint`),
      * and stop existing when they are burned (`_burn`).
+     * @custom:calledby everyone
+     * @custom:shortd returns whether `tokenId` exists.
      */
     function tokenExists(uint256 tokenId) public view virtual returns (bool) {
         return abi.decode(
@@ -761,6 +863,8 @@ contract NFTMain is NFTStorage {
 
     /**
     * @dev returns contract URI. 
+    * @custom:calledby everyone
+    * @custom:shortd return contract uri
     */
     function contractURI() public view returns(string memory){
         return abi.decode(
@@ -778,6 +882,8 @@ contract NFTMain is NFTStorage {
     /**
      * @dev Returns a token ID owned by `owner` at a given `index` of its token list.
      * Use along with {balanceOf} to enumerate all of ``owner``'s tokens.
+     * @custom:calledby everyone
+     * @custom:shortd token of owner by index
      */
     function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual override returns (uint256) {
         return abi.decode(
@@ -795,6 +901,8 @@ contract NFTMain is NFTStorage {
 
     /**
      * @dev Returns the total amount of tokens stored by the contract.
+     * @custom:calledby everyone
+     * @custom:shortd totalsupply
      */
     function totalSupply() public view virtual override returns (uint256) {
         return abi.decode(
@@ -812,6 +920,8 @@ contract NFTMain is NFTStorage {
     /**
      * @dev Returns a token ID at a given `index` of all the tokens stored by the contract.
      * Use along with {totalSupply} to enumerate all tokens.
+     * @custom:calledby everyone
+     * @custom:shortd token by index
      */
     function tokenByIndex(uint256 index) public view virtual override returns (uint256) {
         return abi.decode(
@@ -829,6 +939,8 @@ contract NFTMain is NFTStorage {
 
     /**
      * @dev See {IERC165-supportsInterface}.
+     * @custom:calledby everyone
+     * @custom:shortd see {IERC165-supportsInterface}
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override /*override(ERC165Upgradeable, IERC165Upgradeable)*/ returns (bool) {
         return abi.decode(
@@ -847,6 +959,8 @@ contract NFTMain is NFTStorage {
 
     /**
      * @dev Returns the number of tokens in ``owner``'s account.
+     * @custom:calledby everyone
+     * @custom:shortd owner balance
      */
     function balanceOf(address owner) public view virtual override returns (uint256) {
         return abi.decode(
@@ -868,6 +982,8 @@ contract NFTMain is NFTStorage {
      * Requirements:
      *
      * - `tokenId` must exist.
+     * @custom:calledby everyone
+     * @custom:shortd owner address by token id
      */
 
     function ownerOf(uint256 tokenId) public view virtual override returns (address) {
@@ -886,6 +1002,8 @@ contract NFTMain is NFTStorage {
 
     /**
      * @dev Returns the token collection name.
+     * @custom:calledby everyone
+     * @custom:shortd token's name
      */
     function name() public view virtual override returns (string memory) {
         return abi.decode(
@@ -902,6 +1020,8 @@ contract NFTMain is NFTStorage {
 
     /**
      * @dev Returns the token collection symbol.
+     * @custom:calledby everyone
+     * @custom:shortd token's symbol
      */
     function symbol() public view virtual override returns (string memory) {
         return abi.decode(
@@ -919,6 +1039,9 @@ contract NFTMain is NFTStorage {
    
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+     * @param tokenId token id
+     * @custom:calledby everyone
+     * @custom:shortd return token's URI
      */
     function tokenURI(
         uint256 tokenId
@@ -949,6 +1072,8 @@ contract NFTMain is NFTStorage {
      * Requirements:
      *
      * - `tokenId` must exist.
+     * @custom:calledby everyone
+     * @custom:shortd account approved for `tokenId` token
      */
     function getApproved(uint256 tokenId) public view virtual override returns (address) {
         return abi.decode(
@@ -971,6 +1096,8 @@ contract NFTMain is NFTStorage {
      * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
      *
      * See {setApprovalForAll}
+     * @custom:calledby everyone
+     * @custom:shortd see {setApprovalForAll}
      */
     function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {
         return abi.decode(
@@ -992,6 +1119,8 @@ contract NFTMain is NFTStorage {
     * whether it exists or not,
     * as well as data about the sale and its owner
     * @param tokenId token ID 
+    * @custom:calledby everyone
+    * @custom:shortd return token's sale info
     */
     function getTokenSaleInfo(uint256 tokenId) 
         public 
@@ -1020,6 +1149,8 @@ contract NFTMain is NFTStorage {
     /**
     * @dev returns info for token and series that belong to
     * @param tokenId token ID 
+    * @custom:calledby everyone
+    * @custom:shortd full info by token id
     */
     function tokenInfo(
         uint256 tokenId
@@ -1041,8 +1172,7 @@ contract NFTMain is NFTStorage {
         );  
 
     }
-      
-
+     
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     function _verifyCallResult(
         bool success,
