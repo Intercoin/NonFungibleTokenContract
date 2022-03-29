@@ -21,6 +21,9 @@ The list of basic features:
 <h3> Current version addresses implementation: </h3>
 
 Rinkeby: [0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87](https://rinkeby.etherscan.io/address/0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87#code)<br>
+BSC-Testnet: [0x59021Cb2448a3af840112eC2de878d8B7d4C1b4E](https://testnet.bscscan.com/address/0x59021Cb2448a3af840112eC2de878d8B7d4C1b4E#code)<br>
+MATIC: [0x910F345AC291d22B1188338c9F4e4a91E9EA2A47](https://polygonscan.com/address/0x910F345AC291d22B1188338c9F4e4a91E9EA2A47#code) (not verified)<br>
+
 <br>
 <details>
 <summary><b><i>Previous versions implementation</i></b></summary>
@@ -38,6 +41,9 @@ Factory contract for NFTs. Allows gas-efficient deploy of copies of the NFTs con
 <h3> Current version addresses: </h3>
 
 Rinkeby: [0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B](https://rinkeby.etherscan.io/address/0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B#code)<br>
+BSC-Testnet: [0xe05B713E968246aE8B829df8FD5a088879594d6F](https://testnet.bscscan.com/address/0xe05B713E968246aE8B829df8FD5a088879594d6F#code)<br>
+MATIC: [0x427CD51e32DE879B0b4c220396A2ea7172dD7ec2](https://polygonscan.com/address/0x427CD51e32DE879B0b4c220396A2ea7172dD7ec2#code) (not verified)<br>
+
 <br>
 <details>
 <summary><b><i>Previous versions</i></b></summary>
