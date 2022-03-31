@@ -11,5 +11,4 @@ secret.*.json
 remix-compiler.config.js
 TODO.txt
 /bin
-.DS_Store
-
+*DS_Store

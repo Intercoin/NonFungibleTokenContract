@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import "./NFTStorage.sol";
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 contract NFTState is NFTStorage {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -280,7 +280,7 @@ contract NFTState is NFTStorage {
     {
         uint256 len = addresses.length;
         require(tokenIds.length == len, "lengths should be the same");
-        
+
         for(uint256 i = 0; i < len; i++) {
             _requireCanManageSeries(getSeriesId(tokenIds[i]));
             _mint(addresses[i], tokenIds[i]);

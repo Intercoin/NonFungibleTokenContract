@@ -6,6 +6,7 @@ import "./NFTStorage.sol";
 
 import "./NFTState.sol";
 import "./NFTView.sol";
+//import "hardhat/console.sol";
 
 contract NFTMain is NFTStorage {
     
@@ -39,6 +40,7 @@ contract NFTMain is NFTStorage {
                 NFTState.initialize.selector,
                 name_, symbol_, contractURI_, baseURI_, suffixURI_, costManager_, producedBy_
             )
+            //msg.data
         );
 
     }
@@ -57,10 +59,11 @@ contract NFTMain is NFTStorage {
     
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setBaseURI.selector,
-                baseURI_
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setBaseURI.selector,
+            //     baseURI_
+            // )
+            msg.data
         );
 
     }
@@ -79,10 +82,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setSuffix.selector,
-                suffix_
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setSuffix.selector,
+            //     suffix_
+            // )
+            msg.data
         );
     }
 
@@ -100,10 +104,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setContractURI.selector,
-                newContractURI
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setContractURI.selector,
+            //     newContractURI
+            // )
+            msg.data
         );
 
     }
@@ -123,10 +128,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setSeriesInfo.selector,
-                seriesId, info
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setSeriesInfo.selector,
+            //     seriesId, info
+            // )
+            msg.data
         );
 
     }
@@ -146,10 +152,11 @@ contract NFTMain is NFTStorage {
 
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setOwnerCommission.selector,
-                commission
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setOwnerCommission.selector,
+            //     commission
+            // )
+            msg.data
         );
     }
 
@@ -168,10 +175,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setCommission.selector,
-                seriesId, commissionData
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setCommission.selector,
+            //     seriesId, commissionData
+            // )
+            msg.data
         );
     }
 
@@ -188,10 +196,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.removeCommission.selector,
-                seriesId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.removeCommission.selector,
+            //     seriesId
+            // )
+            msg.data
         );
         
     }
@@ -215,10 +224,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.listForSale.selector,
-                tokenId, price, currency, duration
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.listForSale.selector,
+            //     tokenId, price, currency, duration
+            // )
+            msg.data
         );
 
     }
@@ -236,10 +246,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.removeFromSale.selector,
-                tokenId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.removeFromSale.selector,
+            //     tokenId
+            // )
+            msg.data
         );
 
     }
@@ -261,10 +272,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.mintAndDistribute.selector,
-                tokenIds, addresses
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.mintAndDistribute.selector,
+            //     tokenIds, addresses
+            // )
+            msg.data
         );
 
     }
@@ -283,10 +295,11 @@ contract NFTMain is NFTStorage {
 
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.overrideCostManager.selector,
-                costManager_
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.overrideCostManager.selector,
+            //     costManager_
+            // )
+            msg.data
         );
 
     }
@@ -378,11 +391,12 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                //NFTState.buy.selector,
-                bytes4(keccak256(bytes("buy(uint256,uint256,bool,uint256)"))),
-                tokenId, price, safe, hookCount
-            )
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,uint256,bool,uint256)"))),
+            //     tokenId, price, safe, hookCount
+            // )
+            msg.data
         );
 
     }
@@ -413,12 +427,13 @@ contract NFTMain is NFTStorage {
 
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                //NFTState.buy.selector,
-                bytes4(keccak256(bytes("buy(uint256,address,uint256,bool,uint256)"))),
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,address,uint256,bool,uint256)"))),
 
-                tokenId, currency, price, safe, hookCount
-            )
+            //     tokenId, currency, price, safe, hookCount
+            // )
+            msg.data
         );
 
     }
@@ -438,10 +453,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setNameAndSymbol.selector,
-                newName, newSymbol
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setNameAndSymbol.selector,
+            //     newName, newSymbol
+            // )
+            msg.data
         );
 
     }
@@ -466,10 +482,11 @@ contract NFTMain is NFTStorage {
     function approve(address to, uint256 tokenId) public virtual override {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.approve.selector,
-                to, tokenId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.approve.selector,
+            //     to, tokenId
+            // )
+            msg.data
         );
 
     }
@@ -490,10 +507,11 @@ contract NFTMain is NFTStorage {
     function setApprovalForAll(address operator, bool approved) public virtual override {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setApprovalForAll.selector,
-                operator, approved
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setApprovalForAll.selector,
+            //     operator, approved
+            // )
+            msg.data
         );
 
     }
@@ -521,10 +539,11 @@ contract NFTMain is NFTStorage {
     ) public virtual override {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.transferFrom.selector,
-                from, to, tokenId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.transferFrom.selector,
+            //     from, to, tokenId
+            // )
+            msg.data
         );
 
     }
@@ -553,11 +572,12 @@ contract NFTMain is NFTStorage {
     ) public virtual override {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                //NFTState.safeTransferFrom.selector,
-                bytes4(keccak256(bytes("safeTransferFrom(address,address,uint256,bytes)"))),
-                from, to, tokenId, ""
-            )
+            // abi.encodeWithSelector(
+            //     //NFTState.safeTransferFrom.selector,
+            //     bytes4(keccak256(bytes("safeTransferFrom(address,address,uint256,bytes)"))),
+            //     from, to, tokenId, ""
+            // )
+            msg.data
         );
 
     }
@@ -586,11 +606,12 @@ contract NFTMain is NFTStorage {
     ) public virtual override {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                //NFTState.safeTransferFrom.selector,
-                bytes4(keccak256(bytes("safeTransferFrom(address,address,uint256,bytes)"))),
-                from, to, tokenId, _data
-            )
+            // abi.encodeWithSelector(
+            //     //NFTState.safeTransferFrom.selector,
+            //     bytes4(keccak256(bytes("safeTransferFrom(address,address,uint256,bytes)"))),
+            //     from, to, tokenId, _data
+            // )
+            msg.data
         );
 
     }
@@ -616,10 +637,11 @@ contract NFTMain is NFTStorage {
     ) public virtual {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.transfer.selector,
-                to, tokenId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.transfer.selector,
+            //     to, tokenId
+            // )
+            msg.data
         );
 
     }
@@ -645,10 +667,11 @@ contract NFTMain is NFTStorage {
         
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.safeTransfer.selector,
-                to, tokenId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.safeTransfer.selector,
+            //     to, tokenId
+            // )
+            msg.data
         );
         
     }
@@ -666,10 +689,11 @@ contract NFTMain is NFTStorage {
     function burn(uint256 tokenId) public virtual {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.burn.selector,
-                tokenId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.burn.selector,
+            //     tokenId
+            // )
+            msg.data
         );
 
     }
@@ -689,10 +713,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.setTrustedForwarder.selector,
-                trustedForwarder_
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.setTrustedForwarder.selector,
+            //     trustedForwarder_
+            // )
+            msg.data
         );
 
     }
@@ -713,10 +738,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.pushTokenTransferHook.selector,
-                seriesId, contractAddress
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.pushTokenTransferHook.selector,
+            //     seriesId, contractAddress
+            // )
+            msg.data
         );
 
     }
@@ -734,11 +760,12 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                //NFTState.freeze.selector,
-                bytes4(keccak256(bytes("freeze(uint256)"))),
-                tokenId
-            )
+            // abi.encodeWithSelector(
+            //     //NFTState.freeze.selector,
+            //     bytes4(keccak256(bytes("freeze(uint256)"))),
+            //     tokenId
+            // )
+            msg.data
         );
 
     }
@@ -760,11 +787,12 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                //NFTState.freeze.selector,
-                bytes4(keccak256(bytes("freeze(uint256,string,string)"))),
-                tokenId, baseURI_, suffix_
-            )
+            // abi.encodeWithSelector(
+            //     //NFTState.freeze.selector,
+            //     bytes4(keccak256(bytes("freeze(uint256,string,string)"))),
+            //     tokenId, baseURI_, suffix_
+            // )
+            msg.data
         );
         
     }
@@ -782,10 +810,11 @@ contract NFTMain is NFTStorage {
     {
         _functionDelegateCall(
             address(implNFTState), 
-            abi.encodeWithSelector(
-                NFTState.unFreeze.selector,
-                tokenId
-            )
+            // abi.encodeWithSelector(
+            //     NFTState.unFreeze.selector,
+            //     tokenId
+            // )
+            msg.data
         );
     }
       

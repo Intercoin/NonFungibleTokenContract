@@ -13,6 +13,8 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "../interfaces/ICostManager.sol";
 import "../interfaces/IFactory.sol";
 
+//import "hardhat/console.sol";
+
 abstract contract ERC721UpgradeableExt is 
     ERC165Upgradeable, 
     IERC721MetadataUpgradeable,
@@ -416,6 +418,7 @@ abstract contract ERC721UpgradeableExt is
     )
         external 
     {
+
         uint256 len = addresses.length;
         require(tokenIds.length == len, "lengths should be the same");
         for(uint256 i = 0; i < len; i++) {
