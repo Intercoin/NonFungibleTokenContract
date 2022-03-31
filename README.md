@@ -40,7 +40,7 @@ Factory contract for NFTs. Allows gas-efficient deploy of copies of the NFTs con
 
 <h3> Current version addresses: </h3>
 
-Rinkeby: [0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B](https://rinkeby.etherscan.io/address/0x4a273f42F320E015Db1F741E17E517F6aF1E4D9B#code)<br>
+Rinkeby: [0x1411384E65547569657172F6d474Ecf21EE172dD](https://rinkeby.etherscan.io/address/0x1411384E65547569657172F6d474Ecf21EE172dD#code)<br>
 BSC-Testnet: [0xe05B713E968246aE8B829df8FD5a088879594d6F](https://testnet.bscscan.com/address/0xe05B713E968246aE8B829df8FD5a088879594d6F#code)<br>
 MATIC: [0x427CD51e32DE879B0b4c220396A2ea7172dD7ec2](https://polygonscan.com/address/0x427CD51e32DE879B0b4c220396A2ea7172dD7ec2#code) (not verified)<br>
 
