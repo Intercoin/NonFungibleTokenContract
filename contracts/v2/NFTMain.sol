@@ -386,6 +386,7 @@ contract NFTMain is NFTStorage {
         uint256 hookCount
     ) 
         public 
+        virtual
         payable 
         nonReentrant 
     {
@@ -422,6 +423,7 @@ contract NFTMain is NFTStorage {
         uint256 hookCount
     ) 
         public 
+        virtual
         nonReentrant 
     {
 
