@@ -1239,7 +1239,7 @@ contract NFTMain is NFTStorage {
         string memory errorMessage
     ) internal view returns (bytes memory) {
         //require(isContract(target), "Address: static call to non-contract");
-        data = abi.encodePacked(target,data);    
+        data = abi.encodePacked(target,data,msg.sender);    
         (bool success, bytes memory returndata) = address(this).staticcall(data);
         return _verifyCallResult(success, returndata, errorMessage);
     }
