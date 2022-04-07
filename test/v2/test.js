@@ -88,8 +88,7 @@ describe("v2 tests", function () {
           await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
       })
 
-    it("should correct put series on sale for Alice", async() => {
-
+    describe("put series on sale", async() => {
       const seriesId = BigNumber.from('1000');
       const tokenId = ONE;
       const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
@@ -114,17 +113,36 @@ describe("v2 tests", function () {
         baseURI,
         suffix
       ];
-      await this.nft.connect(owner).setSeriesInfo(seriesId, params);
-      const seriesInfo = await this.nft.seriesInfo(seriesId);
-      expect(seriesInfo.author).to.be.equal(alice.address);
-      expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-      expect(seriesInfo.saleInfo.price).to.be.equal(price);
-      expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
-      expect(seriesInfo.baseURI).to.be.equal(baseURI);
-      expect(seriesInfo.limit).to.be.equal(10000);
-      
 
-    })
+      beforeEach("deploying", async() => {
+        await this.nft.connect(owner).setSeriesInfo(seriesId, params);
+      });
+
+      it("should correct for Alice", async() => {
+
+        const seriesInfo = await this.nft.seriesInfo(seriesId);
+        expect(seriesInfo.author).to.be.equal(alice.address);
+        expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+        expect(seriesInfo.saleInfo.price).to.be.equal(price);
+        expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
+        expect(seriesInfo.baseURI).to.be.equal(baseURI);
+        expect(seriesInfo.limit).to.be.equal(10000);
+        
+      });
+
+      it("Alice can manage her series (check delegatecall in view calls)", async() => {
+        let x = await this.nft.connect(alice).canManageSeries(seriesId);
+        expect(x).to.be.true;
+      });
+
+      it("Bob can not manage Alice's series (check delegatecall in view calls)", async() => {
+        let x = await this.nft.connect(bob).canManageSeries(seriesId);
+        expect(x).to.be.false;
+      });
+
+    });
+
+    
 
     // it("should correct put token on sale", async() => {
     //   const seriesId = BigNumber.from('1000');
