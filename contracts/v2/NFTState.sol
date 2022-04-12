@@ -377,6 +377,7 @@ contract NFTState is NFTStorage {
         public 
         //nonReentrant 
     {
+     
         uint64 seriesId = getSeriesId(tokenId);
 
         validateHookCount(seriesId, hookCount);    
@@ -393,6 +394,80 @@ contract NFTState is NFTStorage {
             price
         );
     }
+
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param price amount of specified native coin to pay
+    * @param safe use safeMint and safeTransfer or not, 
+    * @param hookCount number of hooks 
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        public 
+        payable 
+        //nonReentrant 
+    {
+
+        validateHookCount(seriesId, hookCount);
+
+        (bool success, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
+
+        _commissions_payment(tokenId, address(0), true, price, success, data, beneficiary);
+
+        _buy(tokenId, exists, data, beneficiary, safe);
+        
+        
+        _accountForOperation(
+            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
+            0,
+            price
+        );
+    }
+
+    
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    * @param hookCount number of hooks 
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        public 
+        //nonReentrant 
+    {
+
+        validateHookCount(seriesId, hookCount);    
+
+        (bool success, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
+
+        _commissions_payment(tokenId, currency, false, price, success, data, beneficiary);
+        
+        _buy(tokenId, exists, data, beneficiary, safe);
+        
+        _accountForOperation(
+            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
+            uint256(uint160(currency)),
+            price
+        );
+    }
+
 
     /** 
     * @dev sets name and symbol for contract
@@ -1208,7 +1283,6 @@ contract NFTState is NFTStorage {
         require(sum < FRACTION, "invalid commission");
 
     }
-
 
     /********************************************************************
     ****** private section **********************************************

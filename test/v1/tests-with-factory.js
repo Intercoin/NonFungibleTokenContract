@@ -61,7 +61,7 @@ describe("v1 tests", function () {
             const ERC20Factory = await ethers.getContractFactory("MockERC20");
             const NFTFactory = await ethers.getContractFactory("NFTV1");
             const BuyerFactory = await ethers.getContractFactory("Buyer");
-            const Factory = await ethers.getContractFactory("Factory");
+            const Factory = await ethers.getContractFactory("FactoryV1");
 
             this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
             // this.nft = await NFTFactory.deploy();
