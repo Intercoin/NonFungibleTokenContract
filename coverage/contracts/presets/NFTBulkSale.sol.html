@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>Code coverage report for contracts\interfaces\ICostManager.sol</title>
+    <title>Code coverage report for contracts\presets\NFTBulkSale.sol</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -16,7 +16,7 @@
 <div class='wrapper'>
   <div class='pad1'>
     <h1>
-      <a href="../../index.html">all files</a> / <a href="index.html">contracts/interfaces/</a> ICostManager.sol
+      <a href="../../index.html">all files</a> / <a href="index.html">contracts/presets/</a> NFTBulkSale.sol
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
@@ -51,7 +51,9 @@
 6
 7
 8
-9</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+9
+10</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -61,11 +63,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
+pragma abicoder v2;
 &nbsp;
-import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
+import "../v2/NFTBulkSaleV2.sol";
 &nbsp;
-interface ICostManager is IERC165Upgradeable {
-    function accountForOperation(address sender, uint256 info, uint256 param1, uint256 param2) external returns(uint256 spent, uint256 remaining);
+contract NFTBulkSale is NFTBulkSaleV2 {
+&nbsp;
 }
 &nbsp;</pre></td></tr>
 </table></pre>

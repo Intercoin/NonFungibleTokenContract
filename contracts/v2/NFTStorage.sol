@@ -100,6 +100,7 @@ contract NFTStorage  is
     address internal constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     uint256 internal constant FRACTION = 100000;
+    uint192 internal constant MAX_TOKEN_INDEX = type(uint192).max;
     
     string public baseURI;
     string public suffix;
@@ -130,6 +131,8 @@ contract NFTStorage  is
     mapping (uint256 => TokenInfo) internal tokensInfo;  // tokenId => tokensInfo
     
     mapping (uint64 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
+
+    mapping (uint64 => uint192) public seriesTokenIndex;  // seriesId => tokenIndex
 
     CommissionInfo public commissionInfo; // Global commission data 
 
@@ -312,6 +315,46 @@ contract NFTStorage  is
             }
         }   
     }
+
+    // find token for primarySale
+    function _getTokenSaleInfoAuto(
+        uint64 seriesId
+    ) 
+        internal 
+        returns
+        (
+            bool isOnSale,
+            bool exists, 
+            SaleInfo memory data,
+            address owner,
+            uint256 tokenId
+        ) 
+    {
+
+        SeriesInfo memory seriesData;
+        for(uint192 i = seriesTokenIndex[seriesId]; i <= MAX_TOKEN_INDEX; i++) {
+            tokenId = (seriesId << SERIES_SHIFT_BITS) + i;
+
+            data = tokensInfo[tokenId].salesInfoToken.saleInfo;
+            exists = _exists(tokenId);
+            owner = tokensInfo[tokenId].owner;
+
+            if (owner == address(0)) { 
+                seriesData = seriesInfo[seriesId];
+                if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
+                    isOnSale = true;
+                    data = seriesData.saleInfo;
+                    owner = seriesData.author;
+                    
+                    // save last index
+                    seriesTokenIndex[seriesId] = i;
+                    break;
+                }
+            } // else token belong to some1
+        }
+
+    }
+
     function _balanceOf(
         address owner
     ) 

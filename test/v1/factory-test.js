@@ -32,7 +32,7 @@ describe("v1 tests", function () {
         const charlie = accounts[3];
 
         beforeEach("deployment", async() => {
-            const FactoryFactory = await ethers.getContractFactory("Factory");
+            const FactoryFactory = await ethers.getContractFactory("FactoryV1");
             const NftFactory = await ethers.getContractFactory("NFTV1");
             const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
 
