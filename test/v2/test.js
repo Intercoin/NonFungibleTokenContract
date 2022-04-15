@@ -448,7 +448,127 @@ describe("v2 tests", function () {
       });
 
   
+/////////////////////////////////////////////
+     
+      it("should correct mint NFT with ETH using autoincrement(with buyFor option)", async() => {
 
+        const expectedTokens = [
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ZERO),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ONE),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(TWO)
+        ];
+        let owner;
+        let tokenSaleInfo;
+
+        for( _id in expectedTokens) {
+
+          await expect(this.nft.ownerOf(_id)).to.be.revertedWith("ERC721: owner query for nonexistent token");
+
+          tokenSaleInfo = await this.nft.getTokenSaleInfo(_id);
+
+          expect(tokenSaleInfo.owner).to.be.equal(ZERO_ADDRESS);
+          expect(tokenSaleInfo.exists).to.be.false;
+
+          expect(tokenSaleInfo.data.currency).to.be.equal(ZERO_ADDRESS);
+          expect(tokenSaleInfo.data.price).to.be.equal(ZERO);
+          expect(tokenSaleInfo.data.onSaleUntil).to.be.equal(ZERO);
+          
+        };
+
+        // buy three tokens in seriesId
+        // expect tokens like XX00001,XX00002,XX00003
+        await this.nft.connect(bob)["buyAuto(uint64,uint256,bool,uint256,address)"](seriesId, price, false, ZERO, alice.address, {value: price.mul(TWO)}); // accidentially send more than needed
+        await this.nft.connect(bob)["buyAuto(uint64,uint256,bool,uint256,address)"](seriesId, price, false, ZERO, alice.address, {value: price.mul(TWO)}); // accidentially send more than needed
+        await this.nft.connect(bob)["buyAuto(uint64,uint256,bool,uint256,address)"](seriesId, price, false, ZERO, alice.address, {value: price.mul(TWO)}); // accidentially send more than needed
+
+        for( _id in expectedTokens) {
+          owner = await this.nft.ownerOf(_id);
+          expect(owner).to.be.equal(alice.address);
+
+          tokenSaleInfo = await this.nft.getTokenSaleInfo(_id);
+
+          expect(tokenSaleInfo.owner).to.be.equal(alice.address);
+          expect(tokenSaleInfo.exists).to.be.true;
+
+          expect(tokenSaleInfo.data.currency).to.be.equal(ZERO_ADDRESS);
+          expect(tokenSaleInfo.data.price).to.be.equal(ZERO);
+          expect(tokenSaleInfo.data.onSaleUntil).to.be.equal(ZERO);
+          
+        };
+
+
+      });
+
+      it("should correct mint NFT with token using autoincrement(with buyFor option)", async() => {
+        
+        const expectedTokens = [
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ZERO),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ONE),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(TWO)
+        ];
+        
+
+        
+        const saleParams = [
+          now + 100000, 
+          this.erc20.address, 
+          price
+        ];
+        const seriesParams = [
+          alice.address, 
+          10000,
+          saleParams,
+          commissions, 
+          baseURI,
+          suffix
+        ];
+
+        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+
+        let tokenOwner;
+        let tokenSaleInfo;
+
+        for( _id in expectedTokens) {
+
+          await expect(this.nft.ownerOf(_id)).to.be.revertedWith("ERC721: owner query for nonexistent token");
+
+          tokenSaleInfo = await this.nft.getTokenSaleInfo(_id);
+
+          expect(tokenSaleInfo.owner).to.be.equal(ZERO_ADDRESS);
+          expect(tokenSaleInfo.exists).to.be.false;
+
+          expect(tokenSaleInfo.data.currency).to.be.equal(ZERO_ADDRESS);
+          expect(tokenSaleInfo.data.price).to.be.equal(ZERO);
+          expect(tokenSaleInfo.data.onSaleUntil).to.be.equal(ZERO);
+          
+        };
+
+
+        await this.erc20.connect(bob).approve(this.nft.address, price);
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256,address)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO, alice.address); // accidentially send more than needed
+        await this.erc20.connect(bob).approve(this.nft.address, price);
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256,address)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO, alice.address); // accidentially send more than needed
+        await this.erc20.connect(bob).approve(this.nft.address, price);
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256,address)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO, alice.address); // accidentially send more than needed
+
+        for( _id in expectedTokens) {
+          tokenOwner = await this.nft.ownerOf(_id);
+          expect(tokenOwner).to.be.equal(alice.address);
+
+          tokenSaleInfo = await this.nft.getTokenSaleInfo(_id);
+
+          expect(tokenSaleInfo.owner).to.be.equal(alice.address);
+          expect(tokenSaleInfo.exists).to.be.true;
+
+          expect(tokenSaleInfo.data.currency).to.be.equal(ZERO_ADDRESS);
+          expect(tokenSaleInfo.data.price).to.be.equal(ZERO);
+          expect(tokenSaleInfo.data.onSaleUntil).to.be.equal(ZERO);
+          
+        };
+
+      });
+
+  
       it("should correct buy minted NFT for token", async() => {
         await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price});
         const saleParams = [
