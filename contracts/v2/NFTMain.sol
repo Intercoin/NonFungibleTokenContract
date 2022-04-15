@@ -474,6 +474,42 @@ contract NFTMain is NFTStorage {
 
     }
 
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param price amount of specified native coin to pay
+    * @param safe use safeMint and safeTransfer or not, 
+    * @param hookCount number of hooks 
+    * @param buyFor address of new nft owner
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for native coin
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        virtual
+        payable 
+        nonReentrant 
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,uint256,bool,uint256)"))),
+            //     tokenId, price, safe, hookCount
+            // )
+            msg.data
+        );
+
+    }
+
     
     /**
     * @dev buys NFT for native coin with undefined id. 
@@ -511,6 +547,46 @@ contract NFTMain is NFTStorage {
         );
 
     }
+
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    * @param hookCount number of hooks 
+    * @param buyFor address of new nft owner
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for specified currency
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        virtual
+        nonReentrant 
+    {
+
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,address,uint256,bool,uint256)"))),
+
+            //     tokenId, currency, price, safe, hookCount
+            // )
+            msg.data
+        );
+
+    }
+
 
     /** 
     * @dev sets name and symbol for contract

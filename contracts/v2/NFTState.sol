@@ -415,12 +415,51 @@ contract NFTState is NFTStorage {
         //nonReentrant 
     {
 
+        _buyAuto(seriesId, address(0), price, safe, hookCount);
+    }
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param price amount of specified native coin to pay
+    * @param safe use safeMint and safeTransfer or not, 
+    * @param hookCount number of hooks 
+    * @param buyFor address of new nft owner
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        payable 
+        //nonReentrant 
+    {
+
+        uint256 tokenId = _buyAuto(seriesId, address(0), price, safe, hookCount);
+        _transfer(_msgSender(), buyFor, tokenId);
+    }
+
+    function _buyAuto(
+        uint64 seriesId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        internal
+        returns(uint256)
+    {
+
         validateHookCount(seriesId, hookCount);
 
         (bool success, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
 
-        _commissions_payment(tokenId, address(0), true, price, success, data, beneficiary);
-
+        _commissions_payment(tokenId, currency, (currency == address(0) ? true : false), price, success, data, beneficiary);
+        
         _buy(tokenId, exists, data, beneficiary, safe);
         
         
@@ -429,8 +468,9 @@ contract NFTState is NFTStorage {
             0,
             price
         );
-    }
 
+        return tokenId;
+    }
     
     /**
     * @dev buys NFT for native coin with undefined id. 
@@ -453,19 +493,34 @@ contract NFTState is NFTStorage {
         //nonReentrant 
     {
 
-        validateHookCount(seriesId, hookCount);    
+        _buyAuto(seriesId, currency, price, safe, hookCount);
+    }
 
-        (bool success, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    * @param hookCount number of hooks 
+    * @param buyFor address of new nft owner
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        //nonReentrant 
+    {
 
-        _commissions_payment(tokenId, currency, false, price, success, data, beneficiary);
-        
-        _buy(tokenId, exists, data, beneficiary, safe);
-        
-        _accountForOperation(
-            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
-            uint256(uint160(currency)),
-            price
-        );
+        uint256 tokenId = _buyAuto(seriesId, currency, price, safe, hookCount);
+        _transfer(_msgSender(), buyFor, tokenId);
     }
 
 
