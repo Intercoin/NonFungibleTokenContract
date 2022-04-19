@@ -346,7 +346,7 @@ contract NFTState is NFTStorage {
 
         _commissions_payment(tokenId, address(0), true, price, success, data, beneficiary);
 
-        _buy(tokenId, exists, data, beneficiary, safe);
+        _buy(tokenId, exists, data, beneficiary, _msgSender(), safe);
         
         
         _accountForOperation(
@@ -386,7 +386,7 @@ contract NFTState is NFTStorage {
 
         _commissions_payment(tokenId, currency, false, price, success, data, owner);
         
-        _buy(tokenId, exists, data, owner, safe);
+        _buy(tokenId, exists, data, owner, _msgSender(), safe);
         
         _accountForOperation(
             (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
@@ -415,7 +415,7 @@ contract NFTState is NFTStorage {
         //nonReentrant 
     {
 
-        _buyAuto(seriesId, address(0), price, safe, hookCount);
+        _buyAuto(seriesId, address(0), price, safe, hookCount, _msgSender());
     }
     /**
     * @dev buys NFT for native coin with undefined id. 
@@ -439,8 +439,7 @@ contract NFTState is NFTStorage {
         //nonReentrant 
     {
 
-        uint256 tokenId = _buyAuto(seriesId, address(0), price, safe, hookCount);
-        _transfer(_msgSender(), buyFor, tokenId);
+        _buyAuto(seriesId, address(0), price, safe, hookCount, buyFor);
     }
 
     function _buyAuto(
@@ -448,10 +447,10 @@ contract NFTState is NFTStorage {
         address currency, 
         uint256 price, 
         bool safe, 
-        uint256 hookCount
+        uint256 hookCount,
+        address buyFor
     ) 
         internal
-        returns(uint256)
     {
 
         validateHookCount(seriesId, hookCount);
@@ -460,7 +459,7 @@ contract NFTState is NFTStorage {
 
         _commissions_payment(tokenId, currency, (currency == address(0) ? true : false), price, success, data, beneficiary);
         
-        _buy(tokenId, exists, data, beneficiary, safe);
+        _buy(tokenId, exists, data, beneficiary, buyFor, safe);
         
         
         _accountForOperation(
@@ -469,7 +468,6 @@ contract NFTState is NFTStorage {
             price
         );
 
-        return tokenId;
     }
     
     /**
@@ -493,7 +491,7 @@ contract NFTState is NFTStorage {
         //nonReentrant 
     {
 
-        _buyAuto(seriesId, currency, price, safe, hookCount);
+        _buyAuto(seriesId, currency, price, safe, hookCount, _msgSender());
     }
 
     /**
@@ -518,9 +516,7 @@ contract NFTState is NFTStorage {
         public 
         //nonReentrant 
     {
-
-        uint256 tokenId = _buyAuto(seriesId, currency, price, safe, hookCount);
-        _transfer(_msgSender(), buyFor, tokenId);
+        _buyAuto(seriesId, currency, price, safe, hookCount, buyFor);
     }
 
 
@@ -835,6 +831,7 @@ contract NFTState is NFTStorage {
         bool exists, 
         SaleInfo memory data, 
         address owner, 
+        address recipient, 
         bool safe
     ) 
         internal 
@@ -842,32 +839,31 @@ contract NFTState is NFTStorage {
     {
         _storeHookCount(tokenId);
 
-        address ms = _msgSender();
         if (exists) {
             if (safe) {
-                _safeTransfer(owner, ms, tokenId, new bytes(0));
+                _safeTransfer(owner, recipient, tokenId, new bytes(0));
             } else {
-                _transfer(owner, ms, tokenId);
+                _transfer(owner, recipient, tokenId);
             }
             emit TokenBought(
                 tokenId, 
                 owner, 
-                ms, 
+                recipient, 
                 data.currency, 
                 data.price
             );
         } else {
 
             if (safe) {
-                _safeMint(ms, tokenId);
+                _safeMint(recipient, tokenId);
             } else {
-                _mint(ms, tokenId);
+                _mint(recipient, tokenId);
             }
-            emit Transfer(owner, ms, tokenId);
+            emit Transfer(owner, recipient, tokenId);
             emit TokenBought(
                 tokenId, 
                 owner, 
-                ms, 
+                recipient, 
                 data.currency, 
                 data.price
             );

@@ -330,10 +330,9 @@ contract NFTStorage  is
             uint256 tokenId
         ) 
     {
-
         SeriesInfo memory seriesData;
         for(uint192 i = seriesTokenIndex[seriesId]; i <= MAX_TOKEN_INDEX; i++) {
-            tokenId = (seriesId << SERIES_SHIFT_BITS) + i;
+            tokenId = (uint256(seriesId) << SERIES_SHIFT_BITS) + i;
 
             data = tokensInfo[tokenId].salesInfoToken.saleInfo;
             exists = _exists(tokenId);
