@@ -66,20 +66,22 @@ contract NFTView is NFTStorage {
     * @dev tells the caller whether they can set info for a series,
     * manage amount of commissions for the series,
     * mint and distribute tokens from it, etc.
+    * @param account address to check
     * @param seriesId the id of the series being asked about
     */
-    function canManageSeries(uint64 seriesId) public view returns (bool) {
-        return _canManageSeries(seriesId);
+    function canManageSeries(address account, uint64 seriesId) public view returns (bool) {
+        return _canManageSeries(account, seriesId);
     }
     /**
     * @dev tells the caller whether they can transfer an existing token,
     * list it for sale and remove it from sale.
     * Tokens can be managed by their owner
     * or approved accounts via {approve} or {setApprovalForAll}.
+    * @param account address to check
     * @param tokenId the id of the tokens being asked about
     */
-    function canManageToken(uint256 tokenId) public view returns (bool) {
-        return _canManageToken(tokenId);
+    function canManageToken(address account, uint256 tokenId) public view returns (bool) {
+        return _canManageToken(account, tokenId);
     }
 
     /**
@@ -293,14 +295,14 @@ contract NFTView is NFTStorage {
         return hooks[seriesId].length();
     }
 
-    function _canManageSeries(uint64 seriesId) internal view returns(bool) {
-        return owner() == _msgSender() || seriesInfo[seriesId].author == _msgSender();
+    function _canManageSeries(address account, uint64 seriesId) internal view returns(bool) {
+        return owner() == account || seriesInfo[seriesId].author == account;
     }
     
-    function _canManageToken(uint256 tokenId) internal view returns (bool) {
-        return __ownerOf(tokenId) == _msgSender()
-            || _getApproved(tokenId) == _msgSender()
-            || _isApprovedForAll(__ownerOf(tokenId), _msgSender());
+    function _canManageToken(address account, uint256 tokenId) internal view returns (bool) {
+        return __ownerOf(tokenId) == account
+            || _getApproved(tokenId) == account
+            || _isApprovedForAll(__ownerOf(tokenId), account);
     }
    
 }
