@@ -62,6 +62,41 @@ contract NFTView is NFTStorage {
     /********************************************************************
     ****** public section *********************************************
     *********************************************************************/
+    function getSeriesInfo(
+        uint64 seriesId
+    ) 
+        public 
+        view 
+        returns (
+            address payable author,
+            uint32 limit,
+            //SaleInfo saleInfo;
+            uint64 onSaleUntil,
+            address currency,
+            uint256 price,
+            ////
+            //CommissionData commission;
+            uint64 value,
+            address recipient,
+            /////
+            string memory baseURI,
+            string memory suffix
+        ) 
+    {
+        author = seriesInfo[seriesId].author;
+        limit = seriesInfo[seriesId].limit;
+        //
+        onSaleUntil = seriesInfo[seriesId].saleInfo.onSaleUntil;
+        currency = seriesInfo[seriesId].saleInfo.currency;
+        price = seriesInfo[seriesId].saleInfo.price;
+        //
+        value = seriesInfo[seriesId].commission.value;
+        recipient = seriesInfo[seriesId].commission.recipient;
+        //
+        baseURI = seriesInfo[seriesId].baseURI;
+        suffix = seriesInfo[seriesId].suffix;
+
+    }
     /**
     * @dev tells the caller whether they can set info for a series,
     * manage amount of commissions for the series,

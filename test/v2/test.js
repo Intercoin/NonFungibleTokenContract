@@ -229,6 +229,14 @@ describe("v2 tests", function () {
 
         expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
 
+        //check getSeriesInfo
+        const getSeriesInfoData = await this.nft.getSeriesInfo(seriesId);
+        expect(getSeriesInfoData.author).to.be.equal(alice.address);
+        expect(getSeriesInfoData.currency).to.be.equal(ZERO_ADDRESS);
+        expect(getSeriesInfoData.price).to.be.equal(price);
+        expect(getSeriesInfoData.onSaleUntil).to.be.equal(now + 100000);
+        expect(getSeriesInfoData.baseURI).to.be.equal(baseURI);
+        expect(getSeriesInfoData.limit).to.be.equal(10000);
       });
 
     
