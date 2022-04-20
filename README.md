@@ -20,13 +20,18 @@ The list of basic features:
 
 <h3> Current version addresses implementation: </h3>
 
-Rinkeby: [0x0b20A09f61D8d8755BFD8dD084eB3078Bed29514](https://rinkeby.etherscan.io/address/0x0b20A09f61D8d8755BFD8dD084eB3078Bed29514#code)<br>
-BSC-Testnet: [0x699e94b92fa331dE1e702332a5fb6b565Eb0D49a](https://testnet.bscscan.com/address/0x699e94b92fa331dE1e702332a5fb6b565Eb0D49a#code)<br>
-MATIC: [0x2EA8BF5091B081aFf7C26d0aB6Bbe386cc9666B7](https://polygonscan.com/address/0x2EA8BF5091B081aFf7C26d0aB6Bbe386cc9666B7#code) (not verified)<br>
+ABI: [https://ipfs.io/ipfs/QmdTf3217bra8Jm1egyKkEDBeJfhJfvJ3jhicoDfrhYEGH](https://ipfs.io/ipfs/QmdTf3217bra8Jm1egyKkEDBeJfhJfvJ3jhicoDfrhYEGH)
+
+MATIC: [0x0122edAB7f102861Ec2b42B133E9E2F5b0E225C3](https://polygonscan.com/address/0x0122edAB7f102861Ec2b42B133E9E2F5b0E225C3#code) (not verified)<br>
 
 <br>
 <details>
 <summary><b><i>Previous versions implementation</i></b></summary>
+------------------------------<br>
+
+Rinkeby: [0x0b20A09f61D8d8755BFD8dD084eB3078Bed29514](https://rinkeby.etherscan.io/address/0x0b20A09f61D8d8755BFD8dD084eB3078Bed29514#code)<br>
+BSC-Testnet: [0x699e94b92fa331dE1e702332a5fb6b565Eb0D49a](https://testnet.bscscan.com/address/0x699e94b92fa331dE1e702332a5fb6b565Eb0D49a#code)<br>
+MATIC: [0x2EA8BF5091B081aFf7C26d0aB6Bbe386cc9666B7](https://polygonscan.com/address/0x2EA8BF5091B081aFf7C26d0aB6Bbe386cc9666B7#code) (not verified)<br>
 ------------------------------<br>
 
 Rinkeby: [0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87](https://rinkeby.etherscan.io/address/0xF0DeBed25eC8ef805280eE8d3e546EE827C6Bc87#code)<br>
@@ -45,13 +50,18 @@ Factory contract for NFTs. Allows gas-efficient deploy of copies of the NFTs con
 
 <h3> Current version addresses: </h3>
 
-Rinkeby: [0x6619495634eA889c73FD51aD60276F104735AbDe](https://rinkeby.etherscan.io/address/0x6619495634eA889c73FD51aD60276F104735AbDe#code)<br>
-BSC-Testnet: [0x730d471fC842a6D9822e444e9cce0EB253DCceDc](https://testnet.bscscan.com/address/0x730d471fC842a6D9822e444e9cce0EB253DCceDc#code)<br>
-MATIC: [0xd4220E0BaB13520356e0A103C68d1896476dbC7C](https://polygonscan.com/address/0xd4220E0BaB13520356e0A103C68d1896476dbC7C#code) (not verified)<br>
+ABI: [https://ipfs.io/ipfs/QmdPMNHNdmSeCmcrao5zw8MnULw97pmtb8QpGM5DLXYWuf](https://ipfs.io/ipfs/QmdPMNHNdmSeCmcrao5zw8MnULw97pmtb8QpGM5DLXYWuf)
+
+MATIC: [0x006385dC7537FD0f020a5b8cfC71f10b67C9f76F](https://polygonscan.com/address/0x006385dC7537FD0f020a5b8cfC71f10b67C9f76F#code) (not verified)<br>
 
 <br>
 <details>
 <summary><b><i>Previous versions</i></b></summary>
+------------------------------<br>
+
+Rinkeby: [0x6619495634eA889c73FD51aD60276F104735AbDe](https://rinkeby.etherscan.io/address/0x6619495634eA889c73FD51aD60276F104735AbDe#code)<br>
+BSC-Testnet: [0x730d471fC842a6D9822e444e9cce0EB253DCceDc](https://testnet.bscscan.com/address/0x730d471fC842a6D9822e444e9cce0EB253DCceDc#code)<br>
+MATIC: [0xd4220E0BaB13520356e0A103C68d1896476dbC7C](https://polygonscan.com/address/0xd4220E0BaB13520356e0A103C68d1896476dbC7C#code) (not verified)<br>
 ------------------------------<br>
 
 Rinkeby: [0x1411384E65547569657172F6d474Ecf21EE172dD](https://rinkeby.etherscan.io/address/0x1411384E65547569657172F6d474Ecf21EE172dD#code)<br>
