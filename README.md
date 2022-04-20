@@ -22,7 +22,10 @@ The list of basic features:
 
 ABI: [https://ipfs.io/ipfs/QmdTf3217bra8Jm1egyKkEDBeJfhJfvJ3jhicoDfrhYEGH](https://ipfs.io/ipfs/QmdTf3217bra8Jm1egyKkEDBeJfhJfvJ3jhicoDfrhYEGH)
 
-MATIC: [0x0122edAB7f102861Ec2b42B133E9E2F5b0E225C3](https://polygonscan.com/address/0x0122edAB7f102861Ec2b42B133E9E2F5b0E225C3#code) (not verified)<br>
+Rinkeby: [0x5633652F103793fE25465CF04291788B7d8EFAC7](https://rinkeby.etherscan.io/address/0x5633652F103793fE25465CF04291788B7d8EFAC7#code)<br>
+BSC-Testnet: [0x814E71E5d6F7F06512bF6db6b00730d75960Dbae](https://testnet.bscscan.com/address/0x814E71E5d6F7F06512bF6db6b00730d75960Dbae#code)<br>
+MATIC: [0x7156BE8D65404b6b2F4aEBd70e6a1Bd538358BE6](https://polygonscan.com/address/0x7156BE8D65404b6b2F4aEBd70e6a1Bd538358BE6#code) (not verified)<br>
+
 
 <br>
 <details>
@@ -52,7 +55,9 @@ Factory contract for NFTs. Allows gas-efficient deploy of copies of the NFTs con
 
 ABI: [https://ipfs.io/ipfs/QmdPMNHNdmSeCmcrao5zw8MnULw97pmtb8QpGM5DLXYWuf](https://ipfs.io/ipfs/QmdPMNHNdmSeCmcrao5zw8MnULw97pmtb8QpGM5DLXYWuf)
 
-MATIC: [0x006385dC7537FD0f020a5b8cfC71f10b67C9f76F](https://polygonscan.com/address/0x006385dC7537FD0f020a5b8cfC71f10b67C9f76F#code) (not verified)<br>
+Rinkeby: [0xf38F70F637124dEaa836D5bB35ce880FEf4786A8](https://rinkeby.etherscan.io/address/0xf38F70F637124dEaa836D5bB35ce880FEf4786A8#code)<br>
+BSC-Testnet: [0x611b4a14e76973d1928B9B0F45022FDf841de50a](https://testnet.bscscan.com/address/0x611b4a14e76973d1928B9B0F45022FDf841de50a#code)<br>
+MATIC: [0x80098e58Cb1e593Cf9C046b90057e0890AB7e596](https://polygonscan.com/address/0x80098e58Cb1e593Cf9C046b90057e0890AB7e596#code) (not verified)<br>
 
 <br>
 <details>

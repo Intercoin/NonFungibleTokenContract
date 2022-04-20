@@ -10,8 +10,8 @@ async function main() {
 	);
 
 	var options = {
-		gasPrice: ethers.utils.parseUnits('50', 'gwei'), 
-		gasLimit: 8e6
+		//gasPrice: ethers.utils.parseUnits('50', 'gwei'), 
+		gasLimit: 10e6
 	};
 
 	console.log("Account balance:", (await deployer.getBalance()).toString());
