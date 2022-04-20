@@ -130,13 +130,13 @@ describe("v2 tests", function () {
         
       });
 
-      it("Alice can manage her series (check delegatecall in view calls)", async() => {
-        let x = await this.nft.connect(alice).canManageSeries(seriesId);
+      it("Alice can manage her series", async() => {
+        let x = await this.nft.connect(charlie).canManageSeries(alice.address, seriesId);
         expect(x).to.be.true;
       });
 
-      it("Bob can not manage Alice's series (check delegatecall in view calls)", async() => {
-        let x = await this.nft.connect(bob).canManageSeries(seriesId);
+      it("Bob can not manage Alice's series", async() => {
+        let x = await this.nft.connect(charlie).canManageSeries(bob.address, seriesId);
         expect(x).to.be.false;
       });
 

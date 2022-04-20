@@ -977,16 +977,18 @@ contract NFTMain is NFTStorage {
     * @dev tells the caller whether they can set info for a series,
     * manage amount of commissions for the series,
     * mint and distribute tokens from it, etc.
+    * @param account address to check
     * @param seriesId the id of the series being asked about
     * @custom:calledby everyone
-    * @custom:shortd tells the caller whether they can ьфтпу a series
+    * @custom:shortd tells the caller whether they can manage a series
     */
-    function canManageSeries(uint64 seriesId) public view returns (bool) {
+    function canManageSeries(address account, uint64 seriesId) public view returns (bool) {
         return abi.decode(
             _functionDelegateCallView(
                 address(implNFTView), 
                 abi.encodeWithSelector(
                     NFTView.canManageSeries.selector, 
+                    account, 
                     seriesId
                 ), 
                 ""
@@ -1001,16 +1003,18 @@ contract NFTMain is NFTStorage {
     * list it for sale and remove it from sale.
     * Tokens can be managed by their owner
     * or approved accounts via {approve} or {setApprovalForAll}.
+    * @param account address to check
     * @param tokenId the id of the tokens being asked about
     * @custom:calledby everyone
     * @custom:shortd tells the caller whether they can transfer an existing token
     */
-    function canManageToken(uint256 tokenId) public view returns (bool) {
+    function canManageToken(address account, uint256 tokenId) public view returns (bool) {
         return abi.decode(
             _functionDelegateCallView(
                 address(implNFTView), 
                 abi.encodeWithSelector(
                     NFTView.canManageToken.selector, 
+                    account,
                     tokenId
                 ), 
                 ""
