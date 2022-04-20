@@ -973,6 +973,41 @@ contract NFTMain is NFTStorage {
     ///////////////////////////////////////
     //// public view section //////////////
     ///////////////////////////////////////
+
+    function getSeriesInfo(
+        uint64 seriesId
+    ) 
+        public 
+        view 
+        returns (
+            address payable author,
+            uint32 limit,
+            //SaleInfo saleInfo;
+            uint64 onSaleUntil,
+            address currency,
+            uint256 price,
+            ////
+            //CommissionData commission;
+            uint64 value,
+            address recipient,
+            /////
+            string memory baseURI,
+            string memory suffix
+        ) 
+    {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.getSeriesInfo.selector, 
+                    seriesId
+                ), 
+                ""
+            ), 
+            (address,uint32,uint64,address,uint256,uint64,address,string,string)
+        );
+
+    }
     /**
     * @dev tells the caller whether they can set info for a series,
     * manage amount of commissions for the series,
