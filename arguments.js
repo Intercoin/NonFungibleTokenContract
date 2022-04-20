@@ -1,6 +1,6 @@
 module.exports = 
     [
-        "0x910F345AC291d22B1188338c9F4e4a91E9EA2A47",
+        "0x814E71E5d6F7F06512bF6db6b00730d75960Dbae",
         // "NFT Video Test Matic 2212",
         // "NFTVTR-2212",
         // "https://pastebin.com/raw/XWrnD2Ve",

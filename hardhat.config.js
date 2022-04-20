@@ -22,8 +22,6 @@ const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_M
 const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MATIC}`
 
 
-
-
 module.exports = {
   networks: {
     hardhat: {
@@ -95,9 +93,9 @@ module.exports = {
     currency: "USD"
   },
   etherscan: {
-    apiKey: process.env.MATIC_API_KEY
+    //apiKey: process.env.MATIC_API_KEY  
     //apiKey: process.env.ETHERSCAN_API_KEY
-    //apiKey: process.env.BSCSCAN_API_KEY
+    apiKey: process.env.BSCSCAN_API_KEY
   },
   solidity: {
     compilers: [
