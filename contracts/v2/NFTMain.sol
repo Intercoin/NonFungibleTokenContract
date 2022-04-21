@@ -367,77 +367,20 @@ contract NFTMain is NFTStorage {
     /********************************************************************
     ****** public section ***********************************************
     *********************************************************************/
-    
-    /**
-    * @dev buys NFT for native coin with defined id. 
-    * mint token if it doesn't exist and transfer token
-    * if it exists and is on sale
-    * @param tokenId token ID to buy
-    * @param price amount of specified native coin to pay
-    * @param safe use safeMint and safeTransfer or not, 
-    * @param hookCount number of hooks 
-    * @custom:calledby everyone
-    * @custom:shortd buys NFT for native coin
-    */
     function buy(
-        uint256 tokenId, 
-        uint256 price, 
-        bool safe, 
-        uint256 hookCount
+        uint256[] memory tokenIds,
+        address currency,
+        uint256 totalPrice,
+        bool safe,
+        uint256 hookCount,
+        address buyFor
     ) 
         public 
         virtual
         payable 
         nonReentrant 
     {
-        _functionDelegateCall(
-            address(implNFTState), 
-            // abi.encodeWithSelector(
-            //     //NFTState.buy.selector,
-            //     bytes4(keccak256(bytes("buy(uint256,uint256,bool,uint256)"))),
-            //     tokenId, price, safe, hookCount
-            // )
-            msg.data
-        );
-
-    }
-
-    
-    /**
-    * @dev buys NFT for specified currency with defined id. 
-    * mint token if it doesn't exist and transfer token
-    * if it exists and is on sale
-    * @param tokenId token ID to buy
-    * @param currency address of token to pay with
-    * @param price amount of specified token to pay
-    * @param safe use safeMint and safeTransfer or not
-    * @param hookCount number of hooks 
-    * @custom:calledby everyone
-    * @custom:shortd buys NFT for specified currency
-    */
-    function buy(
-        uint256 tokenId, 
-        address currency, 
-        uint256 price, 
-        bool safe, 
-        uint256 hookCount
-    ) 
-        public 
-        virtual
-        nonReentrant 
-    {
-
-        _functionDelegateCall(
-            address(implNFTState), 
-            // abi.encodeWithSelector(
-            //     //NFTState.buy.selector,
-            //     bytes4(keccak256(bytes("buy(uint256,address,uint256,bool,uint256)"))),
-
-            //     tokenId, currency, price, safe, hookCount
-            // )
-            msg.data
-        );
-
+        _functionDelegateCall(address(implNFTState), msg.data);
     }
 
     /**
