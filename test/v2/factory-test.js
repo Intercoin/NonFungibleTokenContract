@@ -145,7 +145,7 @@ describe("v2 tests", function () {
 
                 const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
                 const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
-                await this.nftCreatedByFactory.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
+                await this.nftCreatedByFactory.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price.mul(TWO)}); // accidentially send more than needed
                 const balanceAfterBob = await ethers.provider.getBalance(bob.address);
                 const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
                 expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.gt(price);

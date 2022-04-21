@@ -317,8 +317,56 @@ contract NFTState is NFTStorage {
     /********************************************************************
     ****** public section ***********************************************
     *********************************************************************/
-    
+    function buy(
+        uint256[] memory tokenIds,
+        address currency,
+        uint256 totalPrice,
+        bool safe,
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        virtual
+        payable 
+        //nonReentrant 
+    {
+        require(tokenIds.length > 0, "invalid tokenIds");
+        uint64 seriesId = getSeriesId(tokenIds[0]);
+
+        validateHookCount(seriesId, hookCount);
+        uint256 left = totalPrice;
+
+        for(uint256 i = 0; i < tokenIds.length; i ++) {
+            (bool success, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenIds[i]);
+
+            //require(currency == data.currency, "wrong currency for sale");
+            require(left >= data.price, "insufficient amount sent");
+            left -= data.price;
+
+            _commissions_payment(
+                tokenIds[i], 
+                currency, 
+                (currency == address(0) ? true : false), 
+                data.price, 
+                success, 
+                data, 
+                beneficiary
+            );
+
+            _buy(tokenIds[i], exists, data, beneficiary, buyFor, safe);
+            
+            
+            _accountForOperation(
+                (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
+                0,
+                data.price
+            );
+        }
+
+    }
+
     /**
+    * @dev DEPRECATED
     * @dev buys NFT for native coin with defined id. 
     * mint token if it doesn't exist and transfer token
     * if it exists and is on sale
@@ -327,37 +375,38 @@ contract NFTState is NFTStorage {
     * @param safe use safeMint and safeTransfer or not, 
     * @param hookCount number of hooks 
     */
-    function buy(
-        uint256 tokenId, 
-        uint256 price, 
-        bool safe, 
-        uint256 hookCount
-    ) 
-        public 
-        payable 
-        //nonReentrant 
-    {
+    // function buy(
+    //     uint256 tokenId, 
+    //     uint256 price, 
+    //     bool safe, 
+    //     uint256 hookCount
+    // ) 
+    //     public 
+    //     payable 
+    //     //nonReentrant 
+    // {
 
-        uint64 seriesId = getSeriesId(tokenId);
+    //     uint64 seriesId = getSeriesId(tokenId);
 
-        validateHookCount(seriesId, hookCount);
+    //     validateHookCount(seriesId, hookCount);
 
-        (bool success, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenId);
+    //     (bool success, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenId);
 
-        _commissions_payment(tokenId, address(0), true, price, success, data, beneficiary);
+    //     _commissions_payment(tokenId, address(0), true, price, success, data, beneficiary);
 
-        _buy(tokenId, exists, data, beneficiary, _msgSender(), safe);
+    //     _buy(tokenId, exists, data, beneficiary, _msgSender(), safe);
         
         
-        _accountForOperation(
-            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
-            0,
-            price
-        );
-    }
+    //     _accountForOperation(
+    //         (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
+    //         0,
+    //         price
+    //     );
+    // }
 
     
     /**
+    * @dev DEPRECATED
     * @dev buys NFT for specified currency with defined id. 
     * mint token if it doesn't exist and transfer token
     * if it exists and is on sale
@@ -367,33 +416,33 @@ contract NFTState is NFTStorage {
     * @param safe use safeMint and safeTransfer or not
     * @param hookCount number of hooks 
     */
-    function buy(
-        uint256 tokenId, 
-        address currency, 
-        uint256 price, 
-        bool safe, 
-        uint256 hookCount
-    ) 
-        public 
-        //nonReentrant 
-    {
+    // function buy(
+    //     uint256 tokenId, 
+    //     address currency, 
+    //     uint256 price, 
+    //     bool safe, 
+    //     uint256 hookCount
+    // ) 
+    //     public 
+    //     //nonReentrant 
+    // {
      
-        uint64 seriesId = getSeriesId(tokenId);
+    //     uint64 seriesId = getSeriesId(tokenId);
 
-        validateHookCount(seriesId, hookCount);    
+    //     validateHookCount(seriesId, hookCount);    
 
-        (bool success, bool exists, SaleInfo memory data, address owner) = _getTokenSaleInfo(tokenId);
+    //     (bool success, bool exists, SaleInfo memory data, address owner) = _getTokenSaleInfo(tokenId);
 
-        _commissions_payment(tokenId, currency, false, price, success, data, owner);
+    //     _commissions_payment(tokenId, currency, false, price, success, data, owner);
         
-        _buy(tokenId, exists, data, owner, _msgSender(), safe);
+    //     _buy(tokenId, exists, data, owner, _msgSender(), safe);
         
-        _accountForOperation(
-            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
-            uint256(uint160(currency)),
-            price
-        );
-    }
+    //     _accountForOperation(
+    //         (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
+    //         uint256(uint160(currency)),
+    //         price
+    //     );
+    // }
 
     /**
     * @dev buys NFT for native coin with undefined id. 

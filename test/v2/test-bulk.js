@@ -162,35 +162,6 @@ describe("v2 tests", function () {
         expect(await this.nft.ownerOf(id2)).to.be.equal(bob.address);
         expect(await this.nft.ownerOf(id3)).to.be.equal(charlie.address);
 
-
-/*
-        const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
-        const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
-        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
-        const balanceAfterBob = await ethers.provider.getBalance(bob.address);
-        const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
-        expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.gt(price);
-        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price);
-        const newOwner = await this.nft.ownerOf(id);
-        expect(newOwner).to.be.equal(bob.address);
-
-        const tokenInfoData = await this.nft.tokenInfo(id);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
-
-        const seriesInfo = await this.nft.seriesInfo(seriesId);
-        expect(seriesInfo.author).to.be.equal(alice.address);
-        expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(seriesInfo.saleInfo.price).to.be.equal(price);
-        expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
-        expect(seriesInfo.baseURI).to.be.equal(baseURI);
-        expect(seriesInfo.limit).to.be.equal(10000);
-
-        expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
-*/
       });
 
     });
