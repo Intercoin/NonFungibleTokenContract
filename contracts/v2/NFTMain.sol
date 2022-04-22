@@ -259,7 +259,7 @@ contract NFTMain is NFTStorage {
     /**
     * @dev mints and distributes NFTs with specified IDs
     * to specified addresses
-    * @param tokenIds list of NFT IDs t obe minted
+    * @param tokenIds list of NFT IDs to be minted
     * @param addresses list of receiver addresses
     * @custom:calledby owner or series author
     * @custom:shortd mint and distribute new tokens
@@ -279,6 +279,24 @@ contract NFTMain is NFTStorage {
             msg.data
         );
 
+    }
+
+    /**
+    * @dev mints and distributes `amount` NFTs by `seriesId` to `account`
+    * @param seriesId seriesId
+    * @param account receiver addresses
+    * @param amount amount of tokens
+    * @custom:calledby owner or series author
+    * @custom:shortd mint and distribute new tokens
+    */
+    function mintAndDistributeAuto(
+        uint64 seriesId, 
+        address account,
+        uint256 amount
+    )
+        external
+    {
+        _functionDelegateCall(address(implNFTState), msg.data);
     }
     
     /** 

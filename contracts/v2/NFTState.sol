@@ -292,7 +292,54 @@ contract NFTState is NFTStorage {
             0
         );
     }
-    
+
+    /**
+    * @dev mints and distributes `amount` NFTs by `seriesId` to `account`
+    * @param seriesId seriesId
+    * @param account receiver addresses
+    * @param amount amount of tokens
+    * @custom:calledby owner or series author
+    * @custom:shortd mint and distribute new tokens
+    */
+    function mintAndDistributeAuto(
+        uint64 seriesId, 
+        address account,
+        uint256 amount
+    )
+        external
+    {
+        _requireCanManageSeries(seriesId);
+
+        uint256 tokenId;
+        uint256 tokenIndex = (uint256(seriesId) << SERIES_SHIFT_BITS);
+        uint192 j;
+
+        for(uint256 i = 0; i < amount; i++) {
+            for(j = seriesTokenIndex[seriesId]; j < MAX_TOKEN_INDEX; j++) {
+                tokenId = tokenIndex + j;
+
+                if (tokensInfo[tokenId].owner == address(0)) { 
+                    // save last index
+                    seriesTokenIndex[seriesId] = j;
+
+                    break;
+                }
+                
+            }
+            // unreachable but must be
+            if (j == MAX_TOKEN_INDEX) { revert("series max token limit exceeded");}
+            _mint(account, tokenId);
+        }
+
+        _accountForOperation(
+            OPERATION_MINTANDDISTRIBUTE << OPERATION_SHIFT_BITS,
+            amount,
+            0
+        );
+        
+        
+    }
+   
     /** 
     * @dev sets the utility token
     * @param costManager_ new address of utility token, or 0

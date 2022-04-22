@@ -883,6 +883,24 @@ describe("v2 tests", function () {
 
       })
 
+      it("should mint tokens via mintAndDistributeAuto by seriesId", async() => {
+        const seriesId = BigNumber.from('1009');
+        const expectedTokens = [
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ZERO),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ONE),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(TWO)
+        ];
+
+        await this.nft.connect(owner).mintAndDistributeAuto(seriesId, alice.address, THREE);
+
+        expect(await this.nft.balanceOf(alice.address)).to.be.equal(THREE);
+
+        expect(await this.nft.ownerOf(expectedTokens[0])).to.be.equal(alice.address);
+        expect(await this.nft.ownerOf(expectedTokens[1])).to.be.equal(alice.address);
+        expect(await this.nft.ownerOf(expectedTokens[2])).to.be.equal(alice.address);
+
+      })
+
       it("should correct call setSeriesInfo as an owner of series", async() => {
         const newLimit = 11000;
         const saleParams = [
