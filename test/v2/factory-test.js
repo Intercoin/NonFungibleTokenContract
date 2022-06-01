@@ -74,6 +74,7 @@ describe("v2 tests", function () {
             const baseURI = "";
             const suffix = ".json";
             const price = ethers.utils.parseEther('1');
+            const autoincrementPrice = ZERO;
             const now = Math.round(Date.now() / 1000);   
             const name = "NAME 1";
             const symbol = "SMBL1";
@@ -85,6 +86,7 @@ describe("v2 tests", function () {
                 now + 100000, 
                 ZERO_ADDRESS, 
                 price,
+                autoincrementPrice,
                 ZERO, //ownerCommissionValue;
                 ZERO  //authorCommissionValue;
             ];
@@ -118,6 +120,7 @@ describe("v2 tests", function () {
                 const tokenId = ONE;
                 const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
                 const price = ethers.utils.parseEther('1');
+                const autoincrementPrice = ZERO;
                 const now = Math.round(Date.now() / 1000);   
                 const baseURI = "";
                 const suffix = ".json";
@@ -125,6 +128,7 @@ describe("v2 tests", function () {
                     now + 100000, 
                     ZERO_ADDRESS, 
                     price,
+                    autoincrementPrice,
                     ZERO, //ownerCommissionValue;
                     ZERO  //authorCommissionValue;
                 ];
@@ -164,6 +168,7 @@ describe("v2 tests", function () {
                 expect(seriesInfo.author).to.be.equal(alice.address);
                 expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
                 expect(seriesInfo.saleInfo.price).to.be.equal(price);
+                expect(seriesInfo.saleInfo.autoincrement).to.be.equal(autoincrementPrice);
                 expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
                 expect(seriesInfo.baseURI).to.be.equal(baseURI);
                 expect(seriesInfo.limit).to.be.equal(10000);

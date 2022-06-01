@@ -35,6 +35,7 @@ describe("v2 tests", function () {
         const tokenId = ONE;
         const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
         const price = ethers.utils.parseEther('1');
+        const autoincrementPrice = ZERO;
         const now = Math.round(Date.now() / 1000);   
         const baseURI = "http://baseUri/";
         const suffix = ".json";
@@ -43,6 +44,7 @@ describe("v2 tests", function () {
             now + 100000, 
             ZERO_ADDRESS, 
             price,
+            autoincrementPrice
         ];
         const commissions = [
             ZERO,

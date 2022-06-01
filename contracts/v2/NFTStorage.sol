@@ -147,6 +147,7 @@ contract NFTStorage  is
         uint64 onSaleUntil; 
         address currency;
         uint256 price;
+        uint256 autoincrement;
     }
 
     struct SeriesInfo { 
@@ -172,6 +173,7 @@ contract NFTStorage  is
     event SeriesPutOnSale(
         uint64 indexed seriesId, 
         uint256 price, 
+        uint256 autoincrement, 
         address currency, 
         uint64 onSaleUntil
     );
@@ -301,12 +303,15 @@ contract NFTStorage  is
         exists = _exists(tokenId);
         owner = tokensInfo[tokenId].owner;
 
+        uint64 seriesId = getSeriesId(tokenId);
         if (owner != address(0)) { 
             if (data.onSaleUntil > block.timestamp) {
                 isOnSale = true;
+                //using autoincrement for primarysale only
+                data.price = data.price + mintedCountBySeries[seriesId] * data.autoincrement;
             } 
         } else {   
-            uint64 seriesId = getSeriesId(tokenId);
+            
             SeriesInfo memory seriesData = seriesInfo[seriesId];
             if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
                 isOnSale = true;
