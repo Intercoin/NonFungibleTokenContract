@@ -41,7 +41,8 @@ describe("v2 tests", function () {
         const saleParams = [
             now + 100000, 
             ZERO_ADDRESS, 
-            price, 
+            price,
+            ZERO //autoincrement price
         ];
         const commissions = [
             ZERO,

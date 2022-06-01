@@ -105,7 +105,8 @@ contract NFTState is NFTStorage {
         ) {
             emit SeriesPutOnSale(
                 seriesId, 
-                info.saleInfo.price, 
+                info.saleInfo.price,
+                info.saleInfo.autoincrement, 
                 info.saleInfo.currency, 
                 info.saleInfo.onSaleUntil
             );
@@ -218,7 +219,8 @@ contract NFTState is NFTStorage {
         SaleInfo memory newSaleInfo = SaleInfo({
             onSaleUntil: uint64(block.timestamp) + duration,
             currency: currency,
-            price: price
+            price: price,
+            autoincrement:0
         });
         SaleInfoToken memory saleInfoToken = SaleInfoToken({
             saleInfo: newSaleInfo,

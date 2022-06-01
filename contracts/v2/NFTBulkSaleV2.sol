@@ -39,6 +39,7 @@ contract INFT {
         uint64 onSaleUntil; 
         address currency;
         uint256 price;
+        uint256 autoincrement;
     }
     struct CommissionData {
         uint64 value;
@@ -116,6 +117,10 @@ contract NFTBulkSaleV2 {
         bool transferSuccess;
 
         uint256 totalPrice = (saleInfo.price)*(tokenIds.length);
+        for(uint256 i = 0; i<tokenIds.length; i++) {
+            totalPrice = saleInfo.autoincrement+i;
+        }
+
         if (saleInfo.currency == address(0)) {
             
             (transferSuccess, ) = (author).call{gas: 3000, value: (totalPrice)}(new bytes(0));

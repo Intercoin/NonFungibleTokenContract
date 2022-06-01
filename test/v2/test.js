@@ -99,7 +99,8 @@ describe("v2 tests", function () {
       const saleParams = [
         now + 100000, 
         ZERO_ADDRESS, 
-        price
+        price,
+        ZERO //autoincrement price
       ];
       const commissions = [
         ZERO,
@@ -184,6 +185,7 @@ describe("v2 tests", function () {
         now + 100000, 
         ZERO_ADDRESS, 
         price,
+        ZERO //autoincrement price
       ];
       const commissions = [
         ZERO,
@@ -244,7 +246,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address, 
@@ -290,7 +293,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000,
           ZERO_ADDRESS, 
-          price.mul(TWO)
+          price.mul(TWO),
+          ZERO //autoincrement price
         ];      
 
         //await this.nft.connect(bob).setSaleInfo(id, saleParams);
@@ -399,7 +403,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address, 
@@ -520,7 +525,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address, 
@@ -583,6 +589,7 @@ describe("v2 tests", function () {
           now + 100000,
           this.erc20.address, 
           price.mul(TWO),
+          ZERO //autoincrement price
         ];      
 
         //await this.nft.connect(bob).setSaleInfo(id, saleParams);
@@ -621,7 +628,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price, 
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address,  
@@ -662,6 +670,7 @@ describe("v2 tests", function () {
           now + 100000,
           ZERO_ADDRESS, 
           price,
+          ZERO //autoincrement price
         ];      
 
         //await this.nft.connect(bob).setSaleInfo(id, saleParams);
@@ -692,6 +701,7 @@ describe("v2 tests", function () {
           now + 100000,
           ZERO_ADDRESS, 
           price.mul(TWO),
+          ZERO //autoincrement price
         ];      
 
         await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
@@ -704,7 +714,8 @@ describe("v2 tests", function () {
         const saleParams = [
           ZERO, 
           this.erc20.address, 
-          price, 
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address,  
@@ -737,7 +748,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price
+          price,
+          ZERO //autoincrement price
         ];       
         const seriesParams = [
           alice.address,  
@@ -758,7 +770,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price, 
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address,  
@@ -777,7 +790,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price, 
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address,  
@@ -906,7 +920,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           ZERO_ADDRESS, 
-          price, 
+          price,
+          ZERO //autoincrement price
         ]
         const newParams = [
           alice.address,  
@@ -932,7 +947,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           ZERO_ADDRESS, 
-          price, 
+          price,
+          ZERO //autoincrement price
         ]
         const newParams = [
           alice.address,  
@@ -958,7 +974,8 @@ describe("v2 tests", function () {
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
-          price, 
+          price,
+          ZERO //autoincrement price
         ];
         const seriesParams = [
           alice.address,  
@@ -1035,7 +1052,8 @@ describe("v2 tests", function () {
           const saleParams = [
             now + 100000, 
             this.erc20.address, 
-            price, 
+            price,
+            ZERO //autoincrement price
           ]
           const seriesParams = [
             alice.address,  
@@ -1247,7 +1265,8 @@ describe("v2 tests", function () {
           const saleParams = [
             now + 100000, 
             this.erc20.address, 
-            price, 
+            price,
+            ZERO //autoincrement price
           ];
           const seriesParams = [
             alice.address, 
@@ -1285,7 +1304,8 @@ describe("v2 tests", function () {
           const saleParams = [
             now + 100000,
             ZERO_ADDRESS, 
-            price.mul(TWO), 
+            price.mul(TWO),
+            ZERO //autoincrement price
           ];      
     
           await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
@@ -1321,7 +1341,8 @@ describe("v2 tests", function () {
           const saleParams = [
             now + 100000,
             this.erc20.address, 
-            price.mul(TWO), 
+            price.mul(TWO),
+            ZERO //autoincrement price
           ];      
     
           //await this.nft.connect(bob).setSaleInfo(id, saleParams);
