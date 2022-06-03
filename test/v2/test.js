@@ -14,8 +14,14 @@ const ZERO = BigNumber.from('0');
 const ONE = BigNumber.from('1');
 const TWO = BigNumber.from('2');
 const THREE = BigNumber.from('3');
+const FOUR = BigNumber.from('4');
+const FIVE = BigNumber.from('5');
+const SIX = BigNumber.from('6');
+const SEVEN = BigNumber.from('7');
 const TEN = BigNumber.from('10');
 const HUN = BigNumber.from('100');
+
+const ONE_ETH = ethers.utils.parseEther('1');    
 
 const SERIES_BITS = 192;
 const FRACTION = BigNumber.from('100000');
@@ -460,6 +466,148 @@ describe("v2 tests", function () {
 
       });
 
+      it("should correct mint NFT with token using autoincrement price", async() => {
+        
+        const expectedTokens = [
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ZERO),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ONE),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(TWO)
+        ];
+        
+        const expectedToken2 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(THREE);
+
+        const expectedTokens3 = [
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(FOUR),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(FIVE),
+          seriesId.mul(TWO.pow(BigNumber.from('192'))).add(SIX)
+        ];
+        const expectedToken4 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(SEVEN);
+
+        const autoincrementPrice = ONE_ETH.div(100);
+        const saleParams = [
+          now + 100000, 
+          this.erc20.address, 
+          price,
+          autoincrementPrice
+        ];
+        const seriesParams = [
+          alice.address, 
+          10000,
+          saleParams,
+          commissions, 
+          baseURI,
+          suffix
+        ];
+
+        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+
+        let tokenOwner;
+        let tokenSaleInfo;
+
+        for(let i in expectedTokens) {
+
+          await expect(this.nft.ownerOf(expectedTokens[i])).to.be.revertedWith("ERC721: owner query for nonexistent token");
+
+          tokenSaleInfo = await this.nft.getTokenSaleInfo(expectedTokens[i]);
+
+          expect(tokenSaleInfo.owner).to.be.equal(seriesParams[0]);
+          expect(tokenSaleInfo.exists).to.be.false;
+
+          expect(tokenSaleInfo.data.currency).to.be.equal(seriesParams[2][1]);
+          expect(tokenSaleInfo.data.price).to.be.equal(seriesParams[2][2]);
+          expect(tokenSaleInfo.data.onSaleUntil).to.be.equal(seriesParams[2][0]);
+          
+        };
+
+
+        await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+        await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+        await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+
+        for(let i in expectedTokens) {
+          tokenOwner = await this.nft.ownerOf(expectedTokens[i]);
+          expect(tokenOwner).to.be.equal(bob.address);
+
+          tokenSaleInfo = await this.nft.getTokenSaleInfo(expectedTokens[i]);
+
+          expect(tokenSaleInfo.owner).to.be.equal(bob.address);
+          expect(tokenSaleInfo.exists).to.be.true;
+
+          expect(tokenSaleInfo.data.currency).to.be.equal(ZERO_ADDRESS);
+          expect(tokenSaleInfo.data.price).to.be.equal(ZERO);
+          expect(tokenSaleInfo.data.onSaleUntil).to.be.equal(ZERO);
+          
+        };
+        
+        
+        ////////////
+        tokenSaleInfo = await this.nft.getTokenSaleInfo(expectedToken2);
+        expect(tokenSaleInfo.data.price).to.be.equal(
+          price.add(
+            [...Array(expectedTokens.length).keys()].map((e,i)=>autoincrementPrice.mul(i)).reduce((a, b) => b.add(a), 0)
+          )
+        );
+
+        await expect(
+          this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price, false, ZERO)
+        ).to.be.revertedWith("insufficient amount sent");
+
+        await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+
+        // setup again. we will expect that autoincrement value will drop
+        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+
+        await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+        await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+        await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
+
+        let calculatePrice = price;
+        await this.erc20.connect(bob).approve(this.nft.address, calculatePrice);
+        await expect(
+          this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](
+            seriesId, 
+            this.erc20.address, 
+            calculatePrice, 
+            false, 
+            ZERO
+          )
+        ).to.be.revertedWith("insufficient amount sent");
+
+        // length -1
+        calculatePrice = price.add(
+          [...(Array(expectedTokens3.length-1).keys())].map((e,i)=>autoincrementPrice.mul(i)).reduce((a, b) => b.add(a), 0)
+        );
+        await this.erc20.connect(bob).approve(this.nft.address, calculatePrice);    
+        await expect(
+          this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](
+            seriesId, 
+            this.erc20.address, 
+            calculatePrice, 
+            false, 
+            ZERO
+          )
+        ).to.be.revertedWith("insufficient amount sent");
+
+        // send exactle that needed
+        calculatePrice = price.add(
+          [...Array(expectedTokens3.length).keys()].map((e,i)=>autoincrementPrice.mul(i)).reduce((a, b) => b.add(a), 0)
+        );
+        await this.erc20.connect(bob).approve(this.nft.address, calculatePrice);    
+        await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](
+          seriesId, 
+          this.erc20.address, 
+          calculatePrice, 
+          false, 
+          ZERO
+        ); 
+      });
   
 /////////////////////////////////////////////
      
@@ -514,14 +662,14 @@ describe("v2 tests", function () {
 
       });
 
-      it("qqqshould correct mint NFT with token using autoincrement(with buyFor option)", async() => {
+      it("should correct mint NFT with token using autoincrement(with buyFor option)", async() => {
         
         const expectedTokens = [
           seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ZERO),
           seriesId.mul(TWO.pow(BigNumber.from('192'))).add(ONE),
           seriesId.mul(TWO.pow(BigNumber.from('192'))).add(TWO)
         ];
-        
+       
         const saleParams = [
           now + 100000, 
           this.erc20.address, 
@@ -582,7 +730,6 @@ describe("v2 tests", function () {
 
       });
 
-  
       it("should correct buy minted NFT for token", async() => {
         await this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price});
         const saleParams = [

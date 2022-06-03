@@ -115,6 +115,7 @@ contract NFTState is NFTStorage {
         }
         
         seriesInfo[seriesId] = info;
+        mintedCountBySetSeriesInfo[seriesId] = 0;
 
         _accountForOperation(
             (OPERATION_SETSERIESINFO << OPERATION_SHIFT_BITS) | seriesId,
@@ -1087,6 +1088,7 @@ contract NFTState is NFTStorage {
 
         uint64 seriesId = getSeriesId(tokenId);
         mintedCountBySeries[seriesId] += 1;
+        mintedCountBySetSeriesInfo[seriesId] += 1;
 
         if (seriesInfo[seriesId].limit != 0) {
             require(

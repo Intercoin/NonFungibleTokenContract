@@ -137,6 +137,7 @@ contract NFTStorage  is
     CommissionInfo public commissionInfo; // Global commission data 
 
     mapping(uint64 => uint256) public mintedCountBySeries;
+    mapping(uint64 => uint256) internal mintedCountBySetSeriesInfo;
     
     struct SaleInfoToken { 
         SaleInfo saleInfo;
@@ -303,12 +304,12 @@ contract NFTStorage  is
         exists = _exists(tokenId);
         owner = tokensInfo[tokenId].owner;
 
+
         uint64 seriesId = getSeriesId(tokenId);
         if (owner != address(0)) { 
             if (data.onSaleUntil > block.timestamp) {
                 isOnSale = true;
-                //using autoincrement for primarysale only
-                data.price = data.price + mintedCountBySeries[seriesId] * data.autoincrement;
+                
             } 
         } else {   
             
@@ -317,8 +318,14 @@ contract NFTStorage  is
                 isOnSale = true;
                 data = seriesData.saleInfo;
                 owner = seriesData.author;
+
             }
         }   
+
+        if (exists == false) {
+            //using autoincrement for primarysale only
+            data.price = data.price + mintedCountBySetSeriesInfo[seriesId] * data.autoincrement;
+        }
     }
 
     // find token for primarySale
@@ -349,6 +356,11 @@ contract NFTStorage  is
                     isOnSale = true;
                     data = seriesData.saleInfo;
                     owner = seriesData.author;
+                    
+                    if (exists == false) {
+                        //using autoincrement for primarysale only
+                        data.price = data.price + mintedCountBySetSeriesInfo[seriesId] * data.autoincrement;
+                    }
                     
                     // save last index
                     seriesTokenIndex[seriesId] = i;
