@@ -99,6 +99,39 @@ contract NFTState is NFTStorage {
     ) 
         external
     {
+        CommunitySettings memory emptySettings = CommunitySettings(address(0), "");
+        _setSeriesInfo(seriesId, info, emptySettings, emptySettings);
+    }
+
+    /**
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    */
+    function setSeriesInfo(
+        uint64 seriesId, 
+        SeriesInfo memory info,
+        CommunitySettings memory transferWhitelistSettings,
+        CommunitySettings memory buyWhitelistSettings
+    ) 
+        external
+    {
+        _setSeriesInfo(seriesId, info, transferWhitelistSettings, buyWhitelistSettings);
+    }
+
+    /**
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    */
+    function _setSeriesInfo(
+        uint64 seriesId, 
+        SeriesInfo memory info,
+        CommunitySettings memory transferWhitelistSettings,
+        CommunitySettings memory buyWhitelistSettings
+    ) 
+        internal
+    {
         _requireCanManageSeries(seriesId);
         if (info.saleInfo.onSaleUntil > seriesInfo[seriesId].saleInfo.onSaleUntil && 
             info.saleInfo.onSaleUntil > block.timestamp

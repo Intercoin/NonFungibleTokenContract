@@ -122,7 +122,7 @@ describe("v2 tests", function () {
       ];
 
       beforeEach("deploying", async() => {
-        await this.nft.connect(owner).setSeriesInfo(seriesId, params);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, params);
       });
 
       it("should correct for Alice", async() => {
@@ -167,7 +167,7 @@ describe("v2 tests", function () {
     //   ];
     //   const seriesParams = tokenParams.concat([baseURI, 10000]);
 
-    //   await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+    //   await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
     //   await this.nft.connect(alice).listForSale(id, price, ZERO_ADDRESS, 100000);
     //   const tokenInfo = await this.nft.salesInfo(id);
@@ -206,7 +206,7 @@ describe("v2 tests", function () {
         suffix
       ];
       beforeEach("listing series on sale", async() => {
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
       })
 
       it("should correct mint NFT with ETH if ID doesn't exist", async() => {
@@ -263,7 +263,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         await this.erc20.connect(bob).approve(this.nft.address, price);
         const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
         const balanceBeforeAlice = await this.erc20.balanceOf(alice.address);
@@ -421,7 +421,7 @@ describe("v2 tests", function () {
           suffix
         ];
 
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
         let tokenOwner;
         let tokenSaleInfo;
@@ -499,7 +499,7 @@ describe("v2 tests", function () {
           suffix
         ];
 
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
         let tokenOwner;
         let tokenSaleInfo;
@@ -559,7 +559,7 @@ describe("v2 tests", function () {
         await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
 
         // setup again. we will expect that autoincrement value will drop
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
         await this.erc20.connect(bob).approve(this.nft.address, price.mul(TWO));
         await this.nft.connect(bob)["buyAuto(uint64,address,uint256,bool,uint256)"](seriesId, this.erc20.address, price.mul(TWO), false, ZERO); // accidentially send more than needed
@@ -685,7 +685,7 @@ describe("v2 tests", function () {
           suffix
         ];
 
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
         let tokenOwner;
         let tokenSaleInfo;
@@ -786,7 +786,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         await this.erc20.connect(alice).approve(this.nft.address, price);
         await this.nft.connect(alice).buy([id], this.erc20.address, price, false, ZERO, alice.address); 
       })
@@ -872,7 +872,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         await expect(this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price})).to.be.revertedWith("token is not on sale");
       })
       
@@ -907,7 +907,7 @@ describe("v2 tests", function () {
           suffix
         ];
 
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         await this.erc20.connect(charlie).approve(this.nft.address, price.sub(ONE));
         await expect(this.nft.connect(charlie).buy([id], this.erc20.address, price, false, ZERO, charlie.address)).to.be.revertedWith("insufficient amount sent");
       })
@@ -928,7 +928,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         await this.erc20.connect(charlie).approve(this.nft.address, price);
         await expect(this.nft.connect(charlie).buy([id], this.erc20.address, price.sub(ONE), false, ZERO, charlie.address)).to.be.revertedWith("insufficient amount sent");
       })
@@ -948,7 +948,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         await this.erc20.connect(charlie).approve(this.nft.address, price);
         const wrongAddress = bob.address;
         await expect(this.nft.connect(charlie).buy([id], wrongAddress, price, false, ZERO, charlie.address)).to.be.revertedWith("wrong currency for sale");
@@ -1078,7 +1078,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
+        await this.nft.connect(alice)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, newParams);
         const seriesInfo = await this.nft.seriesInfo(seriesId);
         expect(seriesInfo.author).to.be.equal(alice.address);
         expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
@@ -1105,7 +1105,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(alice).setSeriesInfo(seriesId, newParams);
+        await this.nft.connect(alice)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, newParams);
         await this.nft.connect(charlie).buy([id], ZERO_ADDRESS, price, false, ZERO, charlie.address, {value: price});
         await this.nft.connect(charlie).buy([id.add(ONE)], ZERO_ADDRESS, price, false, ZERO, charlie.address, {value: price});
         await expect(this.nft.connect(charlie).buy([id.add(TWO)], ZERO_ADDRESS, price, false, ZERO, charlie.address, {value: price})).to.be.revertedWith("series token limit exceeded");
@@ -1113,7 +1113,7 @@ describe("v2 tests", function () {
       })
 
       it("shouldnt call setSeriesInfo as an owner of series", async() => {
-        await expect(this.nft.connect(bob).setSeriesInfo(seriesId, seriesParams)).to.be.revertedWith('you can\'t manage this series');
+        await expect(this.nft.connect(bob)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams)).to.be.revertedWith('you can\'t manage this series');
 
       })
 
@@ -1132,7 +1132,7 @@ describe("v2 tests", function () {
           baseURI,
           suffix
         ];
-        await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         await expect(this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price})).to.be.revertedWith('wrong currency for sale');
 
       })
@@ -1210,7 +1210,7 @@ describe("v2 tests", function () {
             baseURI,
             suffix
           ];
-          await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);  
+          await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);  
           await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
           await this.erc20.connect(bob).approve(this.nft.address, price);
           await this.nft.connect(bob).buy([id], this.erc20.address, price, false, ONE, bob.address);
@@ -1423,7 +1423,7 @@ describe("v2 tests", function () {
             baseURI,
             suffix
           ];
-          await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+          await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
           await this.erc20.connect(bob).approve(this.nft.address, price);
           const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
           const balanceBeforeAlice = await this.erc20.balanceOf(alice.address);

@@ -171,6 +171,11 @@ contract NFTStorage  is
         address recipient;
     }
 
+    struct CommunitySettings {
+        address community;
+        string role;
+    }
+
     event SeriesPutOnSale(
         uint64 indexed seriesId, 
         uint256 price, 

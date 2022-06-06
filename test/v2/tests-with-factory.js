@@ -77,7 +77,7 @@ describe("v2 tests", function () {
             this.nft = await NFTMainFactory.attach(instanceAddr);
             //--
 
-            await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+            await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
             const retval = '0x150b7a02';
             const error = ZERO;
             this.buyer = await BuyerFactory.deploy(retval, error);
@@ -229,7 +229,7 @@ describe("v2 tests", function () {
                     suffix
                 ];
                 await this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address,{value: price}); 
-                await this.nft.setSeriesInfo(seriesId, newSeriesParams);
+                await this.nft["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, newSeriesParams);
                 expect(await this.nft.tokenURI(id)).to.be.equal(id.toHexString().substring(2).concat(suffix));
             })
             it('shouldnt approve to current owner', async() => {
