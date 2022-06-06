@@ -44,56 +44,59 @@ const OPERATION_TRANSFER = 11;
 
 describe("v2 tests", function () {
   describe("NonFungibleToken tests", function () {
-      const accounts = waffle.provider.getWallets();
-      const owner = accounts[0];                     
-      const alice = accounts[1];
-      const bob = accounts[2];
-      const charlie = accounts[3];
-      const commissionReceiver = accounts[4];
+    const accounts = waffle.provider.getWallets();
+    const owner = accounts[0];                     
+    const alice = accounts[1];
+    const bob = accounts[2];
+    const charlie = accounts[3];
+    const commissionReceiver = accounts[4];
 
-      beforeEach("deploying", async() => {
-          const ERC20Factory = await ethers.getContractFactory("MockERC20");
-          const NFTMainFactory = await ethers.getContractFactory("NFTMain");
-          const NFTStateFactory = await ethers.getContractFactory("NFTState");
-          const NFTViewFactory = await ethers.getContractFactory("NFTView");
+    beforeEach("deploying", async() => {
+        const ERC20Factory = await ethers.getContractFactory("MockERC20");
+        const NFTMainFactory = await ethers.getContractFactory("NFTMain");
+        const NFTStateFactory = await ethers.getContractFactory("NFTState");
+        const NFTViewFactory = await ethers.getContractFactory("NFTView");
 
-          const HookFactory = await ethers.getContractFactory("MockHook");
-          const BadHookFactory = await ethers.getContractFactory("MockBadHook");
-          const FalseHookFactory = await ethers.getContractFactory("MockFalseHook");
-          const NotSupportingHookFactory = await ethers.getContractFactory("MockNotSupportingHook");
-          const WithoutFunctionHookFactory = await ethers.getContractFactory("MockWithoutFunctionHook");
-          const BuyerFactory = await ethers.getContractFactory("Buyer");
-          const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
-          const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
+        const HookFactory = await ethers.getContractFactory("MockHook");
+        const BadHookFactory = await ethers.getContractFactory("MockBadHook");
+        const FalseHookFactory = await ethers.getContractFactory("MockFalseHook");
+        const NotSupportingHookFactory = await ethers.getContractFactory("MockNotSupportingHook");
+        const WithoutFunctionHookFactory = await ethers.getContractFactory("MockWithoutFunctionHook");
+        const BuyerFactory = await ethers.getContractFactory("Buyer");
+        const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
+        const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
+        const MockCommunityFactory = await ethers.getContractFactory("MockCommunity");
 
-          this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
-          this.hook1 = await HookFactory.deploy();
-          this.hook2 = await HookFactory.deploy();
-          this.hook3 = await HookFactory.deploy();
-          this.badHook = await BadHookFactory.deploy();
-          this.falseHook = await FalseHookFactory.deploy();
-          this.notSupportingHook = await NotSupportingHookFactory.deploy();
-          this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
-          this.nftState = await NFTStateFactory.deploy();
-          this.nftView = await NFTViewFactory.deploy();
+        this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
+        this.hook1 = await HookFactory.deploy();
+        this.hook2 = await HookFactory.deploy();
+        this.hook3 = await HookFactory.deploy();
+        this.badHook = await BadHookFactory.deploy();
+        this.falseHook = await FalseHookFactory.deploy();
+        this.notSupportingHook = await NotSupportingHookFactory.deploy();
+        this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
+        this.nftState = await NFTStateFactory.deploy();
+        this.nftView = await NFTViewFactory.deploy();
 
-          this.costManager = await CostManagerFactory.deploy();
+        this.costManager = await CostManagerFactory.deploy();
+        this.mockCommunity = await MockCommunityFactory.deploy();
+        
 
-          const retval = '0x150b7a02';
-          const error = ZERO;
-          this.buyer = await BuyerFactory.deploy(retval, error);
-          this.badBuyer = await BadBuyerFactory.deploy();
-          this.nft = await NFTMainFactory.deploy();
+        const retval = '0x150b7a02';
+        const error = ZERO;
+        this.buyer = await BuyerFactory.deploy(retval, error);
+        this.badBuyer = await BadBuyerFactory.deploy();
+        this.nft = await NFTMainFactory.deploy();
 
-          await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address,"NFT Edition", "NFT", "", "", "", this.costManager.address, ZERO_ADDRESS);
+        await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address,"NFT Edition", "NFT", "", "", "", this.costManager.address, ZERO_ADDRESS);
 
-          await this.erc20.mint(owner.address, TOTALSUPPLY);
+        await this.erc20.mint(owner.address, TOTALSUPPLY);
 
-          await this.erc20.transfer(alice.address, ethers.utils.parseEther('100'));
-          await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
-          await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
-      })
-
+        await this.erc20.transfer(alice.address, ethers.utils.parseEther('100'));
+        await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
+        await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
+    })
+/*
     describe("put series on sale", async() => {
       const seriesId = BigNumber.from('1000');
       const tokenId = ONE;
@@ -148,36 +151,6 @@ describe("v2 tests", function () {
       });
 
     });
-
-    
-
-    // it("should correct put token on sale", async() => {
-    //   const seriesId = BigNumber.from('1000');
-    //   const tokenId = ONE;
-    //   const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
-    //   const price = ethers.utils.parseEther('1');
-    //   const now = Math.round(Date.now() / 1000);   
-    //   const baseURI = "someURI";
-      
-    //   const tokenParams = [
-    //     alice.address, 
-    //     ZERO_ADDRESS, 
-    //     price, 
-    //     now + 100000,
-    //   ];
-    //   const seriesParams = tokenParams.concat([baseURI, 10000]);
-
-    //   await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
-
-    //   await this.nft.connect(alice).listForSale(id, price, ZERO_ADDRESS, 100000);
-    //   const tokenInfo = await this.nft.salesInfo(id);
-    //   expect(tokenInfo.owner).to.be.equal(alice.address);
-    //   expect(tokenInfo.currency).to.be.equal(ZERO_ADDRESS);
-    //   expect(tokenInfo.amount).to.be.equal(price);
-    //   expect(tokenInfo.onSaleUntil).to.be.equal(now + 100000);
-
-
-    // })
 
     describe("buy tests", async() => {
       const seriesId = BigNumber.from('1000');
@@ -609,7 +582,7 @@ describe("v2 tests", function () {
         ); 
       });
   
-/////////////////////////////////////////////
+      /////////////////////////////////////////////
      
       it("should correct mint NFT with ETH using autoincrement(with buyFor option)", async() => {
 
@@ -840,8 +813,6 @@ describe("v2 tests", function () {
         await expect(this.nft.connect(charlie).buy([id], ZERO_ADDRESS, price, false, ZERO, charlie.address, {value: price})).to.be.revertedWith('token is not on sale');
       })
 
-      
-
       it("shouldnt buy if token was removed from sale", async() => {
         await this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price});
         const saleParams = [
@@ -855,7 +826,6 @@ describe("v2 tests", function () {
         await this.nft.connect(bob).removeFromSale(id);
         await expect(this.nft.connect(charlie).buy([id], ZERO_ADDRESS, price.mul(TWO), false, ZERO, charlie.address, {value: price})).to.be.revertedWith('token is not on sale');
       })
-      
 
       it("shouldnt mint if series was unlisted from sale", async() => {
         const saleParams = [
@@ -1160,7 +1130,7 @@ describe("v2 tests", function () {
         expect(bobTokens[2]).to.be.equal(id.add(TWO));
       })
 
-      it("shouldn correct list null tokens if there is ", async() => {
+      it("shouldn correct list null tokens if there is (2) ", async() => {
         const limit = ZERO;
         const bobTokens = await this.nft.connect(bob).tokensByOwner(bob.address,limit);
         expect(bobTokens.length).to.be.equal(0);
@@ -1289,7 +1259,6 @@ describe("v2 tests", function () {
         })
 
       });
-
 
       describe("safe buy tests with contract ", async() => {
         it("should correct safe buy for contract", async() => {
@@ -1554,7 +1523,130 @@ describe("v2 tests", function () {
 
       })
 
-    })
+    });
+*/
+    describe("buy tests with whitelist options", async() => {
+      const seriesId = BigNumber.from('1000');
+      const tokenId = TEN;
+      const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+      const price = ethers.utils.parseEther('1');
+      const now = Math.round(Date.now() / 1000);   
+      const baseURI = "";
+      const suffix = ".json";
+      const saleParams = [
+        now + 100000, 
+        ZERO_ADDRESS, 
+        price,
+        ZERO //autoincrement price
+      ];
+      const commissions = [
+        ZERO,
+        ZERO_ADDRESS
+      ];
+      const seriesParams = [
+        alice.address,  
+        10000,
+        saleParams,
+        commissions,
+        baseURI,
+        suffix
+      ];
+      this.disableWhitelist = [
+        ZERO_ADDRESS,
+        ""
+      ];
+
+
+      beforeEach("listing series on sale", async() => {
+
+        this.transferWhitelist = [
+          this.mockCommunity.address,
+          "roleForTransfer"
+        ];
+        this.buyWhitelist = [
+          this.mockCommunity.address,
+          "roleForBuy"
+        ];
+
+      });
+
+      it("shouldnt buy if buyer not in whitelist", async() => {
+
+        await this.mockCommunity.connect(owner).setRoles(['AAA','BBB','CCC','DDD',"EEE"]);
+
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string),(address,string),(address,string))"](
+          seriesId, 
+          seriesParams,
+          this.disableWhitelist,
+          this.buyWhitelist
+        );
+
+        await expect(
+          this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price})
+        ).to.be.revertedWith("BUYER_INVALID");
+        
+
+      });
+
+
+      it("shouldnt transfer if recipient not in whitelist(while buying)", async() => {
+        await this.mockCommunity.connect(owner).setRoles(['AAA','roleForBuy','CCC','DDD',"EEE"]);
+
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string),(address,string),(address,string))"](
+          seriesId, 
+          seriesParams,
+          this.transferWhitelist,
+          this.buyWhitelist
+        );
+
+        await expect(
+          this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price})
+        ).to.be.revertedWith("RECIPIENT_INVALID");
+        
+      });
+
+      it("shouldnt transfer if recipient not in whitelist(while simple transfer)", async() => {
+        await this.mockCommunity.connect(owner).setRoles(['AAA','roleForBuy','roleForTransfer','DDD',"EEE"]);
+
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string),(address,string),(address,string))"](
+          seriesId, 
+          seriesParams,
+          this.transferWhitelist,
+          this.buyWhitelist
+        );
+        await this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price});
+
+        const newOwner = await this.nft.ownerOf(id);
+        expect(newOwner).to.be.equal(bob.address);
+
+        await this.mockCommunity.connect(owner).setRoles(['AAA','roleForBuy','CCC','DDD',"EEE"]);
+
+        await expect(
+          this.nft.connect(bob).transfer(alice.address, id)
+        ).to.be.revertedWith("RECIPIENT_INVALID");
+        
+      });
+
+      it("should buy and transfer", async() => {
+        await this.mockCommunity.connect(owner).setRoles(['AAA','roleForBuy','roleForTransfer','DDD',"EEE"]);
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string),(address,string),(address,string))"](
+          seriesId, 
+          seriesParams,
+          this.transferWhitelist,
+          this.buyWhitelist
+        );
+        await this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price});
+
+        const newOwner = await this.nft.ownerOf(id);
+        expect(newOwner).to.be.equal(bob.address);
+
+        await this.nft.connect(bob).transfer(alice.address, id);
+
+        const newOwner2 = await this.nft.ownerOf(id);
+        expect(newOwner2).to.be.equal(alice.address);
+
+      });
+    });
     
   });
 });
