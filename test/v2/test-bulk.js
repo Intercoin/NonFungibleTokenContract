@@ -118,7 +118,7 @@ describe("v2 tests", function () {
           await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
           await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
 
-          await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+          await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
           //await this.nft.connect(owner).setTrustedForwarder(this.nftBulkSale.address);
       });

@@ -10,6 +10,7 @@ contract NFTState is NFTStorage {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using AddressUpgradeable for address;
     using StringsW0x for uint256;
+    
 
     function initialize(
         string memory name_, 
@@ -24,6 +25,7 @@ contract NFTState is NFTStorage {
         //override
         onlyInitializing
     {
+
         __Ownable_init();
         __ReentrancyGuard_init();
         __ERC721_init(name_, symbol_, costManager_, producedBy_);
@@ -45,10 +47,9 @@ contract NFTState is NFTStorage {
     function setBaseURI(
         string calldata baseURI_
     ) 
-        onlyOwner
         external
     {
-    
+        requireOnlyOwner();
         baseURI = baseURI_;
         _accountForOperation(
             OPERATION_SETMETADATA << OPERATION_SHIFT_BITS,
@@ -64,9 +65,9 @@ contract NFTState is NFTStorage {
     function setSuffix(
         string calldata suffix_
     ) 
-        onlyOwner
         external
     {
+        requireOnlyOwner();
         suffix = suffix_;
         _accountForOperation(
             OPERATION_SETMETADATA << OPERATION_SHIFT_BITS,
@@ -79,7 +80,8 @@ contract NFTState is NFTStorage {
     * @dev sets contract URI. 
     * @param newContractURI new contract URI
     */
-    function setContractURI(string memory newContractURI) external onlyOwner {
+    function setContractURI(string memory newContractURI) external {
+        requireOnlyOwner();
         _contractURI = newContractURI;
         _accountForOperation(
             OPERATION_SETMETADATA << OPERATION_SHIFT_BITS,
@@ -99,6 +101,39 @@ contract NFTState is NFTStorage {
     ) 
         external
     {
+        CommunitySettings memory emptySettings = CommunitySettings(address(0), "");
+        _setSeriesInfo(seriesId, info, emptySettings, emptySettings);
+    }
+
+    /**
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    */
+    function setSeriesInfo(
+        uint64 seriesId, 
+        SeriesInfo memory info,
+        CommunitySettings memory transferWhitelistSettings,
+        CommunitySettings memory buyWhitelistSettings
+    ) 
+        external
+    {
+        _setSeriesInfo(seriesId, info, transferWhitelistSettings, buyWhitelistSettings);
+    }
+
+    /**
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    */
+    function _setSeriesInfo(
+        uint64 seriesId, 
+        SeriesInfo memory info,
+        CommunitySettings memory transferWhitelistSettings,
+        CommunitySettings memory buyWhitelistSettings
+    ) 
+        internal
+    {
         _requireCanManageSeries(seriesId);
         if (info.saleInfo.onSaleUntil > seriesInfo[seriesId].saleInfo.onSaleUntil && 
             info.saleInfo.onSaleUntil > block.timestamp
@@ -117,6 +152,9 @@ contract NFTState is NFTStorage {
         seriesInfo[seriesId] = info;
         mintedCountBySetSeriesInfo[seriesId] = 0;
 
+        seriesWhitelists[seriesId].transfer = transferWhitelistSettings;
+        seriesWhitelists[seriesId].buy = buyWhitelistSettings;
+
         _accountForOperation(
             (OPERATION_SETSERIESINFO << OPERATION_SHIFT_BITS) | seriesId,
             uint256(uint160(info.saleInfo.currency)),
@@ -133,8 +171,8 @@ contract NFTState is NFTStorage {
         CommissionInfo memory commission
     ) 
         external 
-        onlyOwner 
-    {
+    {   
+        requireOnlyOwner();
         commissionInfo = commission;
 
         _accountForOperation(
@@ -383,7 +421,9 @@ contract NFTState is NFTStorage {
         require(tokenIds.length > 0, "invalid tokenIds");
         uint64 seriesId = getSeriesId(tokenIds[0]);
 
+        validateBuyer(seriesId);
         validateHookCount(seriesId, hookCount);
+        
         uint256 left = totalPrice;
 
         for(uint256 i = 0; i < tokenIds.length; i ++) {
@@ -414,85 +454,6 @@ contract NFTState is NFTStorage {
         }
 
     }
-
-    /**
-    * @dev DEPRECATED
-    * @dev buys NFT for native coin with defined id. 
-    * mint token if it doesn't exist and transfer token
-    * if it exists and is on sale
-    * @param tokenId token ID to buy
-    * @param price amount of specified native coin to pay
-    * @param safe use safeMint and safeTransfer or not, 
-    * @param hookCount number of hooks 
-    */
-    // function buy(
-    //     uint256 tokenId, 
-    //     uint256 price, 
-    //     bool safe, 
-    //     uint256 hookCount
-    // ) 
-    //     public 
-    //     payable 
-    //     //nonReentrant 
-    // {
-
-    //     uint64 seriesId = getSeriesId(tokenId);
-
-    //     validateHookCount(seriesId, hookCount);
-
-    //     (bool success, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenId);
-
-    //     _commissions_payment(tokenId, address(0), true, price, success, data, beneficiary);
-
-    //     _buy(tokenId, exists, data, beneficiary, _msgSender(), safe);
-        
-        
-    //     _accountForOperation(
-    //         (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
-    //         0,
-    //         price
-    //     );
-    // }
-
-    
-    /**
-    * @dev DEPRECATED
-    * @dev buys NFT for specified currency with defined id. 
-    * mint token if it doesn't exist and transfer token
-    * if it exists and is on sale
-    * @param tokenId token ID to buy
-    * @param currency address of token to pay with
-    * @param price amount of specified token to pay
-    * @param safe use safeMint and safeTransfer or not
-    * @param hookCount number of hooks 
-    */
-    // function buy(
-    //     uint256 tokenId, 
-    //     address currency, 
-    //     uint256 price, 
-    //     bool safe, 
-    //     uint256 hookCount
-    // ) 
-    //     public 
-    //     //nonReentrant 
-    // {
-     
-    //     uint64 seriesId = getSeriesId(tokenId);
-
-    //     validateHookCount(seriesId, hookCount);    
-
-    //     (bool success, bool exists, SaleInfo memory data, address owner) = _getTokenSaleInfo(tokenId);
-
-    //     _commissions_payment(tokenId, currency, false, price, success, data, owner);
-        
-    //     _buy(tokenId, exists, data, owner, _msgSender(), safe);
-        
-    //     _accountForOperation(
-    //         (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
-    //         uint256(uint160(currency)),
-    //         price
-    //     );
-    // }
 
     /**
     * @dev buys NFT for native coin with undefined id. 
@@ -551,7 +512,8 @@ contract NFTState is NFTStorage {
     ) 
         internal
     {
-
+        
+        validateBuyer(seriesId);
         validateHookCount(seriesId, hookCount);
 
         (bool success, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
@@ -629,8 +591,8 @@ contract NFTState is NFTStorage {
         string memory newSymbol
     ) 
         public 
-        onlyOwner 
     {
+        requireOnlyOwner();
         _setNameAndSymbol(newName, newSymbol);
     }
     
@@ -816,9 +778,9 @@ contract NFTState is NFTStorage {
     function setTrustedForwarder(
         address trustedForwarder_
     )
-        onlyOwner 
         public 
     {
+        requireOnlyOwner();
         _setTrustedForwarder(trustedForwarder_);
     }
 
@@ -832,9 +794,8 @@ contract NFTState is NFTStorage {
         address contractAddress
     )
         public 
-        onlyOwner
     {
-
+        requireOnlyOwner();
         try ISafeHook(contractAddress).supportsInterface(type(ISafeHook).interfaceId) returns (bool success) {
             if (success) {
                 hooks[seriesId].add(contractAddress);
@@ -882,6 +843,15 @@ contract NFTState is NFTStorage {
     /********************************************************************
     ****** internal section *********************************************
     *********************************************************************/
+
+    function validateBuyer(uint64 seriesId) internal {
+
+        if (seriesWhitelists[seriesId].buy.community != address(0)) {
+            bool success = ICommunity(seriesWhitelists[seriesId].buy.community).isMemberHasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);
+            //require(success, "buyer not in whitelist");
+            require(success, "BUYER_INVALID");
+        }
+    }
 
     function _freeze(uint256 tokenId, string memory baseURI_, string memory suffix_) internal 
     {
@@ -983,11 +953,7 @@ contract NFTState is NFTStorage {
         internal 
         onlyInitializing
     {
-        __Context_init();
-        __ERC165_init();
-        __Ownable_init();
-        __ReentrancyGuard_init();
-
+        
         _setNameAndSymbol(name_, symbol_);
         costManager = costManager_;
         factory = _msgSender();
@@ -1247,6 +1213,14 @@ contract NFTState is NFTStorage {
             }
         }
         ////
+        if (to != address(0) && seriesWhitelists[seriesId].transfer.community != address(0)) {
+            bool success = ICommunity(seriesWhitelists[seriesId].transfer.community).isMemberHasRole(to, seriesWhitelists[seriesId].transfer.role);
+            //require(success, "recipient not in whitelist");
+            require(success, "RECIPIENT_INVALID");
+            
+        }
+    ////
+
         if (from == address(0)) {
             _addTokenToAllTokensEnumeration(tokenId);
         } else if (from != to) {

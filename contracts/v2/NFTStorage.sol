@@ -8,13 +8,16 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721Metad
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "../lib/StringsW0x.sol";
-import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+//import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
+//import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "../interfaces/ICostManager.sol";
 import "../interfaces/IFactory.sol";
 
 import "../interfaces/ISafeHook.sol";
+import "../interfaces/ICommunity.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 
@@ -38,12 +41,12 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 * NFTMain - contract entry point
 */
 contract NFTStorage  is 
-    ERC165Upgradeable, 
+    IERC165Upgradeable, 
     IERC721MetadataUpgradeable,
     IERC721EnumerableUpgradeable, 
-    OwnableUpgradeable, 
     ReentrancyGuardUpgradeable
 {
+    
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using AddressUpgradeable for address;
     using StringsW0x for uint256;
@@ -128,6 +131,11 @@ contract NFTStorage  is
         SeriesInfo seriesInfo;
     }
 
+    struct SeriesWhitelists {
+        CommunitySettings transfer;
+        CommunitySettings buy;
+    }
+
     mapping (uint256 => TokenInfo) internal tokensInfo;  // tokenId => tokensInfo
     
     mapping (uint64 => SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
@@ -138,7 +146,12 @@ contract NFTStorage  is
 
     mapping(uint64 => uint256) public mintedCountBySeries;
     mapping(uint64 => uint256) internal mintedCountBySetSeriesInfo;
+
+    mapping(uint64 => SeriesWhitelists) internal seriesWhitelists;
     
+    // vars from ownable.sol
+    address private _owner;
+
     struct SaleInfoToken { 
         SaleInfo saleInfo;
         uint256 ownerCommissionValue;
@@ -169,6 +182,11 @@ contract NFTStorage  is
     struct CommissionData {
         uint64 value;
         address recipient;
+    }
+
+    struct CommunitySettings {
+        address community;
+        string role;
     }
 
     event SeriesPutOnSale(
@@ -208,6 +226,9 @@ contract NFTStorage  is
         uint64 seriesId, 
         address contractAddress
     );
+
+    // event from ownable.sol
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     
     //stubs
 
@@ -382,4 +403,75 @@ contract NFTStorage  is
         require(owner != address(0), "ERC721: balance query for the zero address");
         return _balances[owner];
     }
+
+    ///////
+    // functions from context
+    function _msgSender() internal view virtual returns (address) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes calldata) {
+        return msg.data;
+    }
+    ///////
+    // functions from ownable
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    function __Ownable_init() internal onlyInitializing {
+        _transferOwnership(_msgSender());
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    function requireOnlyOwner() internal view {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual {
+        requireOnlyOwner();
+        _transferOwnership(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual {
+        requireOnlyOwner();
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        address oldOwner = _owner;
+        _owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+
+    ///////
+    // ERC165 support interface
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return interfaceId == type(IERC165Upgradeable).interfaceId;
+    }
+
 }

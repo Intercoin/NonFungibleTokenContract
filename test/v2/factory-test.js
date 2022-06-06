@@ -145,7 +145,7 @@ describe("v2 tests", function () {
                     suffix
                 ];
 
-                await this.nftCreatedByFactory.connect(owner).setSeriesInfo(seriesId, seriesParams);
+                await this.nftCreatedByFactory.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
                 const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
                 const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);

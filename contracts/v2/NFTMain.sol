@@ -53,10 +53,9 @@ contract NFTMain is NFTStorage {
     function setBaseURI(
         string calldata baseURI_
     ) 
-        onlyOwner
         external
     {
-    
+        requireOnlyOwner();
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
@@ -77,9 +76,9 @@ contract NFTMain is NFTStorage {
     function setSuffix(
         string calldata suffix_
     ) 
-        onlyOwner
         external
     {
+        requireOnlyOwner();
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
@@ -100,8 +99,8 @@ contract NFTMain is NFTStorage {
         string memory newContractURI
     ) 
         external 
-        onlyOwner 
     {
+        requireOnlyOwner();
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
@@ -136,6 +135,31 @@ contract NFTMain is NFTStorage {
         );
 
     }
+    /**
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    * @custom:calledby owner or series author
+    * @custom:shortd set series Info
+    */
+    function setSeriesInfo(
+        uint64 seriesId, 
+        SeriesInfo memory info,
+        CommunitySettings memory transferWhitelistSettings,
+        CommunitySettings memory buyWhitelistSettings
+    ) 
+        external
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setSeriesInfo.selector,
+            //     seriesId, info
+            // )
+            msg.data
+        );
+
+    }
 
     /**
     * set commission paid to contract owner
@@ -147,9 +171,8 @@ contract NFTMain is NFTStorage {
         CommissionInfo memory commission
     ) 
         external 
-        onlyOwner 
     {
-
+        requireOnlyOwner();
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
@@ -561,8 +584,8 @@ contract NFTMain is NFTStorage {
         string memory newSymbol
     ) 
         public 
-        onlyOwner 
     {
+        requireOnlyOwner();
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
@@ -820,9 +843,9 @@ contract NFTMain is NFTStorage {
     function setTrustedForwarder(
         address trustedForwarder_
     )
-        onlyOwner 
         public 
     {
+        requireOnlyOwner();
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
@@ -846,8 +869,8 @@ contract NFTMain is NFTStorage {
         address contractAddress
     )
         public 
-        onlyOwner
     {
+        requireOnlyOwner();
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
