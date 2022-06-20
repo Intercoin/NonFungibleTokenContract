@@ -781,6 +781,7 @@ contract NFTState is NFTStorage {
         public 
     {
         requireOnlyOwner();
+        require(msg.sender != trustedForwarder, "DENIED_FOR_FORWARDER");
         _setTrustedForwarder(trustedForwarder_);
     }
 
@@ -881,6 +882,7 @@ contract NFTState is NFTStorage {
     )
         internal 
     {
+        
         trustedForwarder = trustedForwarder_;
     }
 
