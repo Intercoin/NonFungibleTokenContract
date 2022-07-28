@@ -73,9 +73,11 @@ import "../v2/NFTFactory.sol";
 contract Factory is NFTFactory {
 
     constructor (
-        address instance, 
+        address instance,  
+        address implState, 
+        address implView, 
         address costManager_
-    ) NFTFactory(instance, costManager_) {
+    ) NFTFactory(instance, implState, implView, costManager_) {
         
     }
 }
