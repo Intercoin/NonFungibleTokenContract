@@ -938,7 +938,7 @@ contract NFTMain is NFTStorage {
     * @custom:calledby token owner 
     * @custom:shortd unhold URI and suffix for token
     */
-    function unFreeze(
+    function unfreeze(
         uint256 tokenId
     ) 
         public 
@@ -946,7 +946,7 @@ contract NFTMain is NFTStorage {
         _functionDelegateCall(
             address(implNFTState), 
             // abi.encodeWithSelector(
-            //     NFTState.unFreeze.selector,
+            //     NFTState.unfreeze.selector,
             //     tokenId
             // )
             msg.data

@@ -106,7 +106,7 @@ describe("v2 tests", function () {
                 await expect(this.nft.connect(bob)["freeze(uint256,string,string)"](id, newURI, newSuffix)).to.be.revertedWith("token isn't owned by sender");
                 
             })
-            it('check new tokenURI after freeze', async() => {
+            it('check new tokenURI after freeze and revert back after unfreeze', async() => {
                 await this.nft.connect(alice).buy([id], ZERO_ADDRESS, price, false, ZERO, alice.address,{value: price}); 
 
                 const newURI = 'newURI';
@@ -115,8 +115,12 @@ describe("v2 tests", function () {
                 await this.nft.connect(alice)["freeze(uint256,string,string)"](id, newURI, newSuffix);
 
                 expect(await this.nft.tokenURI(id)).not.to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
-
                 expect(await this.nft.tokenURI(id)).to.be.equal(newURI.concat(id.toHexString().substring(2)).concat(newSuffix));
+
+                await this.nft.connect(alice)["unfreeze(uint256)"](id);
+
+                expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(suffix));
+                expect(await this.nft.tokenURI(id)).not.to.be.equal(newURI.concat(id.toHexString().substring(2)).concat(newSuffix));
 
             })
             it('check holding current tokenURI after freeze', async() => {
@@ -136,6 +140,7 @@ describe("v2 tests", function () {
                 expect(await this.nft.tokenURI(id)).not.to.be.equal(newURI.concat(id.toHexString().substring(2)).concat(newSuffix));
 
             })
+
             it('should transfer token to user', async() => {
                 await this.nft.connect(alice).buy([id], ZERO_ADDRESS, price, false, ZERO, alice.address,{value: price}); 
                 const nftBalanceBeforeAlice = await this.nft.balanceOf(alice.address);

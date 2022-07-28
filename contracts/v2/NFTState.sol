@@ -831,7 +831,8 @@ contract NFTState is NFTStorage {
         _freeze(tokenId, baseURI, suffix);
     }
 
-    function unFreeze(
+    
+    function unfreeze(
         uint256 tokenId
     ) 
         public 
