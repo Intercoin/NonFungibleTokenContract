@@ -36,6 +36,12 @@ describe("v2 tests", function () {
             const NftMainFactory = await ethers.getContractFactory("NFTMain");
             const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
 
+            const NFTStateFactory = await ethers.getContractFactory("NFTState");
+            const NFTViewFactory = await ethers.getContractFactory("NFTView");
+
+            this.nftState = await NFTStateFactory.deploy();
+            this.nftView = await NFTViewFactory.deploy();
+
             this.costManager = await CostManagerFactory.deploy();
 
             this.nft = await NftMainFactory.deploy();
@@ -43,7 +49,7 @@ describe("v2 tests", function () {
             const name = "NFT Edition";
             const symbol = "NFT";
 
-            this.factory = await FactoryFactory.deploy(this.nft.address, ZERO_ADDRESS);
+            this.factory = await FactoryFactory.deploy(this.nft.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS);
             
         })
 

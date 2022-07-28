@@ -28,17 +28,19 @@ contract NFTFactory is Ownable, IFactory {
     event InstanceCreated(string name, string symbol, address instance, uint256 length);
     event RenouncedOverrideCostManagerForInstance(address instance);
 
-    NFTView public implementationNFTView;
-    NFTState public implementationNFTState;
+    address public implementationNFTView;
+    address public implementationNFTState;
     constructor (
         address instance, 
+        address implState, 
+        address implView, 
         address costManager_
     ) {
         implementation = instance;
         costManager = costManager_;
 
-        implementationNFTState = new NFTState();
-        implementationNFTView = new NFTView();
+        implementationNFTState = implState;
+        implementationNFTView = implView;
     }
 
     /**
@@ -148,8 +150,8 @@ contract NFTFactory is Ownable, IFactory {
         require(instanceCreated != address(0), "StakingFactory: INSTANCE_CREATION_FAILED");
         address ms = _msgSender();
         INFTInstanceContract(instanceCreated).initialize(
-            address(implementationNFTState),
-            address(implementationNFTView),
+            implementationNFTState,
+            implementationNFTView,
             name, 
             symbol, 
             contractURI, 

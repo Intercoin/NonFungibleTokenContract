@@ -24,6 +24,13 @@ const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY
 
 module.exports = {
   networks: {
+    local: {
+      url: "http://localhost:8545", //rinkebyURL,
+      chainId: 1337,
+      gasPrice: "auto",
+      accounts: {mnemonic: process.env.MNEMONIC},
+      saveDeployments: true
+    },
     hardhat: {
       allowUnlimitedContractSize: false,
       forking: {

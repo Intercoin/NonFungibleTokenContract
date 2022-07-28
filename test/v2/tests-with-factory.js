@@ -66,11 +66,17 @@ describe("v2 tests", function () {
             const BuyerFactory = await ethers.getContractFactory("Buyer");
             const NFTFactoryFactory = await ethers.getContractFactory("NFTFactory");
 
+            const NFTStateFactory = await ethers.getContractFactory("NFTState");
+            const NFTViewFactory = await ethers.getContractFactory("NFTView");
+
+            this.nftState = await NFTStateFactory.deploy();
+            this.nftView = await NFTViewFactory.deploy();
+
             this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
             // this.nft = await NFTFactory.deploy();
             // await this.nft.connect(owner).initialize("NFT Edition", "NFT");
             this.nftimpl = await NFTMainFactory.deploy();
-            this.factory = await NFTFactoryFactory.deploy(this.nftimpl.address, ZERO_ADDRESS);
+            this.factory = await NFTFactoryFactory.deploy(this.nftimpl.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS);
             let tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
             let receipt = await tx.wait();
             let instanceAddr = receipt['events'][0].args.instance;
@@ -94,6 +100,8 @@ describe("v2 tests", function () {
                 expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(".json"));
                 expect(await this.nft.name()).to.be.equal("NFT Edition");
                 expect(await this.nft.symbol()).to.be.equal("NFT");
+                console.log(await this.nft.name());
+                console.log(await this.nft.symbol());
             })
             
             it('check name and symbol after owner set', async() => {
