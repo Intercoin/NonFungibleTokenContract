@@ -63,7 +63,7 @@ module.exports = {
     bsc: {
       url: bscURL,
       chainId: 56,
-      gasPrice: "auto",
+      //gasPrice: "auto",
       accounts: [process.env.private_key],
       saveDeployments: true
     },
@@ -77,7 +77,7 @@ module.exports = {
     matic: {
       url: maticURL,
       chainId: 137,
-      gasPrice: "auto",
+      //gasPrice: "auto",
       accounts: [process.env.private_key],
       saveDeployments: true
     },
@@ -112,7 +112,7 @@ module.exports = {
           settings: {
             optimizer: {
               enabled: true,
-              runs: 50,
+              runs: 10,
             },
             metadata: {
               // do not include the metadata hash, since this is machine dependent
