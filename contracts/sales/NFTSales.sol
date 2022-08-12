@@ -105,7 +105,6 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
             INFTSalesFactory(factoryAddress).mintAndDistribute(tokenIds, selfAddresses);
 
         }
-        
 
     }
 
@@ -117,7 +116,11 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         view 
         returns(uint64) 
     {
-        return locked[tokenId].untilTimestamp > uint64(block.timestamp) ? locked[tokenId].untilTimestamp - uint64(block.timestamp) : 0;
+        require(
+            locked[tokenId].owner != address(0), 
+            "unknown tokenId"
+        );
+        return remainingLockedTime(tokenId)/86400;
     }
 
     // distribute unlocked tokens to the appropriate addresses
@@ -159,10 +162,16 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
                 locked[tokenIds[i]].owner != address(0), 
                 "unknown tokenId"
             );
+
             require(
-                locked[tokenIds[i]].untilTimestamp <= uint64(block.timestamp), 
-                "still locked"
+                locked[tokenIds[i]].untilTimestamp < uint64(block.timestamp), 
+                string(abi.encodePacked(
+                    "Tokens can be claimed after ", 
+                    remainingLockedTime(tokenIds[i])/86400 ,
+                    " more days."
+                ))
             );
+            
             require(
                 (shouldCheckOwner == false) ||
                 (
@@ -180,5 +189,15 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
 
     function getFactory() internal view returns(address) {
         return owner(); // deployer of contract. this can't make sense if factory some how will make transferownership
+    }
+
+    function remainingLockedTime(
+        uint256 tokenId
+    )
+        internal 
+        view
+        returns(uint64)
+    {
+        return locked[tokenId].untilTimestamp > uint64(block.timestamp) ? locked[tokenId].untilTimestamp - uint64(block.timestamp) : 0;
     }
 }
