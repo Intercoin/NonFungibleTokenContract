@@ -6,16 +6,22 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 import "./INFTSalesFactory.sol";
 import "./INFTSales.sol";
 import "./INFT.sol";
+import "../whitelist/WhitelistUpgradeable.sol";
 
-contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
+contract NFTSales is OwnableUpgradeable, WhitelistUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
+
+    using StringsUpgradeable for uint256;
 
     address currency;
     uint256 price;
     address beneficiary;
     uint64 duration;
+
+    address factoryAddress;
     
     struct TokenData {
          address owner;
@@ -23,8 +29,6 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     }
     
     mapping(uint256 => TokenData) locked;
-
-
 
     function initialize(
         address _currency, 
@@ -37,37 +41,29 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         initializer 
     {
         __Ownable_init();
+        factoryAddress = owner();
+
+        __Whitelist_init();
 
         __NFTSales_init(_currency, _price, _beneficiary, _duration);
 
-
     }
 
-    function __NFTSales_init(
-        address _currency, 
-        uint256 _price, 
-        address _beneficiary, 
-        uint64 _duration
-    ) 
-        internal 
-        onlyInitializing
-    {
-        currency    = _currency;
-        price       = _price;
-        beneficiary = _beneficiary;
-        duration    = _duration;
-    }
 
-    function mintAndDistribute(
+    /********************************************************************
+    ****** external section *********************************************
+    *********************************************************************/
+
+    function specialPurchase(
         uint256[] memory tokenIds, 
         address[] memory addresses
     ) 
         external
         payable
+        onlyWhitelist(commonGroupName)
     {
         address buyer = _msgSender();
-        address factoryAddress = owner();
-
+        
         require(tokenIds.length != 0 && tokenIds.length == addresses.length);
         
         //uint256 tokenId = tokenIds[0];
@@ -150,6 +146,78 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         return IERC721ReceiverUpgradeable.onERC721Received.selector;
     }
 
+    /********************************************************************
+    ****** public section ***********************************************
+    *********************************************************************/
+    /**
+     * Adding addresses list to whitelist 
+     * 
+     * Requirements:
+     *
+     * - `_addresses` cannot contains the zero address.
+     * 
+     * @param _addresses list of addresses which will be added to whitelist
+     */
+    function whitelistAdd(
+        address[] memory _addresses
+    ) 
+        public 
+        onlyOwner
+    {
+        _whitelistAdd(commonGroupName, _addresses);
+    }
+    
+    /**
+     * Removing addresses list from whitelist
+     * 
+     * Requirements:
+     *
+     * - `_addresses` cannot contains the zero address.
+     * 
+     * @param _addresses list of addresses which will be removed from whitelist
+     */
+    function whitelistRemove(
+        address[] memory _addresses
+    ) 
+        onlyOwner
+        public 
+    {
+        _whitelistRemove(commonGroupName, _addresses);
+    }
+
+    /**
+    * Checks if a address already exists in a whitelist
+    * 
+    * @param addr address
+    * @return result return true if exist 
+    */
+    function isWhitelisted(address addr) public virtual view returns (bool result) {
+        result = _isWhitelisted(commonGroupName, addr);
+    }
+    
+    
+    /********************************************************************
+    ****** internal section *********************************************
+    *********************************************************************/
+    function __NFTSales_init(
+        address _currency, 
+        uint256 _price, 
+        address _beneficiary, 
+        uint64 _duration
+    ) 
+        internal 
+        onlyInitializing
+    {
+        currency    = _currency;
+        price       = _price;
+        beneficiary = _beneficiary;
+        duration    = _duration;
+    }
+
+    function getBlockTimestamp() public view returns(uint256) {
+        return block.timestamp;
+    }
+
     function _claim(
         uint256[] memory tokenIds,
         bool shouldCheckOwner
@@ -158,6 +226,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     {
         address nftAddress = INFTSalesFactory(getFactory()).getInstanceNftAddress();
         for(uint256 i=0; i<tokenIds.length; i++) {
+
             require(
                 locked[tokenIds[i]].owner != address(0), 
                 "unknown tokenId"
@@ -167,11 +236,11 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
                 locked[tokenIds[i]].untilTimestamp < uint64(block.timestamp), 
                 string(abi.encodePacked(
                     "Tokens can be claimed after ", 
-                    remainingLockedTime(tokenIds[i])/86400 ,
+                    uint256(remainingLockedTime(tokenIds[i])/86400).toString(),
                     " more days."
                 ))
             );
-            
+
             require(
                 (shouldCheckOwner == false) ||
                 (
@@ -188,7 +257,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     }
 
     function getFactory() internal view returns(address) {
-        return owner(); // deployer of contract. this can't make sense if factory some how will make transferownership
+        return factoryAddress; // deployer of contract. this can't make sense if deployed manually
     }
 
     function remainingLockedTime(

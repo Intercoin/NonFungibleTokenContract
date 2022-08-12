@@ -9,7 +9,9 @@ import "./INFTSales.sol";
 import "./INFTSalesFactory.sol";
 import "./INFT.sol";
 
-contract NFTSalesFactory is Ownable, INFTSalesFactory {
+import "../whitelist/Whitelist.sol";
+
+contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
     using Clones for address;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -18,10 +20,10 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory {
     * @notice Community implementation address
     */
     address public immutable implementationNftSale;
-
-    EnumerableSet.AddressSet internal instances;
-    EnumerableSet.AddressSet internal blackList;
     
+    bytes32 constant internal instancesListGroupName = "instancesList";
+    bytes32 constant internal blackListGroupName = "blackList";
+
     struct InstanceInfo {
         address nftAddress;        
         address owner;
@@ -30,20 +32,22 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory {
         address beneficiary;
         uint64 duration;
     }
-    mapping(address =>InstanceInfo) instancesInfo;
+    mapping(address => InstanceInfo) instancesInfo;
 
     event InstanceCreated(address instance, uint instancesCount);
 
     modifier onlyInstance() {
-        require(instances.contains(_msgSender()), "instances only");
-        require(!blackList.contains(_msgSender()), "instance in black list");
+        require(_isWhitelisted(instancesListGroupName, _msgSender()), "instances only");
+        require(!_isWhitelisted(blackListGroupName, _msgSender()), "instance in black list");
         _;
     }
     /**
     */
     constructor(
         address implementation
-    ) {
+    ) 
+        Whitelist() 
+    {
         require(implementation != address(0), "ZERO ADDRESS");
         implementationNftSale = implementation;
     }
@@ -62,7 +66,7 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory {
         view 
         returns (uint256 amount) 
     {
-        amount = instances.length();
+        amount = _whitelistCount(instancesListGroupName);
     }
 
     function mintAndDistribute(
@@ -142,6 +146,20 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory {
         
     }
 
+    function addToBlackList(address instance) 
+        public 
+        onlyOwner 
+    {
+        _whitelistAddSingle(blackListGroupName, instance);
+    }
+
+    function removeFromBlackList(address instance) 
+        public 
+        onlyOwner 
+    {
+        _whitelistRemoveSingle(blackListGroupName, instance);
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // internal section ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -159,19 +177,11 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory {
     {
         require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
 
-        instances.add(instance);
+        _whitelistAddSingle(instancesListGroupName, instance);
 
         instancesInfo[instance] = InstanceInfo(nftAddress, owner, currency, price, beneficiary, duration);
-        // instancesInfo[instance] = InstanceInfo({
-        //     nftAddress: nftAddress,
-        //     owner: owner,
-        //     currency: currency,
-        //     price: price,
-        //     beneficiary: beneficiary,
-        //     duration: duration
-        // });
         
-        emit InstanceCreated(instance, instances.length());
+        emit InstanceCreated(instance, _whitelistCount(instancesListGroupName));
     }
 
      function _postProduce(

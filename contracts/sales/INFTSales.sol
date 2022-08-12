@@ -9,12 +9,12 @@ interface INFTSales {
         uint64 duration
     ) external;
 
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external payable;
+    function specialPurchase(uint256[] memory tokenIds, address[] memory addresses) external payable;
 
     
     function remainingDays(uint256 tokenId) external view returns(uint64);
     function distributeUnlockedTokens(uint256[] memory tokenIds) external;
     function claim(uint256[] memory tokenIds) external;
-    
+
     
 }
