@@ -92,7 +92,7 @@ module.exports = {
   docgen: {
     path: './docs',
     clear: true,
-    only: ['contracts/v2'],
+    only: ['contracts/v2','contracts/sales'],
     theme: '../../docgen-custom-markdown',
     runOnCompile: false,
   },

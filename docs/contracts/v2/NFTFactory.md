@@ -32,6 +32,8 @@ Arguments
 | **name** | **type** | **description** |
 |-|-|-|
 | instance | address |  |
+| implState | address |  |
+| implView | address |  |
 | costManager_ | address |  |
 
 

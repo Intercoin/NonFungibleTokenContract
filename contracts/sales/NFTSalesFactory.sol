@@ -69,6 +69,13 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         amount = _whitelistCount(instancesListGroupName);
     }
 
+    /**
+    * @notice mint distribute nfts
+    * @param tokenIds array of tokens that would be a minted
+    * @param addresses array of desired owners to newly minted nft tokens
+    * @custom:calledby instance
+    * @custom:shortd mint distribute nfts
+    */
     function mintAndDistribute(
         uint256[] memory tokenIds, 
         address[] memory addresses
@@ -98,6 +105,11 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         _verifyCallResult(transferSuccess, returndata, "low level error");
     }
 
+    /**
+    * @notice view nft contrac address. used by instances in external calls
+    * @custom:calledby instance
+    * @custom:shortd view nft contrac address 
+    */
     function getInstanceNFTcontract(
     ) 
         onlyInstance
@@ -108,17 +120,21 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         return instancesInfo[_msgSender()].NFTcontract;
     }
 
-
     ////////////////////////////////////////////////////////////////////////
     // public section //////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
 
     /**
-    * param hook address of contract implemented ICommunityHook interface. Can be address(0)
-    * param name erc721 name
-    * param symbol erc721 symbol
-    * @return instance address of created instance `CommunityERC721`
-    * @custom:shortd creation CommunityERC721 instance
+    * @notice creation NFTSales instance
+    * @param NFTcontract nftcontract's address that allows to mintAndDistribute for this factory 
+    * @param owner owner's adddress for newly created NFTSales contract
+    * @param currency currency for every sale nft token 
+    * @param price price amount for every sale nft token 
+    * @param beneficiary address where which receive funds after sale
+    * @param duration locked time when nft will be locked after sale
+    * @return instance address of created instance `NFTSales`
+    * @custom:calledby owner
+    * @custom:shortd creation NFTSales instance
     */
     function produce(
         address NFTcontract,
@@ -141,10 +157,16 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
 
         Ownable(instance).transferOwnership(owner);
         
-        _postProduce(instance);
+        //_postProduce(instance);
         
     }
 
+    /**
+    * @notice remove ability to mintAndDistibute nft tokens for certain instance
+    * @param instance instance's address that would be added to blacklist and prevent call mintAndDistibute
+    * @custom:calledby owner
+    * @custom:shortd adding instance to black list
+    */
     function addToBlackList(address instance) 
         public 
         onlyOwner 
@@ -152,6 +174,12 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         _whitelistAddSingle(blackListGroupName, instance);
     }
 
+    /**
+    * @notice remove ability to mintAndDistibute nft tokens for certain instance
+    * @param instance instance's address that would be added to blacklist and prevent call mintAndDistibute
+    * @custom:calledby owner
+    * @custom:shortd adding instance to black list
+    */
     function removeFromBlackList(address instance) 
         public 
         onlyOwner 
@@ -183,21 +211,12 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         emit InstanceCreated(instance, _whitelistCount(instancesListGroupName));
     }
 
-     function _postProduce(
-        address instance
-    ) 
-        internal
-    {
-        // address[] memory s = new address[](1);
-        // s[0] = msg.sender;
-
-        // uint8[] memory r = new uint8[](1);
-        // r[0] = 2;//"owners";
-
-        // //ICommunityTransfer(instance).addMembers(s);
-        // ICommunityTransfer(instance).grantRoles(s, r);
-
-    }
+    // function _postProduce(
+    //     address instance
+    // ) 
+    //     internal
+    // {
+    // }
 
     function _verifyCallResult(
         bool success,
@@ -214,7 +233,6 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
             // Look for revert reason and bubble it up if present
             if (returndata.length > 0) {
                 // The easiest way to bubble the revert reason is using memory via assembly
-
                 assembly {
                     let returndata_size := mload(returndata)
                     revert(add(32, returndata), returndata_size)
@@ -224,5 +242,4 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
             }
         }
     }
-
 }

@@ -19,6 +19,7 @@ Once installed will be use methods:
 |<a href="#factory">factory</a>|everyone||
 |<a href="#getapproved">getApproved</a>|everyone||
 |<a href="#gethooklist">getHookList</a>|everyone||
+|<a href="#getseriesinfo">getSeriesInfo</a>|everyone||
 |<a href="#gettokensaleinfo">getTokenSaleInfo</a>|everyone||
 |<a href="#isapprovedforall">isApprovedForAll</a>|everyone||
 |<a href="#mintedcountbyseries">mintedCountBySeries</a>|everyone||
@@ -30,6 +31,7 @@ Once installed will be use methods:
 |<a href="#safetransferfrom">safeTransferFrom</a>|everyone||
 |<a href="#safetransferfrom">safeTransferFrom</a>|everyone||
 |<a href="#seriesinfo">seriesInfo</a>|everyone||
+|<a href="#seriestokenindex">seriesTokenIndex</a>|everyone||
 |<a href="#setapprovalforall">setApprovalForAll</a>|everyone||
 |<a href="#suffix">suffix</a>|everyone||
 |<a href="#supportsinterface">supportsInterface</a>|everyone||
@@ -99,6 +101,7 @@ Arguments
 |-|-|-|
 | seriesId | uint64 | indexed |
 | price | uint256 | not indexed |
+| autoincrement | uint256 | not indexed |
 | currency | address | not indexed |
 | onSaleUntil | uint64 | not indexed |
 
@@ -213,6 +216,7 @@ Arguments
 
 | **name** | **type** | **description** |
 |-|-|-|
+| account | address | address to check |
 | seriesId | uint64 | the id of the series being asked about |
 
 Outputs
@@ -231,6 +235,7 @@ Arguments
 
 | **name** | **type** | **description** |
 |-|-|-|
+| account | address | address to check |
 | tokenId | uint256 | the id of the tokens being asked about |
 
 Outputs
@@ -318,6 +323,30 @@ Outputs
 | **name** | **type** | **description** |
 |-|-|-|
 | -/- | address[] |  |
+
+
+
+### getSeriesInfo
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| seriesId | uint64 |  |
+
+Outputs
+
+| **name** | **type** | **description** |
+|-|-|-|
+| author | address |  |
+| limit | uint32 |  |
+| onSaleUntil | uint64 |  |
+| currency | address |  |
+| price | uint256 |  |
+| value | uint64 |  |
+| recipient | address |  |
+| baseURI | string |  |
+| suffix | string |  |
 
 
 
@@ -479,6 +508,22 @@ Outputs
 | commission | tuple |  |
 | baseURI | string |  |
 | suffix | string |  |
+
+
+
+### seriesTokenIndex
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| -/- | uint64 |  |
+
+Outputs
+
+| **name** | **type** | **description** |
+|-|-|-|
+| -/- | uint192 |  |
 
 
 
