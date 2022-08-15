@@ -25,7 +25,7 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
     bytes32 constant internal blackListGroupName = "blackList";
 
     struct InstanceInfo {
-        address nftAddress;        
+        address NFTcontract;        
         address owner;
         address currency;
         uint256 price;
@@ -76,18 +76,17 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         external
         onlyInstance
     {
-        //address instance = _msgSender();
-        //address nftAddress = instancesInfo[instance].nftAddress;
-        address nftAddress = instancesInfo[_msgSender()].nftAddress;
+        
+        address NFTcontract = instancesInfo[_msgSender()].NFTcontract;
 
         // get current owner directly from nft instance contract
-        address owner = Ownable(nftAddress).owner();
+        address owner = Ownable(NFTcontract).owner();
         
         bool transferSuccess;
         bytes memory returndata;
 
         // factory is a trusted forwarder for nft contract and calls makes as an owner
-        (transferSuccess, returndata) = nftAddress.call(
+        (transferSuccess, returndata) = NFTcontract.call(
             abi.encodePacked(
                 abi.encodeWithSelector(
                     INFT.mintAndDistribute.selector,
@@ -99,14 +98,14 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         _verifyCallResult(transferSuccess, returndata, "low level error");
     }
 
-    function getInstanceNftAddress(
+    function getInstanceNFTcontract(
     ) 
         onlyInstance
         external 
         view 
         returns(address) 
     {
-        return instancesInfo[_msgSender()].nftAddress;
+        return instancesInfo[_msgSender()].NFTcontract;
     }
 
 
@@ -122,7 +121,7 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
     * @custom:shortd creation CommunityERC721 instance
     */
     function produce(
-        address nftAddress,
+        address NFTcontract,
         address owner, 
         address currency, 
         uint256 price, 
@@ -136,7 +135,7 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
         
         instance = address(implementationNftSale).clone();
 
-        _produce(instance, owner, nftAddress, currency, price, beneficiary, duration);
+        _produce(instance, owner, NFTcontract, currency, price, beneficiary, duration);
         
         INFTSales(instance).initialize(currency, price, beneficiary, duration);
 
@@ -167,7 +166,7 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
     function _produce(
         address instance,
         address owner, 
-        address nftAddress,
+        address NFTcontract,
         address currency, 
         uint256 price, 
         address beneficiary, 
@@ -179,7 +178,7 @@ contract NFTSalesFactory is Ownable, INFTSalesFactory, Whitelist {
 
         _whitelistAddSingle(instancesListGroupName, instance);
 
-        instancesInfo[instance] = InstanceInfo(nftAddress, owner, currency, price, beneficiary, duration);
+        instancesInfo[instance] = InstanceInfo(NFTcontract, owner, currency, price, beneficiary, duration);
         
         emit InstanceCreated(instance, _whitelistCount(instancesListGroupName));
     }

@@ -224,7 +224,7 @@ contract NFTSales is OwnableUpgradeable, WhitelistUpgradeable, INFTSales, IERC72
     ) 
         internal
     {
-        address nftAddress = INFTSalesFactory(getFactory()).getInstanceNftAddress();
+        address NFTcontract = INFTSalesFactory(getFactory()).getInstanceNFTcontract();
         for(uint256 i=0; i<tokenIds.length; i++) {
 
             require(
@@ -250,7 +250,7 @@ contract NFTSales is OwnableUpgradeable, WhitelistUpgradeable, INFTSales, IERC72
                 "should be owner"
             );
 
-            IERC721Upgradeable(nftAddress).safeTransferFrom(address(this), locked[tokenIds[i]].owner, tokenIds[i]);
+            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), locked[tokenIds[i]].owner, tokenIds[i]);
 
             delete locked[tokenIds[i]];
         }
