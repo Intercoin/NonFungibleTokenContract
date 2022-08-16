@@ -12,9 +12,12 @@ Once installed will be use methods:
 |<a href="#balanceof">balanceOf</a>|everyone|owner balance|
 |<a href="#baseuri">baseURI</a>|everyone|global baseURI|
 |<a href="#burn">burn</a>|token owner |part of ERC721|
-|<a href="#buy">buy</a>|everyone|buys NFT for specified currency|
-|<a href="#buy">buy</a>|everyone|buys NFT for native coin|
-|<a href="#canmanageseries">canManageSeries</a>|everyone|tells the caller whether they can ьфтпу a series|
+|<a href="#buy">buy</a>|everyone||
+|<a href="#buyauto">buyAuto</a>|everyone|buys NFT for specified currency|
+|<a href="#buyauto">buyAuto</a>|everyone|buys NFT for native coin|
+|<a href="#buyauto">buyAuto</a>|everyone|buys NFT for native coin|
+|<a href="#buyauto">buyAuto</a>|everyone|buys NFT for specified currency|
+|<a href="#canmanageseries">canManageSeries</a>|everyone|tells the caller whether they can manage a series|
 |<a href="#canmanagetoken">canManageToken</a>|everyone|tells the caller whether they can transfer an existing token|
 |<a href="#commissioninfo">commissionInfo</a>|everyone|global commission data |
 |<a href="#contracturi">contractURI</a>|everyone|return contract uri|
@@ -24,10 +27,12 @@ Once installed will be use methods:
 |<a href="#freeze">freeze</a>|token owner |hold series URI and suffix for token|
 |<a href="#getapproved">getApproved</a>|everyone|account approved for `tokenId` token|
 |<a href="#gethooklist">getHookList</a>|everyone|returns the list of hooks for series|
+|<a href="#getseriesinfo">getSeriesInfo</a>|everyone||
 |<a href="#gettokensaleinfo">getTokenSaleInfo</a>|everyone|return token's sale info|
 |<a href="#isapprovedforall">isApprovedForAll</a>|everyone|see {setApprovalForAll}|
 |<a href="#listforsale">listForSale</a>|token owner|list on sale|
 |<a href="#mintanddistribute">mintAndDistribute</a>|owner or series author|mint and distribute new tokens|
+|<a href="#mintanddistributeauto">mintAndDistributeAuto</a>|owner or series author|mint and distribute new tokens|
 |<a href="#mintedcountbyseries">mintedCountBySeries</a>|everyone|amount of tokens minted in certain series|
 |<a href="#name">name</a>|everyone|token's name|
 |<a href="#overridecostmanager">overrideCostManager</a>|owner or factory that produced instance|set cost manager address|
@@ -41,12 +46,14 @@ Once installed will be use methods:
 |<a href="#safetransferfrom">safeTransferFrom</a>|token owner |part of ERC721|
 |<a href="#safetransferfrom">safeTransferFrom</a>|token owner |part of ERC721|
 |<a href="#seriesinfo">seriesInfo</a>|everyone|series info|
+|<a href="#seriestokenindex">seriesTokenIndex</a>|everyone||
 |<a href="#setapprovalforall">setApprovalForAll</a>|token owner |part of ERC721|
 |<a href="#setbaseuri">setBaseURI</a>|owner|set default baseURI|
 |<a href="#setcommission">setCommission</a>|owner or series author|set new commission|
 |<a href="#setcontracturi">setContractURI</a>|owner|set default contract URI|
 |<a href="#setnameandsymbol">setNameAndSymbol</a>|owner|sets name and symbol for contract|
 |<a href="#setownercommission">setOwnerCommission</a>|owner|set owner commission|
+|<a href="#setseriesinfo">setSeriesInfo</a>|owner or series author|set series Info|
 |<a href="#setseriesinfo">setSeriesInfo</a>|owner or series author|set series Info|
 |<a href="#setsuffix">setSuffix</a>|owner|set default suffix|
 |<a href="#settrustedforwarder">setTrustedForwarder</a>|owner |set trustedForwarder address |
@@ -62,9 +69,9 @@ Once installed will be use methods:
 |<a href="#totalsupply">totalSupply</a>|everyone|totalsupply|
 |<a href="#transfer">transfer</a>|token owner |part of ERC721|
 |<a href="#transferfrom">transferFrom</a>|token owner |part of ERC721|
-|<a href="#transferownership">transferOwnership</a>|everyone||
-|<a href="#trustedforwarder">trustedForwarder</a>|everyone||
-|<a href="#unfreeze">unFreeze</a>|token owner |unhold URI and suffix for token|
+|<a href="#transferownership">transferOwnership</a>|everyone|Transfers ownership of the contract to a new account|
+|<a href="#trustedforwarder">trustedForwarder</a>|everyone|trusted forwarder's address|
+|<a href="#unfreeze">unfreeze</a>|token owner |unhold URI and suffix for token|
 ## *Events*
 ### Approval
 
@@ -120,6 +127,7 @@ Arguments
 |-|-|-|
 | seriesId | uint64 | indexed |
 | price | uint256 | not indexed |
+| autoincrement | uint256 | not indexed |
 | currency | address | not indexed |
 | onSaleUntil | uint64 | not indexed |
 
@@ -244,31 +252,79 @@ Arguments
 
 ### buy
 
-> Details: buys NFT for specified currency with defined id.  mint token if it doesn't exist and transfer token if it exists and is on sale
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| tokenIds | uint256[] |  |
+| currency | address |  |
+| totalPrice | uint256 |  |
+| safe | bool |  |
+| hookCount | uint256 |  |
+| buyFor | address |  |
+
+
+
+### buyAuto
+
+> Details: buys NFT for native coin with undefined id.  Id will be generate as usually by auto inrement but belong to seriesId and transfer token if it is on sale
 
 Arguments
 
 | **name** | **type** | **description** |
 |-|-|-|
-| tokenId | uint256 | token ID to buy |
+| seriesId | uint64 | series ID whene we can find free token to buy |
 | currency | address | address of token to pay with |
 | price | uint256 | amount of specified token to pay |
 | safe | bool | use safeMint and safeTransfer or not |
 | hookCount | uint256 | number of hooks  |
+| buyFor | address | address of new nft owner |
 
 
 
-### buy
+### buyAuto
 
-> Details: buys NFT for native coin with defined id.  mint token if it doesn't exist and transfer token if it exists and is on sale
+> Details: buys NFT for native coin with undefined id.  Id will be generate as usually by auto inrement but belong to seriesId and transfer token if it is on sale
 
 Arguments
 
 | **name** | **type** | **description** |
 |-|-|-|
-| tokenId | uint256 | token ID to buy |
+| seriesId | uint64 | series ID whene we can find free token to buy |
 | price | uint256 | amount of specified native coin to pay |
 | safe | bool | use safeMint and safeTransfer or not,  |
+| hookCount | uint256 | number of hooks  |
+
+
+
+### buyAuto
+
+> Details: buys NFT for native coin with undefined id.  Id will be generate as usually by auto inrement but belong to seriesId and transfer token if it is on sale
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| seriesId | uint64 | series ID whene we can find free token to buy |
+| price | uint256 | amount of specified native coin to pay |
+| safe | bool | use safeMint and safeTransfer or not,  |
+| hookCount | uint256 | number of hooks  |
+| buyFor | address | address of new nft owner |
+
+
+
+### buyAuto
+
+> Details: buys NFT for native coin with undefined id.  Id will be generate as usually by auto inrement but belong to seriesId and transfer token if it is on sale
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| seriesId | uint64 | series ID whene we can find free token to buy |
+| currency | address | address of token to pay with |
+| price | uint256 | amount of specified token to pay |
+| safe | bool | use safeMint and safeTransfer or not |
 | hookCount | uint256 | number of hooks  |
 
 
@@ -281,6 +337,7 @@ Arguments
 
 | **name** | **type** | **description** |
 |-|-|-|
+| account | address | address to check |
 | seriesId | uint64 | the id of the series being asked about |
 
 Outputs
@@ -299,6 +356,7 @@ Arguments
 
 | **name** | **type** | **description** |
 |-|-|-|
+| account | address | address to check |
 | tokenId | uint256 | the id of the tokens being asked about |
 
 Outputs
@@ -421,6 +479,30 @@ Outputs
 
 
 
+### getSeriesInfo
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| seriesId | uint64 |  |
+
+Outputs
+
+| **name** | **type** | **description** |
+|-|-|-|
+| author | address |  |
+| limit | uint32 |  |
+| onSaleUntil | uint64 |  |
+| currency | address |  |
+| price | uint256 |  |
+| value | uint64 |  |
+| recipient | address |  |
+| baseURI | string |  |
+| suffix | string |  |
+
+
+
 ### getTokenSaleInfo
 
 > Details: returns if token is on sale or not,  whether it exists or not, as well as data about the sale and its owner
@@ -484,8 +566,22 @@ Arguments
 
 | **name** | **type** | **description** |
 |-|-|-|
-| tokenIds | uint256[] | list of NFT IDs t obe minted |
+| tokenIds | uint256[] | list of NFT IDs to be minted |
 | addresses | address[] | list of receiver addresses |
+
+
+
+### mintAndDistributeAuto
+
+> Details: mints and distributes `amount` NFTs by `seriesId` to `account`
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| seriesId | uint64 | seriesId |
+| account | address | receiver addresses |
+| amount | uint256 | amount of tokens |
 
 
 
@@ -669,6 +765,22 @@ Outputs
 
 
 
+### seriesTokenIndex
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| -/- | uint64 |  |
+
+Outputs
+
+| **name** | **type** | **description** |
+|-|-|-|
+| -/- | uint192 |  |
+
+
+
 ### setApprovalForAll
 
 > Details: Approve or remove `operator` as an operator for the caller. Operators can call {transferFrom} or {safeTransferFrom} for any token owned by the caller. Requirements: - The `operator` cannot be the caller. Emits an {ApprovalForAll} event.
@@ -739,6 +851,21 @@ Arguments
 | **name** | **type** | **description** |
 |-|-|-|
 | commission | tuple | new commission info |
+
+
+
+### setSeriesInfo
+
+> Details: sets information for series with 'seriesId'. 
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| seriesId | uint64 | series ID |
+| info | tuple | new info to set |
+| transferWhitelistSettings | tuple |  |
+| buyWhitelistSettings | tuple |  |
 
 
 
@@ -984,6 +1111,8 @@ Arguments
 
 ### trustedForwarder
 
+> Details: trusted forwarder's address
+
 Outputs
 
 | **name** | **type** | **description** |
@@ -992,7 +1121,7 @@ Outputs
 
 
 
-### unFreeze
+### unfreeze
 
 > Details: unhold token
 
