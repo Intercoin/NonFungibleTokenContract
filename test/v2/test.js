@@ -66,6 +66,8 @@ describe("v2 tests", function () {
         const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
         const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
         const MockCommunityFactory = await ethers.getContractFactory("MockCommunity");
+        const CostManagerGoodF = await ethers.getContractFactory("MockCostManagerGood");
+        const CostManagerBadF = await ethers.getContractFactory("MockCostManagerBad");
 
         this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
         this.hook1 = await HookFactory.deploy();
@@ -81,6 +83,8 @@ describe("v2 tests", function () {
         this.costManager = await CostManagerFactory.deploy();
         this.mockCommunity = await MockCommunityFactory.deploy();
         
+        this.costManagerGood = await CostManagerGoodF.deploy();
+        this.costManagerBad = await CostManagerBadF.deploy();
 
         const retval = '0x150b7a02';
         const error = ZERO;
@@ -149,8 +153,49 @@ describe("v2 tests", function () {
         let x = await this.nft.connect(charlie).canManageSeries(bob.address, seriesId);
         expect(x).to.be.false;
       });
+ 
+    });
+
+    describe("CostManager test", async() => {
+    
+      //beforeEach("deploying", async() => {
+          
+          // let tx,rc,event,instance,instancesCount;
+          // //
+          // tx = await CommunityFactory.connect(owner)["produce(address,string,string)"](NO_HOOK,TOKEN_NAME,TOKEN_SYMBOL);
+          // rc = await tx.wait(); // 0ms, as tx is already confirmed
+          // event = rc.events.find(event => event.event === 'InstanceCreated');
+          // [instance, instancesCount] = event.args;
+          // CommunityInstance = await ethers.getContractAt("Community",instance);
+
+          // if (trustedForwardMode) {
+          //     await CommunityInstance.connect(owner).setTrustedForwarder(trustedForwarder.address);
+          // }
+
+      //}); 
+
+      it("shouldnt override costmanager", async () => {
+          await expect(
+              this.nft.connect(bob).overrideCostManager(this.costManagerGood.address)
+          ).to.be.revertedWith("cannot override");
+          
+      });     
+
+      it("should override costmanager", async () => {
+          let oldCostManager = await this.nft.costManager();
+          
+          await this.nft.connect(owner).overrideCostManager(this.costManagerGood.address);
+
+          let newCostManager = await this.nft.costManager();
+
+          expect(oldCostManager).not.to.be.eq(newCostManager);
+          expect(newCostManager).to.be.eq(this.costManagerGood.address);
+
+      }); 
+     
 
     });
+
 
     describe("buy tests", async() => {
       const seriesId = BigNumber.from('1000');

@@ -13,8 +13,9 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeab
 //import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "../interfaces/ICostManager.sol";
-import "../interfaces/IFactory.sol";
+// import "../interfaces/ICostManager.sol";
+// import "../interfaces/IFactory.sol";
+import "releasemanager/contracts/CostManagerHelperERC2771Support.sol";
 
 import "../interfaces/ISafeHook.sol";
 import "../interfaces/ICommunity.sol";
@@ -44,7 +45,8 @@ contract NFTStorage  is
     IERC165Upgradeable, 
     IERC721MetadataUpgradeable,
     IERC721EnumerableUpgradeable, 
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    CostManagerHelperERC2771Support
 {
     
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -61,12 +63,12 @@ contract NFTStorage  is
     string internal _contractURI;    
     
     // Address of factory that produced this instance
-    address public factory;
+    //address public factory;
     
     // Utility token, if any, to manage during operations
-    address public costManager;
+    //address public costManager;
 
-    address public trustedForwarder;
+    //address public trustedForwarder;
 
     // Mapping owner address to token count
     mapping(address => uint256) internal _balances;
@@ -255,15 +257,15 @@ contract NFTStorage  is
         return tokensInfo[tokenId].tokenApproval;
     }
     function _ownerOf(uint256 tokenId) internal view virtual returns (address) {
-        address owner = __ownerOf(tokenId);
-        require(owner != address(0), "ERC721: owner query for nonexistent token");
-        return owner;
+        address owner_ = __ownerOf(tokenId);
+        require(owner_ != address(0), "ERC721: owner query for nonexistent token");
+        return owner_;
     }
     function __ownerOf(uint256 tokenId) internal view virtual returns (address) {
         return tokensInfo[tokenId].owner;
     }
-    function _isApprovedForAll(address owner, address operator) internal view virtual returns (bool) {
-        return _operatorApprovals[owner][operator];
+    function _isApprovedForAll(address owner_, address operator) internal view virtual returns (bool) {
+        return _operatorApprovals[owner_][operator];
     }
     function _exists(uint256 tokenId) internal view virtual returns (bool) {
         return tokensInfo[tokenId].owner != address(0)
@@ -317,17 +319,17 @@ contract NFTStorage  is
             bool isOnSale,
             bool exists, 
             SaleInfo memory data,
-            address owner
+            address owner_
         ) 
     {
         data = tokensInfo[tokenId].salesInfoToken.saleInfo;
 
         exists = _exists(tokenId);
-        owner = tokensInfo[tokenId].owner;
+        owner_ = tokensInfo[tokenId].owner;
 
 
         uint64 seriesId = getSeriesId(tokenId);
-        if (owner != address(0)) { 
+        if (owner_ != address(0)) { 
             if (data.onSaleUntil > block.timestamp) {
                 isOnSale = true;
                 
@@ -338,7 +340,7 @@ contract NFTStorage  is
             if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
                 isOnSale = true;
                 data = seriesData.saleInfo;
-                owner = seriesData.author;
+                owner_ = seriesData.author;
 
             }
         }   
@@ -359,7 +361,7 @@ contract NFTStorage  is
             bool isOnSale,
             bool exists, 
             SaleInfo memory data,
-            address owner,
+            address owner_,
             uint256 tokenId
         ) 
     {
@@ -369,14 +371,14 @@ contract NFTStorage  is
 
             data = tokensInfo[tokenId].salesInfoToken.saleInfo;
             exists = _exists(tokenId);
-            owner = tokensInfo[tokenId].owner;
+            owner_ = tokensInfo[tokenId].owner;
 
-            if (owner == address(0)) { 
+            if (owner_ == address(0)) { 
                 seriesData = seriesInfo[seriesId];
                 if (seriesData.saleInfo.onSaleUntil > block.timestamp) {
                     isOnSale = true;
                     data = seriesData.saleInfo;
-                    owner = seriesData.author;
+                    owner_ = seriesData.author;
                     
                     if (exists == false) {
                         //using autoincrement for primarysale only
@@ -393,26 +395,30 @@ contract NFTStorage  is
     }
 
     function _balanceOf(
-        address owner
+        address owner_
     ) 
         internal 
         view 
         virtual 
         returns (uint256) 
     {
-        require(owner != address(0), "ERC721: balance query for the zero address");
-        return _balances[owner];
+        require(owner_ != address(0), "ERC721: balance query for the zero address");
+        return _balances[owner_];
     }
 
     ///////
-    // functions from context
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
+    // // functions from context
+    // function _msgSender() internal view virtual returns (address) {
+    //     return msg.sender;
+    // }
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        return msg.data;
+    // function _msgData() internal view virtual returns (bytes calldata) {
+    //     return msg.data;
+    // }
+    function setTrustedForwarder(address forwarder) public virtual override {
+        //just stub but must override
     }
+    
     ///////
     // functions from ownable
     /**

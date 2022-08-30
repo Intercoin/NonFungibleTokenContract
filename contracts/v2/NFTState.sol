@@ -381,27 +381,6 @@ contract NFTState is NFTStorage {
         
     }
    
-    /** 
-    * @dev sets the utility token
-    * @param costManager_ new address of utility token, or 0
-    */
-    function overrideCostManager(address costManager_) external {
-        // require factory owner or operator
-        // otherwise needed deployer(!!not contract owner) in cases if was deployed manually
-        require (
-            (factory.isContract()) 
-                ?
-                    IFactory(factory).canOverrideCostManager(_msgSender(), address(this))
-                :
-                    factory == _msgSender()
-            ,
-            "cannot override"
-        );
-        costManager = costManager_;
-    }
-
-    
-
     /********************************************************************
     ****** public section ***********************************************
     *********************************************************************/
@@ -779,6 +758,7 @@ contract NFTState is NFTStorage {
         address trustedForwarder_
     )
         public 
+        override
     {
         requireOnlyOwner();
         _setTrustedForwarder(trustedForwarder_);
@@ -862,29 +842,7 @@ contract NFTState is NFTStorage {
         tokensInfo[tokenId].freezeInfo.suffix = suffix_;
         
     }
-    function _msgSender(
-    ) 
-        internal 
-        view 
-        override
-        returns (address signer) 
-    {
-        signer = msg.sender;
-        if (msg.data.length >= 20 && trustedForwarder == signer) {
-            assembly {
-                signer := shr(96,calldataload(sub(calldatasize(),20)))
-            }
-        }    
-    }
-
-    function _setTrustedForwarder(
-        address trustedForwarder_
-    )
-        internal 
-    {
-        trustedForwarder = trustedForwarder_;
-    }
-
+   
     function _transferOwnership(
         address newOwner
     ) 
@@ -956,9 +914,10 @@ contract NFTState is NFTStorage {
     {
         
         _setNameAndSymbol(name_, symbol_);
-        costManager = costManager_;
-        factory = _msgSender();
         
+        __CostManagerHelper_init(_msgSender());
+        _setCostManager(costManager_);
+
         _accountForOperation(
             OPERATION_INITIALIZE << OPERATION_SHIFT_BITS,
             uint256(uint160(producedBy_)),
@@ -1517,28 +1476,5 @@ contract NFTState is NFTStorage {
         tokensInfo[tokenId].allTokensIndex = 0;
         _allTokens.pop();
     }
-    
-    /**
-     * @dev Private function that tells utility token contract to account for an operation
-     * @param info uint256 The operation ID (first 8 bits), seriesId is last 8 bits
-     * @param param1 uint256 Some more information, if any
-     * @param param2 uint256 Some more information, if any
-     */
-    function _accountForOperation(uint256 info, uint256 param1, uint256 param2) private {
-        if (costManager != address(0)) {
-            try ICostManager(costManager).accountForOperation(
-                _msgSender(), info, param1, param2
-            )
-            returns (uint256 /*spent*/, uint256 /*remaining*/) {
-                // if error is not thrown, we are fine
-            } catch Error(string memory reason) {
-                // This is executed in case revert() was called with a reason
-                revert(reason);
-            } catch {
-                revert("Insufficient Utility Token: Contact Owner");
-            }
-        }
-    }
-
     
 }

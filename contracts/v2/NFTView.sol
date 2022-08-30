@@ -14,12 +14,13 @@ contract NFTView is NFTStorage {
     * - NTMain should !obligatory! append to msg.data (msg.sender). and only for view calls (NFTView)
     * - msg.data(NFTView) shouldn't be empty and shoud exist at least 20 bytes to identify sender
     */
-    function _msgSender() internal pure override returns (address signer) {
-        require(msg.data.length>=20, "incorrect msg.data");
-        assembly {
-            signer := shr(96,calldataload(sub(calldatasize(),20)))
-        }
-    }
+    // function _msgSender() internal pure override returns (address signer) {
+    //     require(msg.data.length>=20, "incorrect msg.data");
+    //     assembly {
+    //         signer := shr(96,calldataload(sub(calldatasize(),20)))
+    //     }
+    // }
+    //!!!!!!!!!!!!!
 
     /********************************************************************
     ****** external section *********************************************

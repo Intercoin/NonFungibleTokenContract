@@ -57,17 +57,28 @@ describe("v2 tests", function () {
             suffix
         ];
 
+        var NFTMainFactory;
         beforeEach("deploying", async() => {
+            const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
+            const CostManagerGoodF = await ethers.getContractFactory("MockCostManagerGood");
+            const CostManagerBadF = await ethers.getContractFactory("MockCostManagerBad");
+
+            const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
+
 
             const ERC20Factory = await ethers.getContractFactory("MockERC20");
 
-            const NFTMainFactory = await ethers.getContractFactory("NFTMain");
+            NFTMainFactory = await ethers.getContractFactory("NFTMain");
             
             const BuyerFactory = await ethers.getContractFactory("Buyer");
             const NFTFactoryFactory = await ethers.getContractFactory("NFTFactory");
 
             const NFTStateFactory = await ethers.getContractFactory("NFTState");
             const NFTViewFactory = await ethers.getContractFactory("NFTView");
+
+            this.costManagerGood = await CostManagerGoodF.deploy();
+            this.costManagerBad = await CostManagerBadF.deploy();
+            let implementationReleaseManager    = await ReleaseManagerF.deploy();
 
             this.nftState = await NFTStateFactory.deploy();
             this.nftView = await NFTViewFactory.deploy();
@@ -76,10 +87,33 @@ describe("v2 tests", function () {
             // this.nft = await NFTFactory.deploy();
             // await this.nft.connect(owner).initialize("NFT Edition", "NFT");
             this.nftimpl = await NFTMainFactory.deploy();
+
+            let releaseManagerFactory   = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.address);
+            let tx,rc,event,instance,instancesCount;
+            //
+            tx = await releaseManagerFactory.connect(owner).produce();
+            rc = await tx.wait(); // 0ms, as tx is already confirmed
+            event = rc.events.find(event => event.event === 'InstanceProduced');
+            [instance, instancesCount] = event.args;
+            let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+
             this.factory = await NFTFactoryFactory.deploy(this.nftimpl.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS);
-            let tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
-            let receipt = await tx.wait();
-            let instanceAddr = receipt['events'][0].args.instance;
+
+            // 
+            const factoriesList = [this.factory.address];
+            const factoryInfo = [
+                [
+                    1,//uint8 factoryIndex; 
+                    1,//uint16 releaseTag; 
+                    "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
+                ]
+            ]
+            await this.factory.connect(owner).registerReleaseManager(releaseManager.address);
+            await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
+
+            tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
+            rc = await tx.wait();
+            let instanceAddr = rc['events'][0].args.instance;
             this.nft = await NFTMainFactory.attach(instanceAddr);
             //--
 
@@ -93,6 +127,30 @@ describe("v2 tests", function () {
 
         })
 
+        it("should set costmanager while factory produce", async () => {
+            
+
+            let tx,rc,event,instance;
+            //
+            tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition2", "NFT2", "");
+            rc = await tx.wait(); // 0ms, as tx is already confirmed
+            event = rc.events.find(event => event.event === 'InstanceCreated');
+            instance = rc['events'][0].args.instance;
+            let communityInstance1 = await NFTMainFactory.attach(instance);
+
+            await this.factory.connect(owner).setCostManager(this.costManagerGood.address);
+
+            tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition3", "NFT3", "");
+            rc = await tx.wait(); // 0ms, as tx is already confirmed
+            event = rc.events.find(event => event.event === 'InstanceCreated');
+            instance = rc['events'][0].args.instance;
+            let communityInstance2 = await NFTMainFactory.attach(instance);
+
+            expect(await communityInstance1.costManager()).to.be.eq(ZERO_ADDRESS);
+            expect(await communityInstance2.costManager()).to.be.eq(this.costManagerGood.address);
+
+        }); 
+
         describe('produced instance tests', async() => {
             
             it('check name, symbol and tokenURI', async() => {
@@ -100,8 +158,7 @@ describe("v2 tests", function () {
                 expect(await this.nft.tokenURI(id)).to.be.equal(baseURI.concat(id.toHexString().substring(2)).concat(".json"));
                 expect(await this.nft.name()).to.be.equal("NFT Edition");
                 expect(await this.nft.symbol()).to.be.equal("NFT");
-                console.log(await this.nft.name());
-                console.log(await this.nft.symbol());
+
             })
             
             it('check name and symbol after owner set', async() => {

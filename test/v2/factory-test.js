@@ -32,12 +32,23 @@ describe("v2 tests", function () {
         const charlie = accounts[3];
 
         beforeEach("deployment", async() => {
+            const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
+            const CostManagerGoodF = await ethers.getContractFactory("MockCostManagerGood");
+            const CostManagerBadF = await ethers.getContractFactory("MockCostManagerBad");
+
+            const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
+
             const FactoryFactory = await ethers.getContractFactory("NFTFactory");
             const NftMainFactory = await ethers.getContractFactory("NFTMain");
             const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
 
             const NFTStateFactory = await ethers.getContractFactory("NFTState");
             const NFTViewFactory = await ethers.getContractFactory("NFTView");
+
+            this.costManagerGood = await CostManagerGoodF.deploy();
+            this.costManagerBad = await CostManagerBadF.deploy();
+
+            let implementationReleaseManager    = await ReleaseManagerF.deploy();
 
             this.nftState = await NFTStateFactory.deploy();
             this.nftView = await NFTViewFactory.deploy();
@@ -49,8 +60,28 @@ describe("v2 tests", function () {
             const name = "NFT Edition";
             const symbol = "NFT";
 
+            let releaseManagerFactory   = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.address);
+            let tx,rc,event,instance,instancesCount;
+            //
+            tx = await releaseManagerFactory.connect(owner).produce();
+            rc = await tx.wait(); // 0ms, as tx is already confirmed
+            event = rc.events.find(event => event.event === 'InstanceProduced');
+            [instance, instancesCount] = event.args;
+            let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+
             this.factory = await FactoryFactory.deploy(this.nft.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS);
             
+            // 
+            const factoriesList = [this.factory.address];
+            const factoryInfo = [
+                [
+                    1,//uint8 factoryIndex; 
+                    1,//uint16 releaseTag; 
+                    "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
+                ]
+            ]
+            await this.factory.connect(owner).registerReleaseManager(releaseManager.address);
+            await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
         })
 
         it("should correct deploy instance and do usual buy test", async() => {

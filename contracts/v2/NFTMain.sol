@@ -328,22 +328,23 @@ contract NFTMain is NFTStorage {
     * @custom:calledby owner or factory that produced instance
     * @custom:shortd set cost manager address
     */
-    function overrideCostManager(
-        address costManager_
-    ) 
-        external 
-    {
+    // function overrideCostManager(
+    //     address costManager_
+    // ) 
+    //     external 
+        
+    // {
 
-        _functionDelegateCall(
-            address(implNFTState), 
-            // abi.encodeWithSelector(
-            //     NFTState.overrideCostManager.selector,
-            //     costManager_
-            // )
-            msg.data
-        );
+    //     _functionDelegateCall(
+    //         address(implNFTState), 
+    //         // abi.encodeWithSelector(
+    //         //     NFTState.overrideCostManager.selector,
+    //         //     costManager_
+    //         // )
+    //         msg.data
+    //     );
 
-    }
+    // }
 
     ///////////////////////////////////////
     //// external view section ////////////
@@ -844,6 +845,7 @@ contract NFTMain is NFTStorage {
         address trustedForwarder_
     )
         public 
+        override
     {
         requireOnlyOwner();
         _functionDelegateCall(
