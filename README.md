@@ -95,8 +95,6 @@ Polygon: 0xEd99D3bf50e76c257F1b197796c5df8B27F73986 (not verified)<br>
 ------------------------------<br>
 </details>
 
-
- <hr>
 <h1> Getting started </h1>
 To deploy a new instance of NFT contract user should call produce() method of Factory contract with desired 'name' and 'symbol' of a new token. 
 Since it is done, address of the new instance can be obtained by calling getInstance() method of Factory contract. 
@@ -104,7 +102,30 @@ The caller of the Factory contract is the owner of the new contract. Owner can c
 For example, owner can call mintAndDistribute() method and freely mint list of specified IDs to list of specified addresses. 
 To create the new series of tokens, function setSeriesInfo() must be called with appropriate parameters ('onSaleUntil' must be > current timestamp).
 
-<hr>
+<br>
+<h2> NFTSales </h2>
+NFTSales contract can be produced by contract NFTSalesFactory and allow to purchase nft by special price that can be setup by NFTSalesFactory's owner . 
 
-## Contracts MD
+The list of basic features:
+Token can be claim after duration period that should be passed after purchase
+The contract owner can add(or remove) any person into whitelist
+Any person from the whitelist can purchase tokens by calling specialPurchase 
+Bought tokens will be able after duration time was passed it will not be automaticallY. person have need to call distribute/claim methods
+
+<br>
+<h2> NFTSalesFactory </h2>
+NFTSalesFactory is a factory contract for NFTSales instance.
+Work schema are following: Deployer deploy NFTSalesFactory and make it as Trusted Forwarder for desired NFTContract, where would want to sell nft tokens.
+Then for his clients deployer can create NFTSales instance and specify params like currency,price,beneficiary,etc.
+Now Client - as owner of NFTSales contract can add to whitelist any persons because calling specialPurchase are able only whitelist's persons.
+in any time: 
+Owner of NFTSales contract can remove person from whitelist and block method specialPurchase for him using.
+Deployer can add to black list certain NFTSales contract, and block it works.
+From other side NFTContract's owner can remove NFTSalesFactory from the TrustedForwarder. This will block work for all NFTSales instances produced by the factory.
+
+<hr>
+<h1>Contracts MD</h1>
+
 [NFT.md](docs/contracts/v2/NFTMain.md)<br>
+[NFTSales.md](docs/contracts/sales/NFTSales.md)<br>
+[NFTSalesFactory.md](docs/contracts/sales/NFTSalesFactory.md)<br>

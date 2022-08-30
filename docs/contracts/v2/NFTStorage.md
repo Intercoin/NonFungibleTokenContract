@@ -27,6 +27,7 @@ Once installed will be use methods:
 |<a href="#safetransferfrom">safeTransferFrom</a>|everyone||
 |<a href="#safetransferfrom">safeTransferFrom</a>|everyone||
 |<a href="#seriesinfo">seriesInfo</a>|everyone||
+|<a href="#seriestokenindex">seriesTokenIndex</a>|everyone||
 |<a href="#setapprovalforall">setApprovalForAll</a>|everyone||
 |<a href="#suffix">suffix</a>|everyone||
 |<a href="#supportsinterface">supportsInterface</a>|everyone||
@@ -93,6 +94,7 @@ Arguments
 |-|-|-|
 | seriesId | uint64 | indexed |
 | price | uint256 | not indexed |
+| autoincrement | uint256 | not indexed |
 | currency | address | not indexed |
 | onSaleUntil | uint64 | not indexed |
 
@@ -381,6 +383,22 @@ Outputs
 
 
 
+### seriesTokenIndex
+
+Arguments
+
+| **name** | **type** | **description** |
+|-|-|-|
+| -/- | uint64 |  |
+
+Outputs
+
+| **name** | **type** | **description** |
+|-|-|-|
+| -/- | uint192 |  |
+
+
+
 ### setApprovalForAll
 
 Arguments
@@ -404,7 +422,7 @@ Outputs
 
 ### supportsInterface
 
-> Details: See {IERC165-supportsInterface}.
+> Details: Returns true if this contract implements the interface defined by `interfaceId`. See the corresponding https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section] to learn more about how these ids are created. This function call must use less than 30 000 gas.
 
 Arguments
 

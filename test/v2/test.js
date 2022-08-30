@@ -96,7 +96,7 @@ describe("v2 tests", function () {
         await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
         await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
     })
-/*
+/**/
     describe("put series on sale", async() => {
       const seriesId = BigNumber.from('1000');
       const tokenId = ONE;
@@ -1524,7 +1524,7 @@ describe("v2 tests", function () {
       })
 
     });
-*/
+/**/
     describe("buy tests with whitelist options", async() => {
       const seriesId = BigNumber.from('1000');
       const tokenId = TEN;
