@@ -35,9 +35,11 @@ async function main() {
 		typeof data_object.nft === 'undefined' ||
 		typeof data_object.nftState === 'undefined' ||
 		typeof data_object.nftView === 'undefined' ||
+		typeof data_object.releaseManager === 'undefined' ||
 		!data_object.nft ||
 		!data_object.nftState ||
-		!data_object.nftView
+		!data_object.nftView ||
+		!data_object.releaseManager
 	) {
 		throw("Arguments file: wrong addresses");
 	}
@@ -67,17 +69,16 @@ async function main() {
 		options
 	]
 
-
 	let deployerBalanceAtBegin = await deployer.getBalance();
 	console.log("Started account balance:", (deployerBalanceAtBegin).toString());
 
 	const FactoryFactory = await ethers.getContractFactory("Factory");
-
 	this.factory = await FactoryFactory.connect(deployer).deploy(...params);
+	await this.factory.connect(deployer).registerReleaseManager(data_object.releaseManager);
 
 	console.log("Factory deployed at:", this.factory.address);
-
 	console.log("with params:", [..._params]);
+	console.log("registered with release manager:", data_object.releaseManager);
 
 	let deployerBalanceInTheEnd = await deployer.getBalance();
 	console.log("ETH spent: ", ethers.utils.formatEther(BigNumber.from(deployerBalanceAtBegin).sub(BigNumber.from(deployerBalanceInTheEnd))));

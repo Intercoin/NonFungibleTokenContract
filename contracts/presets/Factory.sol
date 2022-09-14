@@ -1,20 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.11;
 
+import "../v2/NFTFactory.sol";
+
 /**
-********************
-NFT FACTORY CONTRACT
-********************
+****************
+FACTORY CONTRACT
+****************
 
-Although this code is available for viewing on GitHub and Etherscan, the general public is NOT given a license to freely deploy smart contracts based on this code, on any blockchains.
+Although this code is available for viewing on GitHub and here, the general public is NOT given a license to freely deploy smart contracts based on this code, on any blockchains.
 
-To prevent confusion and increase trust in the audited code bases of smart contracts we produce, we intend for there to be only ONE official Factory address on the blockchain producing these NFT smart contracts, and we are going to point a blockchain domain name at it.
+To prevent confusion and increase trust in the audited code bases of smart contracts we produce, we intend for there to be only ONE official Factory address on the blockchain producing the corresponding smart contracts, and we are going to point a blockchain domain name at it.
 
 Copyright (c) Intercoin Inc. All rights reserved.
 
 ALLOWED USAGE.
 
-Provided they agree to all the conditions of this Agreement listed below, anyone is welcome to interact with the official Factory Contract at the address 0x22222e0849704b754be0A372fFcDb9B22e4D7147 to produce smart contract instances, or to interact with instances produced in this manner by others.
+Provided they agree to all the conditions of this Agreement listed below, anyone is welcome to interact with the official Factory Contract at the this address to produce smart contract instances, or to interact with instances produced in this manner by others.
 
 Any user of software powered by this code MUST agree to the following, in order to use it. If you do not agree, refrain from using the software:
 
@@ -44,16 +46,17 @@ This Agreement does not grant you any right in any trademark or logo of Develope
 
 LINK REQUIREMENTS.
 
-Operators of any Websites and Apps which make use of smart contracts based on this code must conspicuously include the following phrase in their website, featuring a clickable link that takes users to nftremix.com:
-"Visit https://nftremix.com to release your own NFT collection."
+Operators of any Websites and Apps which make use of smart contracts based on this code must conspicuously include the following phrase in their website, featuring a clickable link that takes users to intercoin.app:
 
-STAKING REQUIREMENTS.
+"Visit https://intercoin.app to launch your own NFTs, DAOs and other Web3 solutions."
 
-In the future, Developer may begin requiring staking of ITR tokens in order to take further actions (such as producing series and minting tokens). Any staking requirements will first be announced on Developer's website (intercoin.org) four weeks in advance. Staking requirements will not apply to any actions already taken before they are put in place.
+STAKING OR SPENDING REQUIREMENTS.
+
+In the future, Developer may begin requiring staking or spending of Intercoin tokens in order to take further actions (such as producing series and minting tokens). Any staking or spending requirements will first be announced on Developer's website (intercoin.org) four weeks in advance. Staking requirements will not apply to any actions already taken before they are put in place.
 
 CUSTOM ARRANGEMENTS.
 
-Reach out to us at intercoin.org if you are looking to obtain ITR tokens in bulk, remove link requirements forever, remove staking requirements forever, or get custom work done with your NFT projects.
+Reach out to us at intercoin.org if you are looking to obtain Intercoin tokens in bulk, remove link requirements forever, remove staking requirements forever, or get custom work done with your decentralized projects.
 
 ENTIRE AGREEMENT
 
@@ -67,9 +70,6 @@ ARBITRATION
 
 All disputes related to this agreement shall be governed by and interpreted in accordance with the laws of New York, without regard to principles of conflict of laws. The parties to this agreement will submit all disputes arising under this agreement to arbitration in New York City, New York before a single arbitrator of the American Arbitration Association (“AAA”). The arbitrator shall be selected by application of the rules of the AAA, or by mutual agreement of the parties, except that such arbitrator shall be an attorney admitted to practice law New York. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section.
 **/
-
-import "../v2/NFTFactory.sol";
-
 contract Factory is NFTFactory {
 
     constructor (

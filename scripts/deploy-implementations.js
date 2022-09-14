@@ -47,6 +47,7 @@ async function main() {
 	const [deployer] = await ethers.getSigners();
 	
 	const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+    const RELEASE_MANAGER = process.env.RELEASEMANAGER;
 	console.log(
 		"Deploying contracts with the account:",
 		deployer.address
@@ -71,10 +72,13 @@ async function main() {
 	console.log("  NFT deployed at:       ", nft.address);
 	console.log("  NFTState deployed at:  ", nftState.address);
 	console.log("  NFTView deployed at:   ", nftView.address);
+    console.log("Linked with manager:");
+    console.log("  Release manager:", RELEASE_MANAGER);
 
-	data_object.nft 		= nft.address;
-	data_object.nftState	= nftState.address;
-	data_object.nftView		= nftView.address;
+	data_object.nft 		    = nft.address;
+	data_object.nftState	    = nftState.address;
+	data_object.nftView		    = nftView.address;
+    data_object.releaseManager  = RELEASE_MANAGER;
 
 
 	//---
