@@ -65,9 +65,14 @@ async function main() {
 	const NFTViewFactory = await ethers.getContractFactory("NFTView");
         
 	let nftState= await NFTStateFactory.connect(deployer).deploy();
-	let nftView = await NFTViewFactory.connect(deployer).deploy();
-	let nft 	= await NftFactory.connect(deployer).deploy();
+    await nftState.wait();
 
+	let nftView = await NFTViewFactory.connect(deployer).deploy();
+    await nftView.wait();
+
+	let nft 	= await NftFactory.connect(deployer).deploy();
+    await nft.wait();
+    
 	console.log("Implementations:");
 	console.log("  NFT deployed at:       ", nft.address);
 	console.log("  NFTState deployed at:  ", nftState.address);
