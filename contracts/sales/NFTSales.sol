@@ -16,6 +16,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
 //    using StringsUpgradeable for uint256;
 
     uint8 internal constant SERIES_SHIFT_BITS = 192; // 256 - 64
+    uint192 internal constant MAX_TOKEN_INDEX = type(uint192).max;
 
     address currency;
     uint256 price;
@@ -34,7 +35,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     mapping(address => bool) specialPurchasesList;
 
     struct AutoMintStruct {
-        uint256 index;
+        uint192 index;
         mapping(address => bool) list;
     }
     mapping(uint64 => AutoMintStruct) autoMint;
@@ -48,6 +49,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     error ShouldBeTokenOwner(address account);
     error NotInWhiteList(address account);
     error NotInListForAutoMint(address account, uint64 seriesId);
+    error SeriesMaxTokenLimitExceeded(uint64 seriesId);
+    
 
     function getSeriesId(
         uint256 tokenId
@@ -155,16 +158,45 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
 
     }
 
-    function _getTokenIds(uint64 seriesId, uint256 amount) internal returns(uint256[] memory) {
+    function _getTokenIds(uint64 seriesId, uint256 amount) internal view returns(uint256[] memory) {
         uint256[] memory tokenIds = new uint256[](amount);
 
         // TODO 0: 
         // generate tokenids via autoindex,
         // increament autoidnex
         // check if tokenid in loop dos not have owner  
+        uint256 amountLeft = amount;
 
-        // generate tokenIDS here
-        
+        bool exists;
+        uint256 tokenId;
+        uint256 tokenIndex = (uint256(seriesId) << SERIES_SHIFT_BITS);
+        uint192 j = autoMint[seriesId].index;
+
+        address nftContract = INFTSalesFactory(factoryAddress).getInstanceNFTcontract();
+
+        while (j != MAX_TOKEN_INDEX) {
+            tokenId = tokenIndex + j;
+
+            //exists means that  _owners[tokenId] != address(0) && _owners[tokenId] != DEAD_ADDRESS;
+            (,exists,,) = INFT(nftContract).getTokenSaleInfo(tokenId);
+            if (!exists) {
+                tokenIds[amount-amountLeft] = tokenId; // or maybe do it slightly cheaper and do fill from "N-1" to "0"
+                amountLeft -= 1;
+            }
+            
+            if (amountLeft == 0) {
+                break;
+            }
+
+            j+=1;
+            
+        }
+
+        // unreachable but must be.
+        if (j == MAX_TOKEN_INDEX || amountLeft != 0) {
+            revert SeriesMaxTokenLimitExceeded(seriesId);
+        }
+
         return tokenIds;
     }
 
@@ -180,7 +212,6 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
 
                 locked[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
             }
-
 
             INFTSalesFactory(factoryAddress).mintAndDistribute(tokenIds, selfAddresses);
 
@@ -303,7 +334,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         _whitelistManage(autoMint[seriesID].list, addresses, false);
     }
 
-    function setAutoIndex(uint64 seriesID, uint256 index) external onlyOwner {
+    function setAutoIndex(uint64 seriesID, uint192 index) external onlyOwner {
         autoMint[seriesID].index = index;
     }
 
