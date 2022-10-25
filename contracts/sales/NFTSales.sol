@@ -117,7 +117,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         //     totalPrice = saleInfo.autoincrement+i;
         // }
         _confirmPay(totalPrice, buyer);
-        _distributeTokens(buyer, tokenIds, addresses);
+        _distributeTokens(tokenIds, addresses);
         
     }
 
@@ -151,7 +151,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         // generate token ids
         uint256[] memory tokenIds = _getTokenIds(seriesID, amount);
 
-        _distributeTokens(buyer, tokenIds, addresses);
+        _distributeTokens(tokenIds, addresses);
 
     }
 
@@ -168,7 +168,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         return tokenIds;
     }
 
-    function _distributeTokens(address buyer, uint256[] memory tokenIds, address[] memory addresses) internal {
+    function _distributeTokens(uint256[] memory tokenIds, address[] memory addresses) internal {
         // distribute tokens
         if (duration == 0) {
             INFTSalesFactory(factoryAddress).mintAndDistribute(tokenIds, addresses);
@@ -178,7 +178,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
             for(uint256 i=0; i<tokenIds.length; i++) {
                 selfAddresses[i] = address(this);
 
-                locked[tokenIds[i]] = TokenData(buyer, duration + uint64(block.timestamp));
+                locked[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
             }
 
 
