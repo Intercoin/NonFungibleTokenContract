@@ -105,34 +105,35 @@ describe("tests", function () {
     });
 
     // Connection with original Gay Aliens NFT smart contract on Ethereum 0x626a67477d2dca67cac6d8133f0f9daddbfea94e
-    it("Ability to purchase and mint multiple NFTs in the same transaction, as long as the user has enough gas.", async() => {});
-    it("Ability to transfer ownership of this smart contract", async() => {});
-    it("Ability for the owner of the smart contract to manage the whitelist of who can use the Sales contract to mint NFTs from the connected NFT smart contract.", async() => {});
-    it("If there is a staking interval, this smart contract mints NFTs to itself as an owner, and allows the addresses in the whitelist to claim after the staking interval elapsed.", async() => {});
+    xit("Ability to purchase and mint multiple NFTs in the same transaction, as long as the user has enough gas.", async() => {});
+    xit("Ability to transfer ownership of this smart contract", async() => {});
+    xit("Ability for the owner of the smart contract to manage the whitelist of who can use the Sales contract to mint NFTs from the connected NFT smart contract.", async() => {});
+    xit("If there is a staking interval, this smart contract mints NFTs to itself as an owner, and allows the addresses in the whitelist to claim after the staking interval elapsed.", async() => {});
+
+
+
     
+    // xit("should correct mint NFT with ETH if ID doesn't exist", async() => {
 
-
-    xit("should correct mint NFT with ETH if ID doesn't exist", async() => {
-
-        const seriesId = BigNumber.from('1000');
-        await expect(ONE).to.be.eq(ONE);
-        const tokenId1 = ONE;
-        const tokenId2 = TEN;
-        const tokenId3 = HUN;
-        const id1 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId1);
-        const id2 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId2);
-        const id3 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId3);
+    //     const seriesId = BigNumber.from('1000');
+    //     await expect(ONE).to.be.eq(ONE);
+    //     const tokenId1 = ONE;
+    //     const tokenId2 = TEN;
+    //     const tokenId3 = HUN;
+    //     const id1 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId1);
+    //     const id2 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId2);
+    //     const id3 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId3);
     
-        const ids = [id1, id2, id3];
-        const users = [
-          alice.address,
-          bob.address,
-          charlie.address
-        ];
+    //     const ids = [id1, id2, id3];
+    //     const users = [
+    //       alice.address,
+    //       bob.address,
+    //       charlie.address
+    //     ];
 
-        // await expect(
-        //     this.nftBulkSale.connect(charlie).distribute(this.nftGayAliens.address, ids, users, {value: price.mul(THREE)})
-        // ).to.be.revertedWith("you can't manage this series");
-    });
+    //     // await expect(
+    //     //     this.nftBulkSale.connect(charlie).distribute(this.nftGayAliens.address, ids, users, {value: price.mul(THREE)})
+    //     // ).to.be.revertedWith("you can't manage this series");
+    // });
 
 });
