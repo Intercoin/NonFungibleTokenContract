@@ -20,10 +20,10 @@ contract CostManager is ICostManager {
     uint8 internal constant OPERATION_TRANSFER = 0xB;
 
     uint8 internal constant SERIES_SHIFT_BITS = 192; // 256 - 64
-    uint8 internal constant OPERATION_SHIFT_BITS = 240;  // 256 - 16
+    uint8 internal constant OPERATION_SHIFT_BITS = 240; // 256 - 16
 
     mapping(address => mapping(uint256 => address)) lockedMap;
-    
+
     error AlreadyLocked(address nftContract, uint256 tokenId, address custodian);
     error NotLocked(address nftContract, uint256 tokenId);
     error Locked(address nftContract, uint256 tokenId);
@@ -32,7 +32,19 @@ contract CostManager is ICostManager {
     error UnknownTokenId(address nftContract, uint256 tokenId);
     error WrongAddress(address account);
 
-    function accountForOperation(address sender, uint256 info, uint256/* param1*/, uint256/* param2*/) external view returns(uint256/* spent*/, uint256/* remaining*/) {
+    function accountForOperation(
+        address sender,
+        uint256 info,
+        uint256, /* param1*/
+        uint256 /* param2*/
+    )
+        external
+        view
+        returns (
+            uint256, /* spent*/
+            uint256 /* remaining*/
+        )
+    {
         // _accountForOperation(
         //     (OPERATION_TRANSFER << OPERATION_SHIFT_BITS) | getSeriesId(tokenId),
         //     uint256(uint160(from)),
@@ -43,27 +55,31 @@ contract CostManager is ICostManager {
         if ((info >> OPERATION_SHIFT_BITS) == OPERATION_TRANSFER) {
             // address from = address(uint160(param1));
             // address to = address(uint160(param2));
-            uint256 tokenId = info - (info >> OPERATION_SHIFT_BITS << OPERATION_SHIFT_BITS);
+            uint256 tokenId = info - ((info >> OPERATION_SHIFT_BITS) << OPERATION_SHIFT_BITS);
             if (lockedMap[sender][tokenId] != address(0)) {
                 revert Locked(sender, tokenId);
             }
         }
 
-        return (0,0); // to hide warning
+        return (0, 0); // to hide warning
     }
 
-    function lock(address nftContract, uint256 tokenId, address custodian) public {
+    function lock(
+        address nftContract,
+        uint256 tokenId,
+        address custodian
+    ) public {
         if (lockedMap[nftContract][tokenId] != address(0)) {
             revert AlreadyLocked(nftContract, tokenId, lockedMap[nftContract][tokenId]);
         }
-        
+
         bool exists;
         address nftOwner;
-        (,exists,,nftOwner) = INFT(nftContract).getTokenSaleInfo(tokenId);
-        if (!exists) { 
+        (, exists, , nftOwner) = INFT(nftContract).getTokenSaleInfo(tokenId);
+        if (!exists) {
             revert UnknownTokenId(nftContract, tokenId);
         }
-        if (nftOwner != msg.sender) { 
+        if (nftOwner != msg.sender) {
             revert NotAnOwner(nftContract, tokenId);
         }
         if (custodian == address(0)) {
@@ -71,7 +87,6 @@ contract CostManager is ICostManager {
         }
 
         lockedMap[nftContract][tokenId] = custodian;
-
     }
 
     function unlock(address nftContract, uint256 tokenId) public {
@@ -81,9 +96,7 @@ contract CostManager is ICostManager {
         if (lockedMap[nftContract][tokenId] != msg.sender) {
             revert NotACustodian(nftContract, tokenId);
         }
-    
+
         lockedMap[nftContract][tokenId] = address(0);
     }
-
 }
-
