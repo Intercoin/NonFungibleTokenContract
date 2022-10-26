@@ -9,6 +9,8 @@ import "./INFTSales.sol";
 import "./INFTSalesFactory.sol";
 import "./INFT.sol";
 
+//import "hardhat/console.sol";
+
 contract NFTSalesFactory is INFTSalesFactory {
     using Clones for address;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -159,10 +161,11 @@ contract NFTSalesFactory is INFTSalesFactory {
         if (NFTOwner != msg.sender) {
             revert OwnerOfNFTContractOnly(NFTContract, NFTOwner);
         }
+
         instance = address(implementationNFTSale).clone();
 
         _produce(instance, owner, NFTContract, currency, price, beneficiary, duration);
-        
+
         INFTSales(instance).initialize(currency, price, beneficiary, duration);
 
         Ownable(instance).transferOwnership(owner);

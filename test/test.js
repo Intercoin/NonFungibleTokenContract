@@ -100,11 +100,8 @@ describe("tests", function () {
         expect(this.nftSales.address).not.to.be.eq(ZERO_ADDRESS);
     });
 
-    
     it("Ability to purchase and mint multiple NFTs in the same transaction, as long as the user has enough gas.", async() => {
         
-
-
         await this.nftSales.connect(alice).specialPurchasesListAdd(users);
 
         let oldOwners = [];
@@ -145,10 +142,87 @@ describe("tests", function () {
         expect(ownerShouldToBe).to.be.eq(newOwner);
     });
 
-    xit("Ability for the owner of the smart contract to manage the whitelist of who can use the Sales contract to mint NFTs from the connected NFT smart contract.", async() => {
+    it("Ability for the owner of the smart contract to manage the whitelist of who can use the Sales contract to mint NFTs from the connected NFT smart contract.", async() => {
+        const isWhitelistedBefore = await this.nftSales.isWhitelisted(charlie.address);
+
+        await expect(
+            this.nftSales.connect(charlie).specialPurchase([id1], [charlie.address], {value: price})
+        ).to.be.revertedWith("NotInWhiteList");
+
+        await this.nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
+        const isWhitelistedAfter = await this.nftSales.isWhitelisted(charlie.address);
+        await this.nftSales.connect(charlie).specialPurchase([id1], [charlie.address], {value: price})
+
+        await this.nftSales.connect(alice).specialPurchasesListRemove([charlie.address]);
+        const isWhitelistedAfter2 = await this.nftSales.isWhitelisted(charlie.address);
+
+        expect(isWhitelistedBefore).to.be.false;
+        expect(isWhitelistedAfter).to.be.true;
+        expect(isWhitelistedAfter2).to.be.false;
+
+        //------
+        const amount = 2;
+        const isWhitelisteAutodBefore = await this.nftSales.isWhitelistedAuto(charlie.address, seriesId);
+        await expect(
+            this.nftSales.connect(charlie).autorizeMintAndDistributeAuto(seriesId, charlie.address, amount, {value: price.mul(amount)})
+        ).to.be.revertedWith(`NotInListForAutoMint("${charlie.address}", ${seriesId})`);
+
+        await this.nftSales.connect(alice).mintWhitelistAdd(seriesId, [charlie.address]);
+        const isWhitelisteAutodAfter = await this.nftSales.isWhitelistedAuto(charlie.address, seriesId);
+        await this.nftSales.connect(charlie).autorizeMintAndDistributeAuto(seriesId, charlie.address, amount, {value: price.mul(amount)})
+
+        await this.nftSales.connect(alice).mintWhitelistRemove(seriesId, [charlie.address]);
+        const isWhitelisteAutodAfter2 = await this.nftSales.isWhitelistedAuto(charlie.address, seriesId);
+
+        expect(isWhitelisteAutodBefore).to.be.false;
+        expect(isWhitelisteAutodAfter).to.be.true;
+        expect(isWhitelisteAutodAfter2).to.be.false;
+    
+    });
+
+    it("If there is a staking interval, this smart contract mints NFTs to itself as an owner, and allows the addresses in the whitelist to claim after the staking interval elapsed.", async() => {
+        const duration = 24*60*60;
+
+        let tx,rc,event,instance;
+        tx = await this.nftSalesFactory.connect(owner).produce(
+            this.nftGayAliens.address, //address NFTcontract,
+            alice.address, //address owner, 
+            ZERO_ADDRESS, //address currency, 
+            ONE_ETH, //uint256 price, 
+            bob.address, //address beneficiary, 
+            duration, //uint64 duration
+        );
+        
+        rc = await tx.wait(); // 0ms, as tx is already confirmed
+        event = rc.events.find(event => event.event === 'InstanceCreated');
+        [instance] = event.args;
+        let nftSales = await ethers.getContractAt("NFTSales",instance);
+
+        await nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
+        await nftSales.connect(charlie).specialPurchase([id1], [charlie.address], {value: price});
+
+        expect(await this.nftGayAliens.ownerOf(id1)).to.be.eq(nftSales.address);
+
+        
+        await expect(
+            nftSales.connect(charlie).claim([id1])
+        ).to.be.revertedWith(
+            //hardcoded error params :)  remained day+1 and remained timestamp
+            `StillLocked(1, 86399)`
+        );
+
+        // passed time
+        await ethers.provider.send('evm_increaseTime', [duration]);
+        await ethers.provider.send('evm_mine');
+
+        // still contract owner
+        expect(await this.nftGayAliens.ownerOf(id1)).to.be.eq(nftSales.address);
+
+        await nftSales.connect(charlie).claim([id1]);
+
+        expect(await this.nftGayAliens.ownerOf(id1)).to.be.eq(charlie.address);
 
     });
-    xit("If there is a staking interval, this smart contract mints NFTs to itself as an owner, and allows the addresses in the whitelist to claim after the staking interval elapsed.", async() => {});
 
     it("NFT's owner should produce NFTSale only for own NFT.", async() => {
         await expect(
@@ -165,29 +239,5 @@ describe("tests", function () {
 
     });
 
-
-
-    // xit("should correct mint NFT with ETH if ID doesn't exist", async() => {
-
-    //     const seriesId = BigNumber.from('1000');
-    //     await expect(ONE).to.be.eq(ONE);
-    //     const tokenId1 = ONE;
-    //     const tokenId2 = TEN;
-    //     const tokenId3 = HUN;
-    //     const id1 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId1);
-    //     const id2 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId2);
-    //     const id3 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId3);
-    
-    //     const ids = [id1, id2, id3];
-    //     const users = [
-    //       alice.address,
-    //       bob.address,
-    //       charlie.address
-    //     ];
-
-    //     // await expect(
-    //     //     this.nftBulkSale.connect(charlie).distribute(this.nftGayAliens.address, ids, users, {value: price.mul(THREE)})
-    //     // ).to.be.revertedWith("you can't manage this series");
-    // });
 
 });

@@ -6,14 +6,14 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./INFTSalesFactory.sol";
 import "./INFTSales.sol";
 import "./INFT.sol";
 
-contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
+contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable {
 
-//    using StringsUpgradeable for uint256;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
 
     uint8 internal constant SERIES_SHIFT_BITS = 192; // 256 - 64
@@ -53,15 +53,6 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     error SeriesMaxTokenLimitExceeded(uint64 seriesId);
     
 
-    function getSeriesId(
-        uint256 tokenId
-    )
-        internal
-        pure
-        returns(uint64)
-    {
-        return uint64(tokenId >> SERIES_SHIFT_BITS);
-    }
 
 
     /**
@@ -84,6 +75,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         initializer 
     {
         __Ownable_init();
+        __ReentrancyGuard_init();
+
         factoryAddress = owner();
 
         __NFTSales_init(_currency, _price, _beneficiary, _duration);
@@ -101,13 +94,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     * @custom:calledby person in the whitelist
     * @custom:shortd sell NFT tokens
     */
-    function specialPurchase(
-        uint256[] memory tokenIds, 
-        address[] memory addresses
-    ) 
-        external
-        payable
-    {
+    function specialPurchase(uint256[] memory tokenIds, address[] memory addresses) external payable nonReentrant {
         address buyer = _msgSender();
 
         if (!specialPurchasesList.contains(buyer)) {
@@ -117,32 +104,23 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         require(tokenIds.length != 0 && tokenIds.length == addresses.length);
 
         uint256 totalPrice = (price)*(tokenIds.length);
-        // for(uint256 i = 0; i<tokenIds.length; i++) {
-        //     totalPrice = saleInfo.autoincrement+i;
-        // }
+        
         _confirmPay(totalPrice, buyer);
         _distributeTokens(tokenIds, addresses);
         
     }
 
     
-    function autorizeMintAndDistributeAuto(uint64 seriesID, address account, uint256 amount) external {
+    function autorizeMintAndDistributeAuto(uint64 seriesId, address account, uint256 amount) external payable nonReentrant {
         address buyer = _msgSender();
 
-        if (!autoMint[seriesID].list.contains(buyer)) {
-            revert NotInListForAutoMint(buyer, seriesID);
+        if (!autoMint[seriesId].list.contains(buyer)) {
+            revert NotInListForAutoMint(buyer, seriesId);
         }
         
         require(amount != 0);
         
-        //uint256 tokenId = tokenIds[0];
-        //uint64 seriesId = uint64(tokenId >> 192);//getSeriesId(tokenId);
-
-
         uint256 totalPrice = (price)*(amount);
-        // for(uint256 i = 0; i<tokenIds.length; i++) {
-        //     totalPrice = saleInfo.autoincrement+i;
-        // }
         
         // confirm pay
         _confirmPay(totalPrice, buyer);
@@ -153,7 +131,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         }
 
         // generate token ids
-        uint256[] memory tokenIds = _getTokenIds(seriesID, amount);
+        uint256[] memory tokenIds = _getTokenIds(seriesId, amount);
 
         _distributeTokens(tokenIds, addresses);
 
@@ -165,15 +143,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     * @custom:calledby person in the whitelist
     * @custom:shortd locked days
     */
-    function remainingDays(
-        uint256 tokenId
-    ) 
-        external 
-        view 
-        returns(uint64) 
-    {
+    function remainingDays(uint256 tokenId) external view returns(uint64) {
         _validateTokenId(tokenId);
-        
         return _remainingDays(tokenId);
     }
 
@@ -184,11 +155,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     * @custom:calledby everyone
     * @custom:shortd claim locked tokens
     */
-    function distributeUnlockedTokens(
-        uint256[] memory tokenIds
-    ) 
-        external 
-    {
+    function distributeUnlockedTokens(uint256[] memory tokenIds) external {
         _claim(tokenIds, false);
     }
 
@@ -198,11 +165,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     * @custom:calledby owner of tokenIds
     * @custom:shortd claim locked tokens
     */
-    function claim(
-        uint256[] memory tokenIds
-    ) 
-        external 
-    {
+    function claim(uint256[] memory tokenIds) external {
         _claim(tokenIds, true);
     }
 
@@ -241,67 +204,58 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         _whitelistManage(specialPurchasesList, addresses, false);
     }
 
-    function mintWhitelistAdd(uint64 seriesID, address[] memory addresses) external onlyOwner {
-        _whitelistManage(autoMint[seriesID].list, addresses, true);
+    /**
+     * Adding addresses list to whitelist (autoMint[seriesId].list)
+     * @param seriesId series id which will applied
+     * @param addresses list of addresses which will be added to autoMint[seriesId].list
+     */
+    function mintWhitelistAdd(uint64 seriesId, address[] memory addresses) external onlyOwner {
+        _whitelistManage(autoMint[seriesId].list, addresses, true);
     }
 
-    function mintWhitelistRemove(uint64 seriesID, address[] memory addresses) external onlyOwner {
-        _whitelistManage(autoMint[seriesID].list, addresses, false);
+    /**
+     * Removing addresses list to whitelist (autoMint[seriesId].list)
+     * @param seriesId series id which will applied
+     * @param addresses list of addresses which will be removed from autoMint[seriesId].list
+     */
+    function mintWhitelistRemove(uint64 seriesId, address[] memory addresses) external onlyOwner {
+        _whitelistManage(autoMint[seriesId].list, addresses, false);
     }
 
-    function setAutoIndex(uint64 seriesID, uint192 index) external onlyOwner {
-        autoMint[seriesID].index = index;
+    /**
+     * @param seriesId series id which will applied
+     * @param index index from what will be autogenerated tokenid for seriesId
+     */
+    function setAutoIndex(uint64 seriesId, uint192 index) external onlyOwner {
+        autoMint[seriesId].index = index;
+    }
+
+    /**
+     * Checking Is account in common whitelist
+     * @param account address
+     * @return true if account in the whitelist. otherwise - no
+     */
+    function isWhitelisted(address account) external view returns(bool) {
+        return specialPurchasesList.contains(account);
+    }
+    /**
+     * Checking Is account in autoindex whitelist
+     * @param account address
+     * @return true if account in the autoWhitelist. otherwise - no
+     */
+    function isWhitelistedAuto(address account, uint64 seriesId) external view returns(bool) {
+        return autoMint[seriesId].list.contains(account);
     }
 
     /********************************************************************
     ****** public section ***********************************************
     *********************************************************************/
-
+    
     /********************************************************************
     ****** internal section *********************************************
     *********************************************************************/
-    function _getTokenIds(uint64 seriesId, uint256 amount) internal view returns(uint256[] memory) {
-        uint256[] memory tokenIds = new uint256[](amount);
 
-        // TODO 0: 
-        // generate tokenids via autoindex,
-        // increament autoidnex
-        // check if tokenid in loop dos not have owner  
-        uint256 amountLeft = amount;
-
-        bool exists;
-        uint256 tokenId;
-        uint256 tokenIndex = (uint256(seriesId) << SERIES_SHIFT_BITS);
-        uint192 j = autoMint[seriesId].index;
-
-        address NFTContract = INFTSalesFactory(factoryAddress).getInstanceNFTcontract();
-
-        while (j != MAX_TOKEN_INDEX) {
-            tokenId = tokenIndex + j;
-
-            //exists means that  _owners[tokenId] != address(0) && _owners[tokenId] != DEAD_ADDRESS;
-            (,exists,,) = INFT(NFTContract).getTokenSaleInfo(tokenId);
-            if (!exists) {
-                tokenIds[amount - amountLeft] = tokenId; // or maybe do it slightly cheaper and do fill from "N-1" to "0"
-                amountLeft -= 1;
-            }
-            
-            if (amountLeft == 0) {
-                break;
-            }
-
-            j+=1;
-            
-        }
-
-        // unreachable but must be.
-        if (j == MAX_TOKEN_INDEX || amountLeft != 0) {
-            revert SeriesMaxTokenLimitExceeded(seriesId);
-        }
-
-        return tokenIds;
-    }
-
+    
     function _distributeTokens(uint256[] memory tokenIds, address[] memory addresses) internal {
         // distribute tokens
         if (duration == 0) {
@@ -352,19 +306,10 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
             } else {
                 list.remove(addresses[i]);
             }
-            
         }
     }
 
-    function __NFTSales_init(
-        address _currency, 
-        uint256 _price, 
-        address _beneficiary, 
-        uint64 _duration
-    ) 
-        internal 
-        onlyInitializing
-    {
+    function __NFTSales_init(address _currency, uint256 _price, address _beneficiary, uint64 _duration) internal onlyInitializing {
         currency    = _currency;
         price       = _price;
         beneficiary = _beneficiary;
@@ -376,6 +321,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         bool shouldCheckOwner
     ) 
         internal
+        nonReentrant
     {
         address NFTcontract = INFTSalesFactory(getFactory()).getInstanceNFTcontract();
         for(uint256 i=0; i<tokenIds.length; i++) {
@@ -392,13 +338,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
         return factoryAddress; // deployer of contract. this can't make sense if deployed manually
     }
 
-    function remainingLockedTime(
-        uint256 tokenId
-    )
-        internal 
-        view
-        returns(uint64)
-    {
+    function remainingLockedTime(uint256 tokenId) internal view returns(uint64) {
         return locked[tokenId].untilTimestamp > uint64(block.timestamp) ? locked[tokenId].untilTimestamp - uint64(block.timestamp) : 0;
     }
 
@@ -407,14 +347,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
     * @param tokenId token id
     * @return days that left to unlock  plus one day
     */
-    function _remainingDays(
-        uint256 tokenId
-    ) 
-        internal
-        view 
-        returns(uint64) 
-    {
-        
+    function _remainingDays(uint256 tokenId) internal view returns(uint64) {
         return (remainingLockedTime(tokenId)/86400) + 1;
     }
 
@@ -451,6 +384,52 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable {
             revert ShouldBeTokenOwner(_msgSender());
         }
         
+    }
+
+    function _getTokenIds(uint64 seriesId, uint256 amount) internal view returns(uint256[] memory) {
+        uint256[] memory tokenIds = new uint256[](amount);
+
+        // TODO 0: 
+        // generate tokenids via autoindex,
+        // increament autoidnex
+        // check if tokenid in loop dos not have owner  
+        uint256 amountLeft = amount;
+
+        bool exists;
+        uint256 tokenId;
+        uint256 tokenIndex = (uint256(seriesId) << SERIES_SHIFT_BITS);
+        uint192 j = autoMint[seriesId].index;
+
+        address NFTContract = INFTSalesFactory(factoryAddress).getInstanceNFTcontract();
+
+        while (j != MAX_TOKEN_INDEX) {
+            tokenId = tokenIndex + j;
+
+            //exists means that  _owners[tokenId] != address(0) && _owners[tokenId] != DEAD_ADDRESS;
+            (,exists,,) = INFT(NFTContract).getTokenSaleInfo(tokenId);
+            if (!exists) {
+                tokenIds[amount - amountLeft] = tokenId; // or maybe do it slightly cheaper and do fill from "N-1" to "0"
+                amountLeft -= 1;
+            }
+            
+            if (amountLeft == 0) {
+                break;
+            }
+
+            j+=1;
+            
+        }
+
+        // unreachable but must be.
+        if (j == MAX_TOKEN_INDEX || amountLeft != 0) {
+            revert SeriesMaxTokenLimitExceeded(seriesId);
+        }
+
+        return tokenIds;
+    }
+
+    function getSeriesId(uint256 tokenId) internal pure returns(uint64) {
+        return uint64(tokenId >> SERIES_SHIFT_BITS);
     }
 
 }
