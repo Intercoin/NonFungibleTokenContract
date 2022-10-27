@@ -419,9 +419,9 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             tokenId = seriesPart + lastIndex;
 
             //exists means that  _owners[tokenId] != address(0) && _owners[tokenId] != DEAD_ADDRESS;
-            (bool isOnSale, bool exists, INFT.SaleInfo memory data, /*address beneficiary*/) = INFT(NFTContract).getTokenSaleInfo(tokenId);
+            (/*bool isOnSale*/, bool exists, INFT.SaleInfo memory data, /*address beneficiary*/) = INFT(NFTContract).getTokenSaleInfo(tokenId);
 
-            if (!exists && isOnSale) {
+            if (!exists) {
                 if (useExternalPrice) {
                     if (initFlag) {
                         if (data.currency != currencyAddr) {
@@ -435,8 +435,9 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
                     currencyTotalPrice += data.price;
                 }
 
-                tokenIds[amountLeft] = tokenId; // did it slightly cheaper and do fill from "N-1" to "0" and avoid "stack too deep" error
+                
                 amountLeft -= 1;
+                tokenIds[amountLeft] = tokenId; // did it slightly cheaper and do fill from "N-1" to "0" and avoid "stack too deep" error
             }
 
             if (amountLeft == 0) {

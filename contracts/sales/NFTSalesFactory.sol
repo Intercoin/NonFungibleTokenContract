@@ -27,7 +27,10 @@ contract NFTSalesFactory is INFTSalesFactory {
         address currency;
         uint256 price;
         address beneficiary;
+        uint192 autoindex;
         uint64 duration;
+        uint32 rateInterval;
+        uint16 rateAmount;
     }
     //      instance(NFTsale)
     mapping(address => InstanceInfo) public instancesInfo;
@@ -120,7 +123,10 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @param currency currency for every sale NFT token
      * @param price price amount for every sale NFT token
      * @param beneficiary address where which receive funds after sale
+     * @param autoindex from what index contract will start autoincrement from each series(if owner doesnot set before) 
      * @param duration locked time when NFT will be locked after sale
+     * @param rateInterval interval in which contract should sell not more than `rateAmount` tokens
+     * @param rateAmount amount of tokens that can be minted in each `rateInterval`
      * @return instance address of created instance `NFTSales`
      * @custom:calledby owner
      * @custom:shortd creation NFTSales instance
@@ -131,7 +137,10 @@ contract NFTSalesFactory is INFTSalesFactory {
         address currency,
         uint256 price,
         address beneficiary,
-        uint64 duration
+        uint192 autoindex,
+        uint64 duration,
+        uint32 rateInterval,
+        uint16 rateAmount
     ) public returns (address instance) {
         // get current owner directly from NFT instance contract
         address NFTOwner = Ownable(NFTContract).owner();
@@ -141,9 +150,12 @@ contract NFTSalesFactory is INFTSalesFactory {
 
         instance = address(implementationNFTSale).clone();
 
-        _produce(instance, owner, NFTContract, currency, price, beneficiary, duration);
+        require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
+        whitelist.add(instance);
+        instancesInfo[instance] = InstanceInfo(NFTContract, owner, currency, price, beneficiary, autoindex, duration, rateInterval, rateAmount);
+        emit InstanceCreated(instance);
 
-        INFTSales(instance).initialize(currency, price, beneficiary, duration);
+        INFTSales(instance).initialize(currency, price, beneficiary, autoindex, duration, rateInterval, rateAmount);
 
         Ownable(instance).transferOwnership(owner);
     }
@@ -173,31 +185,6 @@ contract NFTSalesFactory is INFTSalesFactory {
     ////////////////////////////////////////////////////////////////////////
     // internal section ////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-
-    function _produce(
-        address instance,
-        address owner,
-        address NFTContract,
-        address currency,
-        uint256 price,
-        address beneficiary,
-        uint64 duration
-    ) internal {
-        require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
-
-        whitelist.add(instance);
-
-        instancesInfo[instance] = InstanceInfo(NFTContract, owner, currency, price, beneficiary, duration);
-
-        emit InstanceCreated(instance);
-    }
-
-    // function _postProduce(
-    //     address instance
-    // )
-    //     internal
-    // {
-    // }
 
     function _verifyCallResult(
         bool success,
