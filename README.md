@@ -1,6 +1,7 @@
 
 
 
+
 # NFTSales 
 NFTSales is a contract that like extension for already deployed ERC-721 standardizes contract 
 called [Gay Aliens Society (Gen 1) (GAS1)](https://etherscan.io/token/0x626a67477d2dca67cac6d8133f0f9daddbfea94e) which have realization ([EIP-2771](https://eips.ethereum.org/EIPS/eip-2771)) protocol.   
@@ -11,6 +12,9 @@ The main goal are:
 -   Ability to transfer ownership of this smart contract
 -   Ability for the owner of the smart contract to manage the whitelist of who can use the Sales contract to mint NFTs from the connected NFT smart contract.
 -   If there is a staking interval, this smart contract mints NFTs to itself as an owner, and allows the addresses in the whitelist to claim after the staking interval elapsed.
+- no way to purchase nft with certain tokenID. Instead that need to autogenerate tokenId every time when user want to buy tokens. Anyway need to provide two way to buy NFT:
+- - common way(method `purchase`) when any user can to buy token  but for price that was set in NFT contractю
+- - way for whitelist users(method `specialPurchase`) when whitelist user can to buy token with special price pointed in initializing
 
 # Contracts
 NFTSales represented in two contract:
@@ -25,27 +29,43 @@ NFTSales represented in two contract:
 
 It's described at diagram below   
 ```mermaid
-sequenceDiagram  
-participant  ActorBuyer
+sequenceDiagram
+actor Buyer
 participant  NFTSalesInstance
 participant  NFTSalesFactory
 participant  NFTContract
-participant  ActorNFTOwner
+actor NFTOwner
 
- ActorNFTOwner -->> NFTContract: set NFTSalesFactory as TrustedForwarder
- ActorNFTOwner -->> NFTSalesFactory: create instances
- NFTSalesFactory ->> NFTSalesFactory: produce
- ActorNFTOwner -->> NFTSalesInstance: adding actors to the whitelist
+NFTOwner-->> NFTContract: set NFTSalesFactory as TrustedForwarder
+NFTOwner-->> NFTSalesFactory: create instances
+NFTSalesFactory ->> NFTSalesFactory: produce
+par using specialPurchase
+ NFTOwner-->> NFTSalesInstance: adding actors to the whitelist
  NFTSalesInstance -->> NFTSalesInstance: specialPurchasesListAdd
- ActorBuyer -->> NFTSalesInstance : specialPurchase
+ Buyer-->> NFTSalesInstance : purchase with special price
+ NFTSalesInstance -->> NFTSalesInstance : specialPurchase
+ loop calculate totalPrice and currency
+  NFTSalesInstance ->> NFTContract: getTokenSaleInfo 
+  NFTContract -->> NFTSalesInstance: mint tokens
+ end
+ rect  rgb(200, 200, 200)  
+  NFTSalesInstance -->> NFTSalesInstance: check rateLimit
+ end
  NFTSalesInstance ->> NFTSalesFactory: mintAndDistribute
  NFTSalesFactory ->> NFTContract: mintAndDistribute
- NFTContract -->> ActorBuyer: mint tokens
-
+ NFTContract -->> Buyer: mint tokens
+end
+par using common purchase
+ Buyer-->> NFTSalesInstance : common purchase
+  NFTSalesInstance -->> NFTSalesInstance: purchase
+ NFTSalesInstance ->> NFTSalesFactory: mintAndDistribute
+ NFTSalesFactory ->> NFTContract: mintAndDistribute
+ NFTContract -->> Buyer: mint tokens
+end
 ```
 
-ActorNFTOwner can prevent works instances in any time by:
+NFTOwner can prevent works instances in any time by:
 - removing NFTSalesFactory from TrustedForwarder. All instances(lined with this nft contract) will stop working.
 - removing certain NFTSaleInstance from NFTSalesFactory by calling `removeFromWhiteList(address instance)`
 
-Also ActorNFTOwner can remove user from whitelist in NFTSaleInstance by calling `specialPurchasesListRemove(address[] memory addresses)` or `mintWhitelistRemove(uint64 seriesId, address[] memory addresses)`. From common whitelist and whitelist for autogeneration tokenIds respectively
+Also NFTOwner can prevent using method `specialPurchase`.  just enough remove user from whitelist in NFTSaleInstance by calling `specialPurchasesListRemove(address[] memory addresses)`.  
