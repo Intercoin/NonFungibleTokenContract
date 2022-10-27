@@ -114,7 +114,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             revert NotInWhiteList(buyer);
         }
 
-        _purchase(seriesId, account, amount, buyer, false);
+        _purchase(seriesId, account, amount, buyer, true);
     }
 
     function purchase(
@@ -123,7 +123,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         uint256 amount
     ) external payable nonReentrant {
         address buyer = _msgSender();
-        _purchase(seriesId, account, amount, buyer, true);
+        _purchase(seriesId, account, amount, buyer, false);
     }
 
     /**
@@ -222,18 +222,20 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         address account,
         uint256 amount,
         address buyer,
-        bool useExternalPrice
+        bool isSpecialPurchase
     ) internal {
 
         require(amount != 0);
-        uint256 currentInterval = currentBucketInterval();
-        purchaseBucket[currentInterval] += amount;
-        if (purchaseBucket[currentInterval] > rateAmount) {
-            revert TooMuchBoughtInCurrentInterval(currentInterval, purchaseBucket[currentInterval], rateAmount);
-        }
 
+        if (isSpecialPurchase) {
+            uint256 currentInterval = currentBucketInterval();
+            purchaseBucket[currentInterval] += amount;
+            if (purchaseBucket[currentInterval] > rateAmount) {
+                revert TooMuchBoughtInCurrentInterval(currentInterval, purchaseBucket[currentInterval], rateAmount);
+            }
+        }
         // generate token ids
-        (uint256[] memory tokenIds, address currencyAddr, uint256 currencyTotalPrice, uint192 lastIndex) = _getTokenIds(seriesId, amount, useExternalPrice);
+        (uint256[] memory tokenIds, address currencyAddr, uint256 currencyTotalPrice, uint192 lastIndex) = _getTokenIds(seriesId, amount, isSpecialPurchase);
         autoIndex[seriesId].index = lastIndex + 1;
         if (!autoIndex[seriesId].exists) {
             autoIndex[seriesId].exists = true;
@@ -388,10 +390,13 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         }
     }
 
+    /**
+     * for special purchase get getTokenSaleInfo externally to get currency and token separately for each token
+     */
     function _getTokenIds(
         uint64 seriesId, 
         uint256 amount, 
-        bool useExternalPrice
+        bool isSpecialPurchase
     ) 
         internal 
         view 
@@ -422,7 +427,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             (/*bool isOnSale*/, bool exists, INFT.SaleInfo memory data, /*address beneficiary*/) = INFT(NFTContract).getTokenSaleInfo(tokenId);
 
             if (!exists) {
-                if (useExternalPrice) {
+                if (!isSpecialPurchase) {
                     if (initFlag) {
                         if (data.currency != currencyAddr) {
                             revert("different currency in tokens list");
@@ -447,7 +452,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             lastIndex += 1;
         }
 
-        if (!useExternalPrice) {
+        if (isSpecialPurchase) {
             currencyAddr = currency;
             currencyTotalPrice = amount * price;
         }

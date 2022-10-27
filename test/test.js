@@ -40,6 +40,8 @@ describe("tests", function () {
     const seriesId = BigNumber.from('1000');
     const autoIncrement = ONE;
     
+    const rateInterval = 24*60*60;
+    const rateAmount = FIVE;
     //const id1 = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId1);
     
     beforeEach("deploying", async() => {
@@ -73,8 +75,8 @@ describe("tests", function () {
             bob.address, //address beneficiary, 
             autoIncrement, // uint192 _autoindex,
             ZERO, //uint64 duration
-            24*60*60, // uint32 _rateInterval,
-            FIVE //uint16 _rateAmount
+            rateInterval, // uint32 _rateInterval,
+            rateAmount //uint16 _rateAmount
         );
         
         rc = await tx.wait(); // 0ms, as tx is already confirmed
@@ -236,5 +238,60 @@ describe("tests", function () {
 
     });
 
+    it("check rateInterval and rateAmount for special and common purchases", async() => {
+
+        const duration = 24*60*60;
+        var nftSales;
+
+        let tx,rc,event,instance;
+        tx = await this.nftSalesFactory.connect(owner).produce(
+            this.nftGayAliens.address, //address NFTcontract,
+            alice.address, //address owner, 
+            ZERO_ADDRESS, //address currency, 
+            ONE_ETH, //uint256 price, 
+            bob.address, //address beneficiary, 
+            autoIncrement, // uint192 _autoindex,
+            duration, //uint64 duration
+            rateInterval, // uint32 _rateInterval,
+            rateAmount //uint16 _rateAmount
+        );
+
+        
+        rc = await tx.wait(); // 0ms, as tx is already confirmed
+        event = rc.events.find(event => event.event === 'InstanceCreated');
+        [instance] = event.args;
+        nftSales = await ethers.getContractAt("NFTSales",instance);
+    
+
+        await nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
+
+        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+
+        // make common purchase. it should not increase  rate variables
+        await nftSales.connect(charlie).purchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).purchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).purchase(seriesId, charlie.address, ONE, {value: price});
+
+        const blockNumBefore = await ethers.provider.getBlockNumber();
+        const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+        const timestampBefore = blockBefore.timestamp;
+
+        await expect(
+            nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price})
+        ).to.be.revertedWith(`TooMuchBoughtInCurrentInterval(${Math.floor(timestampBefore/rateInterval)*rateInterval}, ${rateAmount.add(1)}, ${rateAmount})`);
+
+        // passed time
+        await ethers.provider.send('evm_increaseTime', [duration]);
+        await ethers.provider.send('evm_mine');
+
+        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+
+    });
+
+   
 
 });
