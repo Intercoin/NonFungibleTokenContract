@@ -23,12 +23,13 @@ contract NFTSalesFactory is INFTSalesFactory {
 
     struct InstanceInfo {
         address NFTContract;
+        uint64 seriesId;
         address owner;
+        uint64 duration;
         address currency;
         uint256 price;
         address beneficiary;
         uint192 autoindex;
-        uint64 duration;
         uint32 rateInterval;
         uint16 rateAmount;
     }
@@ -133,6 +134,7 @@ contract NFTSalesFactory is INFTSalesFactory {
      */
     function produce(
         address NFTContract,
+        uint64 seriesId,
         address owner,
         address currency,
         uint256 price,
@@ -152,10 +154,11 @@ contract NFTSalesFactory is INFTSalesFactory {
 
         require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
         whitelist.add(instance);
-        instancesInfo[instance] = InstanceInfo(NFTContract, owner, currency, price, beneficiary, autoindex, duration, rateInterval, rateAmount);
+        instancesInfo[instance] = InstanceInfo(NFTContract, seriesId, owner, duration, currency, price, beneficiary, autoindex, rateInterval, rateAmount);
+
         emit InstanceCreated(instance);
 
-        INFTSales(instance).initialize(currency, price, beneficiary, autoindex, duration, rateInterval, rateAmount);
+        INFTSales(instance).initialize(seriesId, currency, price, beneficiary, autoindex, duration, rateInterval, rateAmount);
 
         Ownable(instance).transferOwnership(owner);
     }

@@ -69,6 +69,7 @@ describe("tests", function () {
         let tx,rc,event,instance;
         tx = await this.nftSalesFactory.connect(owner).produce(
             this.nftGayAliens.address, //address NFTcontract,
+            seriesId, // seriesId
             alice.address, //address owner, 
             ZERO_ADDRESS, //address currency, 
             ONE_ETH, //uint256 price, 
@@ -108,11 +109,11 @@ describe("tests", function () {
         // gasUsed: BigNumber { value: "804639" },
         // tx was consumed around 800k. we setup manually 400k and expect that transaction will fail
         await expect(
-            this.nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, amount, {gasLimit: 400000, value: price.mul(amount)})
+            this.nftSales.connect(charlie).specialPurchase(charlie.address, amount, {gasLimit: 400000, value: price.mul(amount)})
         ).to.be.revertedWith("low level error");
 
         //try to buy 5 NFT in common case
-        await this.nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, amount, {value: price.mul(amount)})
+        await this.nftSales.connect(charlie).specialPurchase(charlie.address, amount, {value: price.mul(amount)})
         
         for(let i = autoIncrement; i < autoIncrement.add(amount); i++) {
             tokenId = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(i);
@@ -141,12 +142,12 @@ describe("tests", function () {
         const tokenId = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(autoIncrement);
         await expect(this.nftGayAliens.ownerOf(tokenId)).to.be.revertedWith("ERC721: owner query for nonexistent token");
         await expect(
-            this.nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, amount, {value: price})
+            this.nftSales.connect(charlie).specialPurchase(charlie.address, amount, {value: price})
         ).to.be.revertedWith(`NotInWhiteList("${charlie.address}")`);
 
         await this.nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
         const isWhitelistedAfter = await this.nftSales.isWhitelisted(charlie.address);
-        await this.nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, amount, {value: price})
+        await this.nftSales.connect(charlie).specialPurchase(charlie.address, amount, {value: price})
 
         await this.nftSales.connect(alice).specialPurchasesListRemove([charlie.address]);
         const isWhitelistedAfter2 = await this.nftSales.isWhitelisted(charlie.address);
@@ -157,13 +158,29 @@ describe("tests", function () {
 
     });
 
-    it("Ability for the anyone purchases tokens", async() => {
+    it("Ability for the anyone purchases tokens but only if series `is on sale`", async() => {
         
         const tokenId = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(autoIncrement);
         const amount = 1;
         //const ownerBeforePurchase = await this.nftGayAliens.ownerOf(tokenId);
         await expect(this.nftGayAliens.ownerOf(tokenId)).to.be.revertedWith("ERC721: owner query for nonexistent token");
-        await this.nftSales.connect(charlie).purchase(seriesId, charlie.address, amount, {value: price})
+        await expect(
+            this.nftSales.connect(charlie).purchase(charlie.address, amount, {value: price})
+        ).to.be.revertedWith(`SeriesIsNotOnSale(${seriesId})`);
+        
+        // then put on sale
+        const now = Math.round(Date.now() / 1000);   
+        const baseURI = "someURI";
+        const suffix = ".json";
+        const saleParams = [now + 100000, ZERO_ADDRESS, price];
+        const commissions = [ZERO, ZERO_ADDRESS]
+        const params = [alice.address, 10000, saleParams, commissions, baseURI, suffix];
+        //await this.nftGayAliens.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256),(uint64,address),string,string))"](seriesId, params);
+        await this.nftGayAliens.connect(owner).setSeriesInfo(seriesId, params);
+
+        // purchase again
+        await this.nftSales.connect(charlie).purchase(charlie.address, amount, {value: price});
+
         const ownerAfterPurchase = await this.nftGayAliens.ownerOf(tokenId);
         await expect(ownerAfterPurchase).to.be.eq(charlie.address);
 
@@ -175,6 +192,7 @@ describe("tests", function () {
         let tx,rc,event,instance;
         tx = await this.nftSalesFactory.connect(owner).produce(
             this.nftGayAliens.address, //address NFTcontract,
+            seriesId, // uint64 seriesId,
             alice.address, //address owner, 
             ZERO_ADDRESS, //address currency, 
             ONE_ETH, //uint256 price, 
@@ -195,7 +213,7 @@ describe("tests", function () {
         const amount = 1;
 
         await nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
-        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, amount, {value: price});
+        await nftSales.connect(charlie).specialPurchase(charlie.address, amount, {value: price});
 
         expect(await this.nftGayAliens.ownerOf(tokenId)).to.be.eq(nftSales.address);
 
@@ -224,6 +242,7 @@ describe("tests", function () {
         await expect(
             this.nftSalesFactory.connect(frank).produce(
                 this.nftGayAliens.address, //address NFTcontract,
+                seriesId, // uint64 seriesId,
                 alice.address, //address owner, 
                 ZERO_ADDRESS, //address currency, 
                 ONE_ETH, //uint256 price, 
@@ -246,6 +265,7 @@ describe("tests", function () {
         let tx,rc,event,instance;
         tx = await this.nftSalesFactory.connect(owner).produce(
             this.nftGayAliens.address, //address NFTcontract,
+            seriesId, // uint64 seriesId,
             alice.address, //address owner, 
             ZERO_ADDRESS, //address currency, 
             ONE_ETH, //uint256 price, 
@@ -261,37 +281,45 @@ describe("tests", function () {
         event = rc.events.find(event => event.event === 'InstanceCreated');
         [instance] = event.args;
         nftSales = await ethers.getContractAt("NFTSales",instance);
+
+        // then put on sale
+        const now = Math.round(Date.now() / 1000);   
+        const baseURI = "someURI";
+        const suffix = ".json";
+        const saleParams = [now + 100000, ZERO_ADDRESS, price];
+        const commissions = [ZERO, ZERO_ADDRESS]
+        const params = [alice.address, 10000, saleParams, commissions, baseURI, suffix];
+        //await this.nftGayAliens.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256),(uint64,address),string,string))"](seriesId, params);
+        await this.nftGayAliens.connect(owner).setSeriesInfo(seriesId, params);
     
 
         await nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
 
-        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
-        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
-        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
-        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
-        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
 
         // make common purchase. it should not increase  rate variables
-        await nftSales.connect(charlie).purchase(seriesId, charlie.address, ONE, {value: price});
-        await nftSales.connect(charlie).purchase(seriesId, charlie.address, ONE, {value: price});
-        await nftSales.connect(charlie).purchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).purchase(charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).purchase(charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).purchase(charlie.address, ONE, {value: price});
 
         const blockNumBefore = await ethers.provider.getBlockNumber();
         const blockBefore = await ethers.provider.getBlock(blockNumBefore);
         const timestampBefore = blockBefore.timestamp;
 
         await expect(
-            nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price})
+            nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price})
         ).to.be.revertedWith(`TooMuchBoughtInCurrentInterval(${Math.floor(timestampBefore/rateInterval)*rateInterval}, ${rateAmount.add(1)}, ${rateAmount})`);
 
         // passed time
         await ethers.provider.send('evm_increaseTime', [duration]);
         await ethers.provider.send('evm_mine');
 
-        await nftSales.connect(charlie).specialPurchase(seriesId, charlie.address, ONE, {value: price});
+        await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
 
     });
-
-   
 
 });
