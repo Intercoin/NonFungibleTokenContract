@@ -26,6 +26,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     uint32 public rateInterval;
     uint192 public currentAutoIndex;
     uint16 public rateAmount;
+    bool public evenIfNotOnSale;
 
     address public factoryAddress;
 
@@ -202,6 +203,10 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      */
     function isWhitelisted(address account) external view returns (bool) {
         return specialPurchasesList.contains(account);
+    }
+
+    function setEvenIfNotOnSale(bool flag) external onlyOwner {
+        evenIfNotOnSale = flag;
     }
 
     /********************************************************************
@@ -420,7 +425,10 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         //console.log(seriesData.saleInfo.onSaleUntil);
         
 
-        if (!isSpecialPurchase && !isSeriesOnSale) {
+        if (
+            (!isSpecialPurchase && !isSeriesOnSale) ||
+            (isSpecialPurchase && !isSeriesOnSale && !evenIfNotOnSale)
+        ) {
             revert SeriesIsNotOnSale(seriesId);
         }
 

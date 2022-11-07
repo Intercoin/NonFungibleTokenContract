@@ -84,6 +84,7 @@ describe("tests", function () {
         event = rc.events.find(event => event.event === 'InstanceCreated');
         [instance] = event.args;
         this.nftSales = await ethers.getContractAt("NFTSales",instance);
+        await this.nftSales.connect(alice).setEvenIfNotOnSale(true);
     });
 
     it("Ability to produce smart contracts with a custom price and staking interval (if any)", async() => {
@@ -209,10 +210,19 @@ describe("tests", function () {
         [instance] = event.args;
         let nftSales = await ethers.getContractAt("NFTSales",instance);
 
+        
+
         const tokenId = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(autoIncrement);
         const amount = 1;
 
         await nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
+        await expect(
+            nftSales.connect(charlie).specialPurchase(charlie.address, amount, {value: price})
+        ).to.be.revertedWith(
+            `SeriesIsNotOnSale(${seriesId})`
+        );
+        await nftSales.connect(alice).setEvenIfNotOnSale(true);
+
         await nftSales.connect(charlie).specialPurchase(charlie.address, amount, {value: price});
 
         expect(await this.nftGayAliens.ownerOf(tokenId)).to.be.eq(nftSales.address);
@@ -319,6 +329,69 @@ describe("tests", function () {
         await ethers.provider.send('evm_mine');
 
         await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
+
+    });
+
+    it.only("try to mint if token[autoindex] has too many tokens that need to skip", async() => {
+
+        const duration = 24*60*60;
+        var nftSales;
+
+        let tx,rc,event,instance;
+        tx = await this.nftSalesFactory.connect(owner).produce(
+            this.nftGayAliens.address, //address NFTcontract,
+            seriesId, // uint64 seriesId,
+            alice.address, //address owner, 
+            ZERO_ADDRESS, //address currency, 
+            ethers.utils.parseEther("0.01"), //uint256 price, 
+            bob.address, //address beneficiary, 
+            autoIncrement, // uint192 _autoindex,
+            ZERO, //uint64 duration
+            rateInterval, // uint32 _rateInterval,
+            TWO.mul(HUN) //uint16 _rateAmount
+        );
+
+        
+        rc = await tx.wait(); // 0ms, as tx is already confirmed
+        event = rc.events.find(event => event.event === 'InstanceCreated');
+        [instance] = event.args;
+        nftSales = await ethers.getContractAt("NFTSales",instance);
+
+        await nftSales.connect(alice).setEvenIfNotOnSale(true);
+        await nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
+        await nftSales.connect(alice).setAutoIndex(HUN);
+        
+        // make common purchase. it should not increase  rate variables
+        for (let i = 0; i< 100; i++) {
+            await nftSales.connect(charlie).specialPurchase(charlie.address, ONE, {value: price});
+        }
+
+        await nftSales.connect(alice).specialPurchasesListAdd([frank.address]);
+        await nftSales.connect(alice).setAutoIndex(HUN.sub(FIVE));
+        for (let i = 0; i< 10; i++) {
+            await nftSales.connect(frank).specialPurchase(frank.address, ONE, {value: price});
+        }
+        
+        let expectedTokens = [
+            HUN.sub(FIVE).add(0),
+            HUN.sub(FIVE).add(1),
+            HUN.sub(FIVE).add(2),
+            HUN.sub(FIVE).add(3),
+            HUN.sub(FIVE).add(4),
+
+            HUN.add(HUN).add(0),
+            HUN.add(HUN).add(1),
+            HUN.add(HUN).add(2),
+            HUN.add(HUN).add(3),
+            HUN.add(HUN).add(4),
+        ];
+
+        
+        for (let i = 0; i< 10; i++) {
+            let tokenId = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(expectedTokens[i]);
+            expect(await this.nftGayAliens.ownerOf(tokenId)).to.be.eq(frank.address);
+        }
+        
 
     });
 
