@@ -332,7 +332,7 @@ describe("tests", function () {
 
     });
 
-    it.only("try to mint if token[autoindex] has too many tokens that need to skip", async() => {
+    it("try to mint if token[autoindex] has too many tokens that need to skip", async() => {
 
         const duration = 24*60*60;
         var nftSales;
