@@ -70,7 +70,7 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @custom:calledby instance
      * @custom:shortd mint distribute NFTs
      */
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external onlyInstance {
+    function _doMintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external onlyInstance {
         address NFTcontract = instancesInfo[msg.sender].NFTContract;
 
         // get current owner directly from NFT instance contract
@@ -91,7 +91,7 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @custom:calledby instance
      * @custom:shortd view NFT contrac address
      */
-    function getInstanceNFTcontract() external view onlyInstance returns (address) {
+    function _doGetInstanceNFTcontract() external view onlyInstance returns (address) {
         return instancesInfo[msg.sender].NFTContract;
     }
 
