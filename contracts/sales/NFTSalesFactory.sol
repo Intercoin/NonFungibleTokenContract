@@ -29,7 +29,7 @@ contract NFTSalesFactory is INFTSalesFactory {
         address currency;
         uint256 price;
         address beneficiary;
-        uint192 autoindex;
+        uint192 autoIndex;
         uint32 rateInterval;
         uint16 rateAmount;
     }
@@ -70,7 +70,7 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @custom:calledby instance
      * @custom:shortd mint distribute NFTs
      */
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external onlyInstance {
+    function _doMintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external onlyInstance {
         address NFTcontract = instancesInfo[msg.sender].NFTContract;
 
         // get current owner directly from NFT instance contract
@@ -91,11 +91,11 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @custom:calledby instance
      * @custom:shortd view NFT contrac address
      */
-    function getInstanceNFTcontract() external view onlyInstance returns (address) {
+    function _doGetInstanceNFTcontract() external view onlyInstance returns (address) {
         return instancesInfo[msg.sender].NFTContract;
     }
 
-    function whitelistByNFT(address NFTContract) external view returns (address[] memory instances) {
+    function whitelistByNFTContract(address NFTContract) external view returns (address[] memory instances) {
         uint256 len;
         address iAddr;
         uint256 j;
@@ -124,7 +124,7 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @param currency currency for every sale NFT token
      * @param price price amount for every sale NFT token
      * @param beneficiary address where which receive funds after sale
-     * @param autoindex from what index contract will start autoincrement from each series(if owner doesnot set before) 
+     * @param autoIndex from what index contract will start autoincrement from each series(if owner doesnot set before) 
      * @param duration locked time when NFT will be locked after sale
      * @param rateInterval interval in which contract should sell not more than `rateAmount` tokens
      * @param rateAmount amount of tokens that can be minted in each `rateInterval`
@@ -139,7 +139,7 @@ contract NFTSalesFactory is INFTSalesFactory {
         address currency,
         uint256 price,
         address beneficiary,
-        uint192 autoindex,
+        uint192 autoIndex,
         uint64 duration,
         uint32 rateInterval,
         uint16 rateAmount
@@ -154,11 +154,11 @@ contract NFTSalesFactory is INFTSalesFactory {
 
         require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
         whitelist.add(instance);
-        instancesInfo[instance] = InstanceInfo(NFTContract, seriesId, owner, duration, currency, price, beneficiary, autoindex, rateInterval, rateAmount);
+        instancesInfo[instance] = InstanceInfo(NFTContract, seriesId, owner, duration, currency, price, beneficiary, autoIndex, rateInterval, rateAmount);
 
         emit InstanceCreated(instance);
 
-        INFTSales(instance).initialize(seriesId, currency, price, beneficiary, autoindex, duration, rateInterval, rateAmount);
+        INFTSales(instance).initialize(seriesId, currency, price, beneficiary, autoIndex, duration, rateInterval, rateAmount);
 
         Ownable(instance).transferOwnership(owner);
     }
