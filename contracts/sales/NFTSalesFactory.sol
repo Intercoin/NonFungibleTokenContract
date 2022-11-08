@@ -95,7 +95,7 @@ contract NFTSalesFactory is INFTSalesFactory {
         return instancesInfo[msg.sender].NFTContract;
     }
 
-    function whitelistByNFT(address NFTContract) external view returns (address[] memory instances) {
+    function whitelistByNFTContract(address NFTContract) external view returns (address[] memory instances) {
         uint256 len;
         address iAddr;
         uint256 j;

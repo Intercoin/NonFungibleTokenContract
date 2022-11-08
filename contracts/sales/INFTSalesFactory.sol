@@ -6,8 +6,6 @@ interface INFTSalesFactory {
 
     function _doGetInstanceNFTcontract() external view returns (address addr);
 
-    function whitelistByNFT(address NFTContract) external view returns (address[] memory instances);
-    // function name() view external returns(string memory);
-    // function symbol() view external returns(string memory);
-    // function owner() view external returns(address);
+    function whitelistByNFTContract(address NFTContract) external view returns (address[] memory instances);
+    
 }
