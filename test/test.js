@@ -49,7 +49,9 @@ describe("tests", function () {
         const NFTGayAliensFactory = await ethers.getContractFactory("NFTSafeHook");
         const NFTSalesFactoryFactory = await ethers.getContractFactory("NFTSalesFactory");
         const NFTSalesFactory = await ethers.getContractFactory("NFTSales");
+        const LockedHookFactory = await ethers.getContractFactory("LockedHook");
     
+        this.lockedHook = await LockedHookFactory.deploy();
         let nftSalesimpl = await NFTSalesFactory.deploy();
         this.nftSalesFactory = await NFTSalesFactoryFactory.deploy(nftSalesimpl.address);
 
@@ -394,5 +396,43 @@ describe("tests", function () {
         
 
     });
+
+    it("token should be locked after hook setup and locked by owner", async() => {
+
+        await this.nftGayAliens.connect(owner).pushTokenTransferHook(seriesId, this.lockedHook.address);
+
+        await this.nftSales.connect(alice).specialPurchasesListAdd([charlie.address]);
+
+        const amount = ONE;
+        await this.nftSales.connect(charlie).specialPurchase(charlie.address, amount, {value: price.mul(amount)})
+
+        let tokenId = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(autoIncrement);
+
+        let tokenOwner = await this.nftGayAliens.ownerOf(tokenId);
+    
+        expect(tokenOwner).to.be.eq(charlie.address);
+
+        //  locked token
+        await this.lockedHook.connect(charlie).lock(this.nftGayAliens.address, tokenId, bob.address);
+
+
+        await expect(
+            this.nftGayAliens.connect(charlie).transfer(frank.address, tokenId)
+        ).to.be.revertedWith(`Transfer Not Authorized`);
+
+
+        // but if unlock 
+        await expect(
+            this.lockedHook.connect(charlie).unlock(this.nftGayAliens.address, tokenId)
+        ).to.be.revertedWith(`NotACustodian("${this.nftGayAliens.address}", ${tokenId})`);
+
+        await this.lockedHook.connect(bob).unlock(this.nftGayAliens.address, tokenId);
+
+        // then be able to transfer
+        await this.nftGayAliens.connect(charlie).transfer(frank.address, tokenId)
+
+    });
+
+
 
 });
