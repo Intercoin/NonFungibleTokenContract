@@ -5,7 +5,7 @@ import "./hooks/SafeHook.sol";
 import "./sales/INFT.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 contract LockedHook is SafeHook, ReentrancyGuard {
 
