@@ -14,6 +14,7 @@ import "./INFT.sol";
 
 contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
 
     uint8 internal constant SERIES_SHIFT_BITS = 192; // 256 - 64
     uint192 internal constant MAX_TOKEN_INDEX = type(uint192).max;
@@ -33,13 +34,14 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     uint256 internal seriesPart;
 
     struct TokenData {
-        address owner;
+        address custodian;
         uint64 untilTimestamp;
     }
     
     mapping(uint256 => uint256) purchaseBucket;
 
-    mapping(uint256 => TokenData) locked;
+    mapping(uint256 => TokenData) _locked;
+    
 
     EnumerableSetUpgradeable.AddressSet specialPurchasesList;
 
@@ -257,10 +259,16 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
                 
             }
         }
-
-        
     }
-    
+
+    function tokenInfo(uint256 tokenId) external view returns(address custodian, uint64 secondsLeft) {
+        return(
+            _locked[tokenId].custodian,
+            _locked[tokenId].untilTimestamp > block.timestamp ? uint64(_locked[tokenId].untilTimestamp-block.timestamp) : 0
+        );
+    }
+
+
 
     /********************************************************************
      ****** public section ***********************************************
@@ -316,7 +324,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 selfAddresses[i] = address(this);
 
-                locked[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
+                _locked[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
+                
             }
 
             INFTSalesFactory(factoryAddress)._doMintAndDistribute(tokenIds, selfAddresses);
@@ -393,9 +402,10 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             _checkTokenForClaim(tokenIds[i], shouldCheckOwner);
 
-            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), locked[tokenIds[i]].owner, tokenIds[i]);
+            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), _locked[tokenIds[i]].custodian, tokenIds[i]);
 
-            delete locked[tokenIds[i]];
+            delete _locked[tokenIds[i]];
+            
         }
     }
 
@@ -405,8 +415,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
 
     function remainingLockedTime(uint256 tokenId) internal view returns (uint64) {
         return
-            locked[tokenId].untilTimestamp > uint64(block.timestamp)
-                ? locked[tokenId].untilTimestamp - uint64(block.timestamp)
+            _locked[tokenId].untilTimestamp > uint64(block.timestamp)
+                ? _locked[tokenId].untilTimestamp - uint64(block.timestamp)
                 : 0;
     }
 
@@ -420,7 +430,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     }
 
     function _validateTokenId(uint256 tokenId) internal view {
-        if (locked[tokenId].owner == address(0)) {
+        if (_locked[tokenId].custodian == address(0)) {
             revert UnknownTokenIdForClaim(tokenId);
         }
     }
@@ -428,7 +438,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     function _checkTokenForClaim(uint256 tokenId, bool shouldCheckOwner) internal view {
         _validateTokenId(tokenId);
 
-        if (locked[tokenId].untilTimestamp >= uint64(block.timestamp)) {
+        if (_locked[tokenId].untilTimestamp >= uint64(block.timestamp)) {
             revert StillLocked(_remainingDays(tokenId), remainingLockedTime(tokenId));
         }
 
@@ -436,13 +446,13 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         //     (shouldCheckOwner == false) ||
         //     (
         //         shouldCheckOwner == true &&
-        //         locked[tokenId].owner == _msgSender()
+        //         _locked[tokenId].owner == _msgSender()
         //     )
         // ) {
         //      revert ShouldBeOwner(_msgSender());
         // }
 
-        if ((shouldCheckOwner) && (!shouldCheckOwner || locked[tokenId].owner != _msgSender())) {
+        if ((shouldCheckOwner) && (!shouldCheckOwner || _locked[tokenId].custodian != _msgSender())) {
             revert ShouldBeTokenOwner(_msgSender());
         }
     }
