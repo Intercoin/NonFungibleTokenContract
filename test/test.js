@@ -433,6 +433,75 @@ describe("tests", function () {
 
     });
 
+    it("check whitelist ", async() => {
+        let whitelistedBefore = await this.nftSales["whitelisted()"]();
+        await this.nftSales.connect(alice).specialPurchasesListAdd([
+            bob.address,
+            charlie.address,
+            frank.address
+        ]);
+        let whitelistedAfter = await this.nftSales["whitelisted()"]();
 
+        expect(whitelistedBefore.length).to.be.eq(ZERO);
+
+        expect(whitelistedAfter[0]).to.be.eq(bob.address);
+        expect(whitelistedAfter[1]).to.be.eq(charlie.address);
+        expect(whitelistedAfter[2]).to.be.eq(frank.address);
+    });
+
+    it("check whitelist with paginations ", async() => {
+
+        await expect(this.nftSales["whitelisted(uint256,uint256)"](0,0)).to.be.revertedWith(`IncorrectInputParameters()`);
+        await expect(this.nftSales["whitelisted(uint256,uint256)"](5,0)).to.be.revertedWith(`IncorrectInputParameters()`);
+        await expect(this.nftSales["whitelisted(uint256,uint256)"](0,5)).to.be.revertedWith(`IncorrectInputParameters()`);
+
+        expect((await this.nftSales["whitelisted(uint256,uint256)"](1,1)).length).to.be.eq(ZERO);
+        expect((await this.nftSales["whitelisted(uint256,uint256)"](2,1)).length).to.be.eq(ZERO);
+        expect((await this.nftSales["whitelisted(uint256,uint256)"](1,2)).length).to.be.eq(ZERO);
+        expect((await this.nftSales["whitelisted(uint256,uint256)"](6,6)).length).to.be.eq(ZERO);
+
+        await this.nftSales.connect(alice).specialPurchasesListAdd([
+            bob.address,
+            charlie.address,
+            frank.address
+        ]);
+
+        let whitelistArr;
+        // emulate requests with one items on pagination page 
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](1,1);
+        expect(whitelistArr[0]).to.be.eq(bob.address);
+        
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](2,1);
+        expect(whitelistArr[0]).to.be.eq(charlie.address);
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](3,1);
+        expect(whitelistArr[0]).to.be.eq(frank.address);
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](4,1);
+        expect(whitelistArr.length).to.be.eq(ZERO);
+
+        // emulate requests with two items on pagination page 
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](1,2);
+        expect(whitelistArr[0]).to.be.eq(bob.address);     
+        expect(whitelistArr[1]).to.be.eq(charlie.address);     
+        
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](2,2);
+        expect(whitelistArr[0]).to.be.eq(frank.address); 
+        expect(whitelistArr.length).to.be.eq(ONE);    
+
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](3,2);
+        expect(whitelistArr.length).to.be.eq(ZERO);
+
+
+        await this.nftSales.connect(alice).specialPurchasesListAdd([owner.address]);
+        // emulate requests with three items on pagination page 
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](1,3);
+        expect(whitelistArr[0]).to.be.eq(bob.address);
+        expect(whitelistArr[1]).to.be.eq(charlie.address);     
+        expect(whitelistArr[2]).to.be.eq(frank.address);     
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](2,3);
+        expect(whitelistArr[0]).to.be.eq(owner.address); 
+        expect(whitelistArr.length).to.be.eq(ONE);    
+        whitelistArr = await this.nftSales["whitelisted(uint256,uint256)"](3,3);
+        expect(whitelistArr.length).to.be.eq(ZERO);
+    });
 
 });

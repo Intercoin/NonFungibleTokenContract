@@ -55,6 +55,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     error SeriesMaxTokenLimitExceeded(uint64 seriesId);
     error TooMuchBoughtInCurrentInterval(uint256 currentInterval, uint256 willBeBought, uint32 maxAmount);
     error SeriesIsNotOnSale(uint64 seriesId);
+    error IncorrectInputParameters();
 
     /**
      * @notice initialization
@@ -205,14 +206,71 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         return specialPurchasesList.contains(account);
     }
 
+    /**
+    * @param flag if true that user can mint tokens through `specialpurchase` even if series in not on salse
+    */
     function setEvenIfNotOnSale(bool flag) external onlyOwner {
         evenIfNotOnSale = flag;
     }
 
+    /**
+    * getting array of whitelisted addresses. used by frontend. return all addresses
+    */
+    function whitelisted() external view returns(address[] memory ret) {
+        uint256 len = specialPurchasesList.length();
+        ret = new address[](len);
+        for (uint256 i = 0; i<len; i++) {
+           ret[i] = specialPurchasesList.at(i);
+        }
+    }
+
+    /**
+    * getting array of whitelisted addresses. overloaded. used by frontend. supports pagination
+    * @param page number of page
+    * @param count amount of addresess of page number
+    * @return ret array of whitelisted addresses
+    * note that 
+    *   if there are no any addresses on the page - method will return zero array
+    *   if addresses exists but their amounts less than `count` - returns array will be without zero values and size will be less
+    *   else returns array will be with length equal `count`
+    */
+    function whitelisted(uint256 page, uint256 count) external view returns(address[] memory ret) {
+        if (page == 0 || count == 0) {
+            revert IncorrectInputParameters();
+        }
+
+        uint256 len = specialPurchasesList.length();
+        uint256 ifrom = page*count-count;
+
+        if (
+            len == 0 || 
+            ifrom >= len
+        ) {
+            ret = new address[](0);
+        } else {
+
+            count = ifrom+count > len ? len-ifrom : count ;
+            ret = new address[](count);
+
+            for (uint256 i = ifrom; i<ifrom+count; i++) {
+                ret[i-ifrom] = specialPurchasesList.at(i);
+                
+            }
+        }
+
+        
+    }
+    
+
     /********************************************************************
      ****** public section ***********************************************
      *********************************************************************/
-
+    /**
+    * @return amount addresses from the special purchases list
+    */
+    function whitelistedCount() external view returns(uint256) {
+        return specialPurchasesList.length();
+    }
     /********************************************************************
      ****** internal section *********************************************
      *********************************************************************/
