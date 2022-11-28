@@ -35,6 +35,11 @@ contract LockedHook is SafeHook, ReentrancyGuard {
         
     }
 
+    function isLocked(address nftContract, uint256 tokenId) public view returns(bool locked, address custodian) {
+        custodian = lockedMap[nftContract][tokenId];
+        locked = custodian == address(0) ? false : true;
+    }
+
     function lock(address nftContract, uint256 tokenId, address custodian) public nonReentrant {
         
         if (lockedMap[nftContract][tokenId] != address(0)) {
