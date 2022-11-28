@@ -270,15 +270,19 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     }
 
 
-
-    /********************************************************************
-     ****** public section ***********************************************
-     *********************************************************************/
     /**
     * @return amount addresses from the special purchases list
     */
     function whitelistedCount() external view returns(uint256) {
         return specialPurchasesList.length();
+    }
+    /********************************************************************
+     ****** public section ***********************************************
+     *********************************************************************/
+
+    function remainingToBuyInCurrentInterval() public view returns(uint256) {
+        uint256 currentInterval = currentBucketInterval();
+        return purchaseBucketLastIntervalIndex == currentInterval ? rateAmount - purchaseBucketLastIntervalAmount : rateAmount;
     }
     /********************************************************************
      ****** internal section *********************************************
