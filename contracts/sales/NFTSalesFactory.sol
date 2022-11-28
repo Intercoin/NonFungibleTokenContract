@@ -91,8 +91,8 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @custom:calledby instance
      * @custom:shortd view NFT contrac address
      */
-    function _doGetInstanceNFTcontract() external view onlyInstance returns (address) {
-        return instancesInfo[msg.sender].NFTContract;
+    function instanceToNFTContract(address instanceAddress) external view onlyInstance returns (address) {
+        return instancesInfo[instanceAddress].NFTContract;
     }
 
     function whitelistByNFTContract(address NFTContract) external view returns (address[] memory instances) {

@@ -409,7 +409,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     }
 
     function _claim(uint256[] memory tokenIds, bool shouldCheckOwner) internal nonReentrant {
-        address NFTcontract = INFTSalesFactory(getFactory())._doGetInstanceNFTcontract();
+        address NFTcontract = INFTSalesFactory(getFactory()).instanceToNFTContract(address(this));
         for (uint256 i = 0; i < tokenIds.length; i++) {
             _checkTokenForClaim(tokenIds[i], shouldCheckOwner);
 
@@ -493,7 +493,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         lastIndex = currentAutoIndex;
 
 
-        address NFTContract = INFTSalesFactory(factoryAddress)._doGetInstanceNFTcontract();
+        address NFTContract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
 
         // Is this whole series for sale?
         //INFT.SeriesInfo memory seriesData = INFT(NFTContract).seriesInfo(seriesId);
