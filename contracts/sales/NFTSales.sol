@@ -38,7 +38,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         uint64 untilTimestamp;
     }
     
-    mapping(uint256 => uint256) purchaseBucket;
+    uint256 purchaseBucketLastIntervalIndex;
+    uint256 purchaseBucketLastIntervalAmount;
 
     mapping(uint256 => TokenData) _locked;
     
@@ -294,9 +295,15 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
 
         if (isSpecialPurchase) {
             uint256 currentInterval = currentBucketInterval();
-            purchaseBucket[currentInterval] += amount;
-            if (purchaseBucket[currentInterval] > rateAmount) {
-                revert TooMuchBoughtInCurrentInterval(currentInterval, purchaseBucket[currentInterval], rateAmount);
+
+            if (purchaseBucketLastIntervalIndex != currentInterval) {
+                purchaseBucketLastIntervalIndex = currentInterval;
+                purchaseBucketLastIntervalAmount = 0;
+            }
+
+            purchaseBucketLastIntervalAmount += amount;
+            if (purchaseBucketLastIntervalAmount > rateAmount) {
+                revert TooMuchBoughtInCurrentInterval(currentInterval, purchaseBucketLastIntervalAmount, rateAmount);
             }
         }
         // generate token ids
