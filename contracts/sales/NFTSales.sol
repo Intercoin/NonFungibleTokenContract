@@ -34,7 +34,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     uint256 internal seriesPart;
 
     struct TokenData {
-        address custodian;
+        address recipient;
         uint64 untilTimestamp;
     }
     
@@ -261,9 +261,9 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         }
     }
 
-    function tokenInfo(uint256 tokenId) external view returns(address custodian, uint64 secondsLeft) {
+    function tokenInfo(uint256 tokenId) external view returns(address recipient, uint64 secondsLeft) {
         return(
-            pending[tokenId].custodian,
+            pending[tokenId].recipient,
             pending[tokenId].untilTimestamp > block.timestamp ? uint64(pending[tokenId].untilTimestamp-block.timestamp) : 0
         );
     }
@@ -402,7 +402,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             _checkTokenForClaim(tokenIds[i], shouldCheckOwner);
 
-            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), pending[tokenIds[i]].custodian, tokenIds[i]);
+            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), pending[tokenIds[i]].recipient, tokenIds[i]);
 
             delete pending[tokenIds[i]];
             
@@ -430,7 +430,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     }
 
     function _validateTokenId(uint256 tokenId) internal view {
-        if (pending[tokenId].custodian == address(0)) {
+        if (pending[tokenId].recipient == address(0)) {
             revert UnknownTokenIdForClaim(tokenId);
         }
     }
@@ -452,7 +452,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         //      revert ShouldBeOwner(_msgSender());
         // }
 
-        if ((shouldCheckOwner) && (!shouldCheckOwner || pending[tokenId].custodian != _msgSender())) {
+        if ((shouldCheckOwner) && (!shouldCheckOwner || pending[tokenId].recipient != _msgSender())) {
             revert ShouldBeTokenOwner(_msgSender());
         }
     }
