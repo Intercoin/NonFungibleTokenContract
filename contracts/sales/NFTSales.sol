@@ -34,14 +34,14 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     uint256 internal seriesPart;
 
     struct TokenData {
-        address custodian;
+        address recipient;
         uint64 untilTimestamp;
     }
     
     uint256 purchaseBucketLastIntervalIndex;
     uint256 purchaseBucketLastIntervalAmount;
 
-    mapping(uint256 => TokenData) _locked;
+    mapping(uint256 => TokenData) public pending;
     
 
     EnumerableSetUpgradeable.AddressSet specialPurchasesList;
@@ -262,10 +262,10 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         }
     }
 
-    function tokenInfo(uint256 tokenId) external view returns(address custodian, uint64 secondsLeft) {
+    function tokenInfo(uint256 tokenId) external view returns(address recipient, uint64 secondsLeft) {
         return(
-            _locked[tokenId].custodian,
-            _locked[tokenId].untilTimestamp > block.timestamp ? uint64(_locked[tokenId].untilTimestamp-block.timestamp) : 0
+            pending[tokenId].recipient,
+            pending[tokenId].untilTimestamp > block.timestamp ? uint64(pending[tokenId].untilTimestamp-block.timestamp) : 0
         );
     }
 
@@ -335,7 +335,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 selfAddresses[i] = address(this);
 
-                _locked[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
+                pending[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
                 
             }
 
@@ -413,9 +413,9 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             _checkTokenForClaim(tokenIds[i], shouldCheckOwner);
 
-            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), _locked[tokenIds[i]].custodian, tokenIds[i]);
+            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), pending[tokenIds[i]].recipient, tokenIds[i]);
 
-            delete _locked[tokenIds[i]];
+            delete pending[tokenIds[i]];
             
         }
     }
@@ -426,8 +426,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
 
     function remainingLockedTime(uint256 tokenId) internal view returns (uint64) {
         return
-            _locked[tokenId].untilTimestamp > uint64(block.timestamp)
-                ? _locked[tokenId].untilTimestamp - uint64(block.timestamp)
+            pending[tokenId].untilTimestamp > uint64(block.timestamp)
+                ? pending[tokenId].untilTimestamp - uint64(block.timestamp)
                 : 0;
     }
 
@@ -441,7 +441,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     }
 
     function _validateTokenId(uint256 tokenId) internal view {
-        if (_locked[tokenId].custodian == address(0)) {
+        if (pending[tokenId].recipient == address(0)) {
             revert UnknownTokenIdForClaim(tokenId);
         }
     }
@@ -449,7 +449,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     function _checkTokenForClaim(uint256 tokenId, bool shouldCheckOwner) internal view {
         _validateTokenId(tokenId);
 
-        if (_locked[tokenId].untilTimestamp >= uint64(block.timestamp)) {
+        if (pending[tokenId].untilTimestamp >= uint64(block.timestamp)) {
             revert StillLocked(_remainingDays(tokenId), remainingLockedTime(tokenId));
         }
 
@@ -457,13 +457,13 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         //     (shouldCheckOwner == false) ||
         //     (
         //         shouldCheckOwner == true &&
-        //         _locked[tokenId].owner == _msgSender()
+        //         pending[tokenId].owner == _msgSender()
         //     )
         // ) {
         //      revert ShouldBeOwner(_msgSender());
         // }
 
-        if ((shouldCheckOwner) && (!shouldCheckOwner || _locked[tokenId].custodian != _msgSender())) {
+        if ((shouldCheckOwner) && (!shouldCheckOwner || pending[tokenId].recipient != _msgSender())) {
             revert ShouldBeTokenOwner(_msgSender());
         }
     }
