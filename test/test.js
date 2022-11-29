@@ -234,7 +234,7 @@ describe("tests", function () {
             nftSales.connect(charlie).claim([tokenId])
         ).to.be.revertedWith(
             //hardcoded error params :)  remained day+1 and remained timestamp
-            `StillLocked(1, 86399)`
+            `StillPending(1, 86399)`
         );
 
         // passed time
