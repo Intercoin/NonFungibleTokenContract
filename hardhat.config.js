@@ -21,7 +21,6 @@ const bsctestURL = 'https://data-seed-prebsc-1-s1.binance.org:8545';
 const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`
 const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MATIC}`
 
-
 module.exports = {
   networks: {
     local: {
@@ -74,7 +73,7 @@ module.exports = {
       accounts: [process.env.private_key],
       saveDeployments: true
     },
-    matic: {
+    polygon: {
       url: maticURL,
       chainId: 137,
       //gasPrice: "auto",
@@ -103,7 +102,12 @@ module.exports = {
   etherscan: {
     //apiKey: process.env.MATIC_API_KEY  
     //apiKey: process.env.ETHERSCAN_API_KEY
-    apiKey: process.env.BSCSCAN_API_KEY
+    //apiKey: process.env.BSCSCAN_API_KEY
+    apiKey: {
+      bsc: process.env.BSCSCAN_API_KEY,
+      polygon: process.env.MATIC_API_KEY,
+      mainnet: process.env.ETHERSCAN_API_KEY
+    }
   },
   solidity: {
     compilers: [
