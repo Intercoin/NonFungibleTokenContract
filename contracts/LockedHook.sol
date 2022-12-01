@@ -4,12 +4,16 @@ pragma solidity 0.8.11;
 import "./hooks/SafeHook.sol";
 import "./sales/INFT.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@artman325/version/contracts/Version.sol";
 
 //import "hardhat/console.sol";
 
-contract LockedHook is SafeHook, ReentrancyGuard {
+contract LockedHook is SafeHook, ReentrancyGuard, Version {
 
     mapping(address => mapping(uint256 => address)) lockedMap;
+
+    event TokenLocked(address nftContract, address indexed owner, uint256 indexed tokenId, address indexed custodian);
+    event TokenUnlocked(address nftContract, address indexed owner, uint256 indexed tokenId, address indexed custodian);
 
     error AlreadyLocked(address nftContract, uint256 tokenId, address custodian);
     error NotLocked(address nftContract, uint256 tokenId);
@@ -18,6 +22,10 @@ contract LockedHook is SafeHook, ReentrancyGuard {
     error NotACustodian(address nftContract, uint256 tokenId);
     error UnknownTokenId(address nftContract, uint256 tokenId);
     error WrongAddress(address account);
+
+    constructor() {
+        setVersionMetaData(1,0,0);
+    }
 
     function executeHook(address from, address /*to*/, uint256 tokenId) external virtual override returns(bool success) {
         address nftContract = msg.sender;
@@ -58,6 +66,8 @@ contract LockedHook is SafeHook, ReentrancyGuard {
             revert WrongAddress(custodian);
         }
         lockedMap[nftContract][tokenId] = custodian;
+
+        emit TokenLocked(nftContract, nftOwner, tokenId, custodian);
     }
 
     function unlock(address nftContract, uint256 tokenId) public nonReentrant {
@@ -67,6 +77,10 @@ contract LockedHook is SafeHook, ReentrancyGuard {
         if (lockedMap[nftContract][tokenId] != msg.sender) {
             revert NotACustodian(nftContract, tokenId);
         }
+        address nftOwner;
+        (,,, nftOwner) = INFT(nftContract).getTokenSaleInfo(tokenId);
+        emit TokenUnlocked(nftContract, nftOwner, tokenId, lockedMap[nftContract][tokenId]);
+
         lockedMap[nftContract][tokenId] = address(0);
     }
 }

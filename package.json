@@ -58,6 +58,7 @@
     "@openzeppelin/contracts-upgradeable": "^4.1.0",
     "@openzeppelin/test-helpers": "^0.5.15",
     "@uniswap/lib": "^4.0.1-alpha",
+    "@artman325/version": "^1.0.0",
     "trustedforwarder": "^1.0.0",
     "releasemanager": "^1.0.5"
   }
