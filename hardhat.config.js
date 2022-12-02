@@ -14,12 +14,14 @@ require("hardhat-gas-reporter")
 
 
 const kovanURL = `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KOVAN}`
-const goerliURL = `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_GOERLI}`
-const rinkebyURL = /*`https://rinkeby.infura.io/v3/${process.env.INFURA_ID_PROJECT}` */`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
-const bscURL = 'https://bsc-dataseed.binance.org' //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
+const goerliURL = `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_GOERLI}`;
+const rinkebyURL = /*`https://rinkeby.infura.io/v3/${process.env.INFURA_ID_PROJECT}` */`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`;
+const bscURL = 'https://bsc-dataseed.binance.org'; //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
 const bsctestURL = 'https://data-seed-prebsc-1-s1.binance.org:8545';
-const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`
-const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MATIC}`
+const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`;
+const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MATIC}`;
+const polygonMumbaiURL = `https://rpc-mumbai.maticvigil.com`;
+
 
 module.exports = {
   networks: {
@@ -80,6 +82,13 @@ module.exports = {
       accounts: [process.env.private_key],
       saveDeployments: true
     },
+    polygonMumbai: {
+      url: polygonMumbaiURL,
+      chainId: 80001,
+      //gasPrice: "auto",
+      accounts: [process.env.private_key],
+      saveDeployments: true
+    },
     mainnet: {
       url: mainnetURL,
       chainId: 1,
@@ -106,6 +115,7 @@ module.exports = {
     apiKey: {
       bsc: process.env.BSCSCAN_API_KEY,
       polygon: process.env.MATIC_API_KEY,
+      polygonMumbai: process.env.MATIC_API_KEY,
       mainnet: process.env.ETHERSCAN_API_KEY
     }
   },
