@@ -136,15 +136,15 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      ****** external section *********************************************
      *********************************************************************/
     /**
-     * @notice sell NFT tokens
-     * param tokenIds array of tokens that would be a sold
-     * param addresses array of desired owners to newly sold NFT tokens
-     * @custom:calledby person in the whitelist
+     * @notice purchase tokens using special promotion from this instance
+     * param amount the number per address
+     * param accounts array of addresses, each gets amount of tokens
+     * @custom:calledby an authorized user
      * @custom:shortd sell NFT tokens
      */
     function specialPurchase(
-        address account,
-        uint256 amount
+        uint256 amount,
+        address[] accounts
     ) external payable nonReentrant {
         address buyer = _msgSender();
 
@@ -152,15 +152,28 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             revert NotInWhiteList(buyer);
         }
 
-        _purchase(account, amount, buyer, true);
+        uint256 l = accounts.length;
+        for (uint256 i = 0; i < l; ++i) {
+            _purchase(amount, accounts[i], buyer, true);
+        }
     }
 
+    /**
+     * @notice if tokens are on sale in the actual NFT contract, purchase some
+     * param amount the number per address
+     * param accounts array of addresses, each gets amount of tokens
+     * @custom:calledby anyone
+     * @custom:shortd sell NFT tokens
+     */
     function purchase(
-        address account,
-        uint256 amount
+        uint256 amount,
+        address[] accounts
     ) external payable nonReentrant {
         address buyer = _msgSender();
-        _purchase(account, amount, buyer, false);
+        uint256 l = accounts.length;
+        for (uint256 i = 0; i < l; ++i) {
+            _purchase(amount, accounts[i], buyer, false);
+        }
     }
 
     /**
@@ -325,8 +338,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      *********************************************************************/
     
     function _purchase(
-        address account,
         uint256 amount,
+        address account,
         address buyer,
         bool isSpecialPurchase
     ) internal {
