@@ -190,19 +190,19 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             revert InvalidInput();
         }
         for (uint256 i = 0; i < cl; ++i) {
-            address contract = contacts[i];
+            address contracti = contacts[i];
             uint256 tokenId = tokens[i];
-            if (usedLicenses[contract][tokenId]
-            || IERC721EnumerableMethods(contract)
+            if (usedLicenses[contracti][tokenId]
+            || IERC721EnumerableMethods(contracti)
                .ownerOf(tokens[i]) !== buyer)) {
                 continue;
             }
-            uint256 additionalAmount = specialPurchaseLicenses[contract].tokensPerLicense; // 0 by default
+            uint256 additionalAmount = specialPurchaseLicenses[contracti].tokensPerLicense; // 0 by default
             allowedAmount += additionalAmount;
             if (allowedAmount > amount) {
                 additionalAmount -= (allowedAmount - amount);
             }
-            usedLicenses[contract][tokenId] = additionalAmount;
+            usedLicenses[contracti][tokenId] = additionalAmount;
         }
         if (allowedAmount < amount) {
             revert NotEnoughLicenses();
