@@ -11,7 +11,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "./INFTSalesFactory.sol";
 import "./INFTSales.sol";
 import "./INFT.sol";
-import "./IERC721EnumerableMethods.sol";
 
 /**
 *****************
@@ -75,15 +74,11 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         uint64 untilTimestamp;
     }
     
-    struct PurchaseLicense {
-        uint16 tokensPerLicense;
-    }
-    
     uint256 purchaseBucketLastIntervalIndex;
     uint256 purchaseBucketLastIntervalAmount;
 
     mapping(uint256 => TokenData) public pending;
-    mapping(address => PurchaseLicense) public specialPurchaseLicenses;
+    mapping(address => uint16) public specialPurchaseLicenses;
     mapping(address => mapping(uint256 => uint256)) usedLicenses;
 
     EnumerableSetUpgradeable.AddressSet specialPurchasesList;
@@ -152,7 +147,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      */
     function specialPurchase(
         uint256 amount,
-        address[] accounts
+        address[] memory accounts
     ) external payable nonReentrant {
         address buyer = _msgSender();
 
@@ -177,31 +172,31 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      */
     function specialPurchaseByLicenses(
         uint256 amount,
-        address account,
-        address[] contracts,
-        uint32[] tokenIds
+        address[] memory accounts,
+        address[] memory contracts,
+        uint32[] memory tokenIds
     ) external payable nonReentrant {
         address buyer = _msgSender();
 
         uint256 allowedAmount = 0;
         
-        if (contracts.length != tokens.length) {
+        if (contracts.length != tokenIds.length) {
             revert InvalidInput();
         }
         for (uint256 i = 0; i < contracts.length; ++i) {
             
             if (
-                usedLicenses[contracts[i]][tokens[i]] || 
-                IERC721Upgradeable(contracts[i]).ownerOf(tokens[i]) != buyer
+                usedLicenses[contracts[i]][tokenIds[i]] || 
+                IERC721Upgradeable(contracts[i]).ownerOf(tokenIds[i]) != buyer
             ) {
                 continue;
             }
-            uint256 additionalAmount = specialPurchaseLicenses[contracts[i]].tokensPerLicense; // 0 by default
+            uint256 additionalAmount = specialPurchaseLicenses[contracts[i]]; // 0 by default
             allowedAmount += additionalAmount;
             if (allowedAmount > amount) {
                 additionalAmount -= (allowedAmount - amount);
             }
-            usedLicenses[contracts[i]][tokens[i]] = additionalAmount;
+            usedLicenses[contracts[i]][tokenIds[i]] = additionalAmount;
         }
         if (allowedAmount < amount) {
             revert NotEnoughLicenses();
@@ -221,7 +216,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      */
     function purchase(
         uint256 amount,
-        address[] accounts
+        address[] memory accounts
     ) external payable nonReentrant {
         address buyer = _msgSender();
         uint256 l = accounts.length;
@@ -301,26 +296,27 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      *
      * Requirements:
      *
-     * - `contract` must be an NFT contract supporting ownerOf function
+     * - `contract_` must be an NFT contract supporting ownerOf function
      *
-     * @param contract address of external NFT contract
+     * @param contract_ address of external NFT contract
      * @param license address of external NFT contract
      */
-    function specialPurchaseLicensesAdd(address contract, PurchaseLicense license) external onlyOwner {
-        specialPurchaseLicenses[contract] = license;
+    function specialPurchaseLicensesAdd(address contract_, uint16 license) external onlyOwner {
+        specialPurchaseLicenses[contract_] = license;
     }
     
     /**
-     * Removing external NFT contract to specialPurchaseLicenses list
+     * Removing external NFT contract from specialPurchaseLicenses list
      *
      * Requirements:
      *
-     * - `contract` must be a contract that was previously added
+     * - `contract_` must be a contract that was previously added
      *
-     * @param contract address of external NFT contract
+     * @param contract_ address of external NFT contract
      */
-    function specialPurchaseLicensesRemove(address contract) external onlyOwner {
-        delete specialPurchaseLicenses[contract];
+    function specialPurchaseLicensesRemove(address contract_) external onlyOwner {
+        //delete specialPurchaseLicenses[contract_];
+        specialPurchaseLicenses[contract_] = 0;
     }
 
     /**
