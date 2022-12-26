@@ -193,7 +193,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             address contracti = contacts[i];
             uint256 tokenId = tokens[i];
             if (usedLicenses[contracti][tokenId]
-            || IERC721EnumerableMethods(contracti)
+            || IERC721Upgradeable(contracti)
                .ownerOf(tokens[i]) !== buyer)) {
                 continue;
             }
