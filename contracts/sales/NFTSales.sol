@@ -189,12 +189,12 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         if (cl != tl) {
             revert InvalidInput();
         }
-        for (uint256 ci = 0; ci < cl; ++ci) {
-            address contract = contacts[ci];
-            uint256 tokenId = tokens[ci];
+        for (uint256 i = 0; i < cl; ++i) {
+            address contract = contacts[i];
+            uint256 tokenId = tokens[i];
             if (usedLicenses[contract][tokenId]
             || IERC721EnumerableMethods(contract)
-               .ownerOf(tokens[ci]) !== buyer)) {
+               .ownerOf(tokens[i]) !== buyer)) {
                 continue;
             }
             uint256 additionalAmount = specialPurchaseLicenses[contract].tokensPerLicense; // 0 by default
@@ -209,8 +209,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         }
 
         uint256 al = accounts.length;
-        for (uint256 ai = 0; ai < al; ++ai) {
-            _purchase(amount, accounts[ai], buyer, true); // also checks global purchase limits
+        for (uint256 i = 0; i < al; ++i) {
+            _purchase(amount, accounts[i], buyer, true); // also checks global purchase limits
         }
     }
 
