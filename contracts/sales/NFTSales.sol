@@ -174,7 +174,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         uint256 amount,
         address[] memory accounts,
         address[] memory contracts,
-        uint32[] memory tokenIds
+        uint256[] memory tokenIds
     ) external payable nonReentrant {
         address buyer = _msgSender();
 
@@ -185,7 +185,6 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             revert InvalidInput();
         }
         for (uint256 i = 0; i < cl; ++i) {
-            
             if (
                 usedLicenses[contracts[i]][tokenIds[i]] > 0 || 
                 IERC721Upgradeable(contracts[i]).ownerOf(tokenIds[i]) != buyer
@@ -318,8 +317,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      * @param contract_ address of external NFT contract
      */
     function specialPurchaseLicensesRemove(address contract_) external onlyOwner {
-        //delete specialPurchaseLicenses[contract_];
-        specialPurchaseLicenses[contract_] = 0;
+        delete specialPurchaseLicenses[contract_];
     }
 
     /**
