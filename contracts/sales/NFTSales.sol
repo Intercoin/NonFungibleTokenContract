@@ -140,8 +140,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      *********************************************************************/
     /**
      * @notice purchase tokens using special promotion from this instance
-     * param amount the number per address
-     * param accounts array of addresses, each gets amount of tokens
+     * @param amount the number per address
+     * @param accounts array of addresses, each gets amount of tokens
      * @custom:calledby an authorized user
      * @custom:shortd sell NFT tokens
      */
@@ -163,10 +163,10 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
     
     /**
      * @notice purchase tokens using special promotion from this instance
-     * param amount the number per address
-     * param account address, to which to send amount of tokens
-     * param contracts array of NFT smart contracts, added with specialPurchaseLicensesAdd, can contain duplicates
-     * param tokenIds array of tokenIds corresponding to the smart contracts
+     * @param amount the number per address
+     * @param accounts array of addresses, each gets amount of tokens
+     * @param contracts array of NFT smart contracts, added with specialPurchaseLicensesAdd, can contain duplicates
+     * @param tokenIds array of tokenIds corresponding to the smart contracts
      * @custom:calledby an authorized user
      * @custom:shortd sell NFT tokens
      */
@@ -209,8 +209,8 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
 
     /**
      * @notice if tokens are on sale in the actual NFT contract, purchase some
-     * param amount the number per address
-     * param accounts array of addresses, each gets amount of tokens
+     * @param amount the number per address
+     * @param accounts array of addresses, each gets amount of tokens
      * @custom:calledby anyone
      * @custom:shortd sell NFT tokens
      */
@@ -227,6 +227,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
 
     /**
      * @notice amount of days+1 that left to unlocked
+     * @param tokenId tokenId that need to view remaining days to be unlocked
      * @return amount of days+1 that left to unlocked
      * @custom:calledby person in the whitelist
      * @custom:shortd locked days
@@ -388,6 +389,12 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         }
     }
 
+    /**
+    * @notice tokens data for pending tokens
+    * @param tokenId tokenId
+    * @return recipient recipient address
+    * @return secondsLeft seconds left to unlock
+    */
     function tokenInfo(uint256 tokenId) external view returns(address recipient, uint64 secondsLeft) {
         return(
             pending[tokenId].recipient,
