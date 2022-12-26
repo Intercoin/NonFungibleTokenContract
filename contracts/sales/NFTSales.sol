@@ -184,32 +184,30 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         address buyer = _msgSender();
 
         uint256 allowedAmount = 0;
-        uint256 cl = contracts.length;
-        uint256 tl = tokens.length;
-        if (cl != tl) {
+        
+        if (contracts.length != tokens.length) {
             revert InvalidInput();
         }
-        for (uint256 i = 0; i < cl; ++i) {
-            address contracti = contacts[i];
-            uint256 tokenId = tokens[i];
-            if (usedLicenses[contracti][tokenId]
-            || IERC721Upgradeable(contracti)
-               .ownerOf(tokens[i]) !== buyer)) {
+        for (uint256 i = 0; i < contracts.length; ++i) {
+            
+            if (
+                usedLicenses[contracts[i]][tokens[i]] || 
+                IERC721Upgradeable(contracts[i]).ownerOf(tokens[i]) != buyer
+            ) {
                 continue;
             }
-            uint256 additionalAmount = specialPurchaseLicenses[contracti].tokensPerLicense; // 0 by default
+            uint256 additionalAmount = specialPurchaseLicenses[contracts[i]].tokensPerLicense; // 0 by default
             allowedAmount += additionalAmount;
             if (allowedAmount > amount) {
                 additionalAmount -= (allowedAmount - amount);
             }
-            usedLicenses[contracti][tokenId] = additionalAmount;
+            usedLicenses[contracts[i]][tokens[i]] = additionalAmount;
         }
         if (allowedAmount < amount) {
             revert NotEnoughLicenses();
         }
 
-        uint256 al = accounts.length;
-        for (uint256 i = 0; i < al; ++i) {
+        for (uint256 i = 0; i < accounts.length; ++i) {
             _purchase(amount, accounts[i], buyer, true); // also checks global purchase limits
         }
     }
