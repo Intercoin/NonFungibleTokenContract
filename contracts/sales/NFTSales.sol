@@ -79,7 +79,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
 
     mapping(uint256 => TokenData) public pending;
     mapping(address => uint16) public specialPurchaseLicenses;
-    mapping(address => mapping(uint256 => bool)) usedLicenses;
+    mapping(address => mapping(uint256 => uint256)) public usedLicenses;
 
     EnumerableSetUpgradeable.AddressSet specialPurchasesList;
 
@@ -187,7 +187,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
         for (uint256 i = 0; i < cl; ++i) {
             
             if (
-                usedLicenses[contracts[i]][tokenIds[i]] || 
+                usedLicenses[contracts[i]][tokenIds[i]] > 0 || 
                 IERC721Upgradeable(contracts[i]).ownerOf(tokenIds[i]) != buyer
             ) {
                 continue;
@@ -197,7 +197,7 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
             if (allowedAmount > amount) {
                 additionalAmount -= (allowedAmount - amount);
             }
-            usedLicenses[contracts[i]][tokenIds[i]] = true;
+            usedLicenses[contracts[i]][tokenIds[i]] = additionalAmount;
         }
         if (allowedAmount < amount) {
             revert NotEnoughLicenses();
