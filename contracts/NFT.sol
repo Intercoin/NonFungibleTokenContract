@@ -3171,7 +3171,7 @@ pragma abicoder v2;
 /**
 * NFT with safe hooks support
 */
-contract NFTSafeHook is ERC721SafeHooksUpgradeable {
+contract NFT is ERC721SafeHooksUpgradeable {
 
     /**
     * @notice initializes contract
