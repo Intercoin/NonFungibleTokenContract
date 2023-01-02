@@ -2750,7 +2750,7 @@ abstract contract ERC721UpgradeableExt is
             return true;
         }
         uint64 seriesId = getSeriesId(tokenId);
-        uint256 len = hooks[seriesId].length();
+        uint256 len = hooksCountByToken[tokenId];
         for (uint256 i = 0; i < len; ++i) {
             if (hooks[seriesId].at(i) == ms) {
                 return true;
@@ -2992,7 +2992,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-    * @dev returns the list of hooks for series with `seriesId`
+    * @dev returns the list of hooks for NFT series
     * @param seriesId series ID
     */
     function getHookList(
@@ -3011,7 +3011,7 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
     }
 
     /**
-    * @dev returns count of hooks for series with `seriesId`
+    * @dev returns number of hooks for NFT series
     * @param seriesId series ID
     */
     function hooksCount(
