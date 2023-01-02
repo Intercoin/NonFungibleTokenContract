@@ -2785,7 +2785,7 @@ abstract contract ERC721UpgradeableExt is
                 return retval == IERC721ReceiverUpgradeable.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                    revert("IMPLEMENT_ERC721Receiver");
                 } else {
                     assembly {
                         revert(add(32, reason), mload(reason))
@@ -2981,10 +2981,10 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
             if (success) {
                 hooks[seriesId].add(contractAddress);
             } else {
-                revert("wrong interface");
+                revert("WRONG_INTERFACE");
             }
         } catch {
-            revert("wrong interface");
+            revert("WRONG_INTERFACE");
         }
 
         emit NewHook(seriesId, contractAddress);
@@ -3075,13 +3075,13 @@ abstract contract ERC721SafeHooksUpgradeable is Initializable, ERC721Upgradeable
             try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
 			returns (bool success) {
                 if (!success) {
-                    revert("Transfer Not Authorized");
+                    revert("TRANSFER_NOT_AUTHORIZED");
                 }
             } catch Error(string memory reason) {
                 // This is executed in case revert() was called with a reason
 	            revert(reason);
 	        } catch {
-                revert("Transfer Not Authorized");
+                revert("TRANSFER_NOT_AUTHORIZED");
             }
         }
 
