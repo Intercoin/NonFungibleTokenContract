@@ -197,6 +197,9 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
                 additionalAmount -= (allowedAmount - amount);
             }
             usedLicenses[contracts[i]][tokenIds[i]] = additionalAmount;
+            if (allowedAmount >= amount) {
+                break;
+            }
         }
         if (allowedAmount < amount) {
             revert NotEnoughLicenses();
@@ -297,10 +300,10 @@ contract NFTSales is OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, 
      * - `contract_` must be an NFT contract supporting ownerOf function
      *
      * @param contract_ address of external NFT contract
-     * @param license address of external NFT contract
+     * @param amount number of tokens that can be minted per external NFT
      */
-    function specialPurchaseLicensesAdd(address contract_, uint16 license) external onlyOwner {
-        specialPurchaseLicenses[contract_] = license;
+    function specialPurchaseLicensesAdd(address contract_, uint16 amount) external onlyOwner {
+        specialPurchaseLicenses[contract_] = amount;
     }
     
     /**
