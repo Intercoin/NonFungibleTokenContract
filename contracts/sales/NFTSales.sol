@@ -468,17 +468,8 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      * Emits a {Transfer} event.
      */
     function _mint(address to, uint256 tokenId) internal override {
-        require(to != address(0), "ERC721: mint to the zero address");
-        require(!_exists(tokenId), "ERC721: token already minted");
-
-        _beforeTokenTransfer(address(0), to, tokenId);
-
         _balances[to] += 1;
-        pending[tokenId].recipient = to;
-
         emit Transfer(address(0), to, tokenId);
-
-        _afterTokenTransfer(address(0), to, tokenId);
     }
 
     /**
@@ -494,17 +485,11 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     function _burn(uint256 tokenId) internal override {
         address owner = ERC721Upgradeable.ownerOf(tokenId);
 
-        _beforeTokenTransfer(owner, address(0), tokenId);
-
         // Clear approvals
         _approve(address(0), tokenId);
-
         _balances[owner] -= 1;
-        delete pending[tokenId];
 
         emit Transfer(owner, address(0), tokenId);
-
-        _afterTokenTransfer(owner, address(0), tokenId);
     }
 
     /**
@@ -570,6 +555,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
                 revert TooMuchBoughtInCurrentInterval(currentInterval, purchaseBucketLastIntervalAmount, rateAmount);
             }
         }
+
         // generate token ids
         (uint256[] memory tokenIds, address currencyAddr, uint256 currencyTotalPrice, uint192 lastIndex) = _getTokenIds(amount, isSpecialPurchase);
         currentAutoIndex = lastIndex + 1;
@@ -581,7 +567,6 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     }
 
     function _distributeTokens(uint256[] memory tokenIds, address account) internal {
-        
         address[] memory addresses = new address[](tokenIds.length);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             addresses[i] = account;
@@ -594,11 +579,9 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
             address[] memory selfAddresses = new address[](tokenIds.length);
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 selfAddresses[i] = address(this);
-
                 pending[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
-                
+                _mint(tokenIds[i], addresses[i]);
             }
-
             INFTSalesFactory(factoryAddress)._doMintAndDistribute(tokenIds, selfAddresses);
         }
     }
@@ -671,12 +654,13 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     function _claim(uint256[] memory tokenIds, bool shouldCheckOwner) internal nonReentrant {
         address NFTcontract = INFTSalesFactory(getFactory()).instanceToNFTContract(address(this));
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            _checkTokenForClaim(tokenIds[i], shouldCheckOwner);
+            uint256 tokenId = tokenIds[i];
+            _checkTokenForClaim(tokenId, shouldCheckOwner);
 
-            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), pending[tokenIds[i]].recipient, tokenIds[i]);
+            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), pending[tokenId].recipient, tokenId);
 
             delete pending[tokenIds[i]];
-            
+            _burn(tokenId);
         }
     }
 
