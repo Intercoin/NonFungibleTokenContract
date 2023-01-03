@@ -2744,6 +2744,7 @@ abstract contract ERC721UpgradeableExt is
     }
 
     function _canManageToken(uint256 tokenId) internal view returns (bool) {
+        address ms = _msgSender();
         if (_ownerOf(tokenId) == ms
         || getApproved(tokenId) == ms
         || isApprovedForAll(_ownerOf(tokenId), ms)) {
