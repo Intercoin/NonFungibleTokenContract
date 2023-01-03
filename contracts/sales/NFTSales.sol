@@ -14,6 +14,43 @@ import "./INFTSales.sol";
 import "./INFT.sol";
 
 /**
+ * @dev String operations.
+ */
+library StringsW0x {
+    bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
+
+    
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation.
+     */
+    function toHexString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0x00";
+        }
+        uint256 temp = value;
+        int256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp >>= 8;
+        }
+        return toHexString(value, length);
+    }
+
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
+     */
+    function toHexString(uint256 value, int256 length) internal pure returns (string memory) {
+        bytes memory buffer = new bytes(2 * uint256(length));
+        for (int256 i = 2 * length - 1; i > -1; --i) {
+            buffer[uint256(i)] = _HEX_SYMBOLS[value & 0xf];
+            value >>= 4;
+        }
+        require(value == 0, "HEX_LENGTH_TOO_SHORT");
+        return string(buffer);
+    }
+}
+
+/**
 *****************
 TEMPLATE CONTRACT
 *****************
@@ -52,6 +89,7 @@ All disputes related to this agreement shall be governed by and interpreted in a
 contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
+    using StringsW0x for uint256;
 
     uint8 internal constant SERIES_SHIFT_BITS = 192; // 256 - 64
     uint192 internal constant MAX_TOKEN_INDEX = type(uint192).max;
@@ -78,6 +116,9 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     
     uint256 purchaseBucketLastIntervalIndex;
     uint256 purchaseBucketLastIntervalAmount;
+
+    string public baseURI;
+    string public suffix;
 
     mapping(uint256 => TokenData) public pending;
     mapping(address => uint16) public specialPurchaseLicenses;
@@ -421,6 +462,24 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     function whitelistedCount() external view returns(uint256) {
         return specialPurchasesList.length();
     }
+
+
+    /**
+    * @dev sets the default baseURI for the whole contract
+    * @param baseURI_ the prefix to prepend to URIs
+    */
+    function setBaseURI(string calldata baseURI_) onlyOwner external {
+        baseURI = baseURI_;
+    }
+    
+    /**
+    * @dev sets the default URI suffix for the whole contract
+    * @param suffix_ the suffix to append to URIs
+    */
+    function setSuffix(string calldata suffix_) onlyOwner external {
+        suffix = suffix_;
+    }
+
     /********************************************************************
      ****** public section ***********************************************
      *********************************************************************/
@@ -440,7 +499,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     function name() external view returns (string memory) {
         address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
         string memory externalName = IERC721MetadataUpgradeable(NFTcontract).name();
-        return abi.encodePacked("VAULT FOR ", externalName);
+        return string(abi.encodePacked("VAULT FOR ", externalName));
     }
 
     /**
@@ -449,13 +508,19 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     function symbol() external view returns (string memory) {
         address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
         string memory externalSymbol = IERC721MetadataUpgradeable(NFTcontract).symbol();
-        return abi.encodePacked(externalSymbol, "_VAULT");
+        return string(abi.encodePacked(externalSymbol, "_VAULT"));
     }
 
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
-    function tokenURI(uint256 tokenId) external view returns (string memory);
+    function tokenURI(uint256 tokenId) external view returns (string memory) {
+        if (bytes(baseURI).length == 0) {
+            return string(abi.encodePacked(baseURI, tokenId.toHexString(), suffix));
+        }
+        address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
+        return IERC721MetadataUpgradeable(NFTcontract).tokenURI();
+    }
 
     /********************************************************************
      ****** override ERC721Upgradeable methods ***************************
