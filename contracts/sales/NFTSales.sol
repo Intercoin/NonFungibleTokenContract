@@ -65,6 +65,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     uint192 public currentAutoIndex;
     uint16 public rateAmount;
     bool public evenIfNotOnSale;
+    bool public allowTransfers;
 
     address public factoryAddress;
 
@@ -99,6 +100,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     error TooMuchBoughtInCurrentInterval(uint256 currentInterval, uint256 willBeBought, uint32 maxAmount);
     error SeriesIsNotOnSale(uint64 seriesId);
     error IncorrectInputParameters();
+    error NoTransfersAllowed();
 
     /**
      * @notice initialization
@@ -337,10 +339,20 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     }
 
     /**
-    * @param flag if true that user can mint tokens through `specialpurchase` even if series in not on salse
+    * @dev whether tokens can be minted through `specialPurchase` even if series is not on sale
+    * @param flag boolean
     */
     function setEvenIfNotOnSale(bool flag) external onlyOwner {
         evenIfNotOnSale = flag;
+    }
+
+    /**
+    * @dev whether to allow transfers of NFTs to other recipients while they are pending.
+    *  When the pending period comes to an end, the recipient at that time can claim it.
+    * @param allow boolean
+    */
+    function setAllowTransfers(bool allow) external onlyOwner {
+        allowTransfers = allow;
     }
 
     /**
@@ -513,6 +525,10 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     ) internal override {
         require(ERC721Upgradeable.ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
         require(to != address(0), "ERC721: transfer to the zero address");
+
+        if (!allowTransfers) {
+            revert NoTransfersAllowed();
+        }
 
         _beforeTokenTransfer(from, to, tokenId);
 
