@@ -431,7 +431,34 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     }
 
     /********************************************************************
-     ****** override NFT methods *****************************************
+     ****** override ERC721MetadataUpgradeable methods *******************
+     *********************************************************************/
+
+    /**
+     * @dev Returns the token collection name.
+     */
+    function name() external view returns (string memory) {
+        address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
+        string memory externalName = IERC721MetadataUpgradeable(NFTcontract).name();
+        return abi.encodePacked("VAULT FOR ", externalName);
+    }
+
+    /**
+     * @dev Returns the token collection symbol.
+     */
+    function symbol() external view returns (string memory) {
+        address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
+        string memory externalSymbol = IERC721MetadataUpgradeable(NFTcontract).symbol();
+        return abi.encodePacked(externalSymbol, "_VAULT");
+    }
+
+    /**
+     * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+     */
+    function tokenURI(uint256 tokenId) external view returns (string memory);
+
+    /********************************************************************
+     ****** override ERC721Upgradeable methods ***************************
      *********************************************************************/
 
     /**

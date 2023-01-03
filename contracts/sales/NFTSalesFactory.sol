@@ -124,7 +124,7 @@ contract NFTSalesFactory is INFTSalesFactory {
     /**
      * @notice view NFT contrac address. used by instances in external calls
      * @custom:calledby instance
-     * @custom:shortd view NFT contrac address
+     * @custom:shortd view NFT contract address
      */
     function instanceToNFTContract(address instanceAddress) external view onlyInstance returns (address) {
         return instancesInfo[instanceAddress].NFTContract;
