@@ -36,7 +36,7 @@ const OPERATION_BURN = 9;
 const OPERATION_BUY = 10;
 const OPERATION_TRANSFER = 11;
 
-describe("v1 tests", function () {
+describe("v2 tests", function () {
   describe("Bulk tests", function () {
       const accounts = waffle.provider.getWallets();
       const owner = accounts[0];                     
@@ -49,6 +49,7 @@ describe("v1 tests", function () {
       const tokenId = ONE;
       const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
       const price = ethers.utils.parseEther('1');
+      const autoincrementPrice = ZERO;
       const now = Math.round(Date.now() / 1000);   
       const baseURI = "";
       const suffix = ".json";
@@ -56,6 +57,7 @@ describe("v1 tests", function () {
         now + 100000, 
         ZERO_ADDRESS, 
         price,
+        autoincrementPrice
       ];
       const commissions = [
         ZERO,
@@ -72,10 +74,13 @@ describe("v1 tests", function () {
       
 
       beforeEach("deploying", async() => {
-          const NFTBulkSaleFactory = await ethers.getContractFactory("NFTBulkSaleV1");
+          const NFTBulkSaleFactory = await ethers.getContractFactory("NFTBulkSaleV2");
 
           const ERC20Factory = await ethers.getContractFactory("MockERC20");
-          const NFTFactory = await ethers.getContractFactory("NFTV1");
+          const NFTFactory = await ethers.getContractFactory("NFT");
+          const NFTStateFactory = await ethers.getContractFactory("NFTState");
+          const NFTViewFactory = await ethers.getContractFactory("NFTView");
+
           const HookFactory = await ethers.getContractFactory("MockHook");
           const BadHookFactory = await ethers.getContractFactory("MockBadHook");
           const FalseHookFactory = await ethers.getContractFactory("MockFalseHook");
@@ -85,27 +90,27 @@ describe("v1 tests", function () {
           const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
           const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
 
+            this.nftBulkSale = await NFTBulkSaleFactory.deploy();
+            this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
+            // this.hook1 = await HookFactory.deploy();
+            // this.hook2 = await HookFactory.deploy();
+            // this.hook3 = await HookFactory.deploy();
+            // this.badHook = await BadHookFactory.deploy();
+            // this.falseHook = await FalseHookFactory.deploy();
+            // this.notSupportingHook = await NotSupportingHookFactory.deploy();
+            // this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
+            this.nftState = await NFTStateFactory.deploy();
+            this.nftView = await NFTViewFactory.deploy();
 
-          this.erc20 = await ERC20Factory.connect(owner).deploy("ERC20 Token", "ERC20");
-          this.hook1 = await HookFactory.deploy();
-          this.hook2 = await HookFactory.deploy();
-          this.hook3 = await HookFactory.deploy();
-          this.badHook = await BadHookFactory.deploy();
-          this.falseHook = await FalseHookFactory.deploy();
-          this.notSupportingHook = await NotSupportingHookFactory.deploy();
-          this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
-
-          this.costManager = await CostManagerFactory.deploy();
-
-          this.nftBulkSale = await NFTBulkSaleFactory.connect(owner).deploy();
+            this.costManager = await CostManagerFactory.deploy();
 
           const retval = '0x150b7a02';
           const error = ZERO;
-          this.buyer = await BuyerFactory.deploy(retval, error);
-          this.badBuyer = await BadBuyerFactory.deploy();
+        //   this.buyer = await BuyerFactory.deploy(retval, error);
+        //   this.badBuyer = await BadBuyerFactory.deploy();
           this.nft = await NFTFactory.deploy();
 
-          await this.nft.connect(owner).initialize("NFT Edition", "NFT", "", "", "", this.costManager.address, ZERO_ADDRESS);
+          await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address,"NFT Edition", "NFT", "", "", "", this.costManager.address, ZERO_ADDRESS);
 
           await this.erc20.mint(owner.address, TOTALSUPPLY);
 
@@ -113,12 +118,12 @@ describe("v1 tests", function () {
           await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
           await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
 
-          await this.nft.connect(owner).setSeriesInfo(seriesId, seriesParams);
+          await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
-          
-      })
+          //await this.nft.connect(owner).setTrustedForwarder(this.nftBulkSale.address);
+      });
 
-      it("should correct mint NFT with ETH if ID doesn't exist", async() => {
+      it("should correct Bulk Sale", async() => {
 
         const seriesId = BigNumber.from('1000');
         
@@ -136,6 +141,7 @@ describe("v1 tests", function () {
           charlie.address
         ];
 
+        // try to distribte without setForwarder before
         await expect(
             this.nftBulkSale.connect(charlie).distribute(this.nft.address, ids, users, {value: price.mul(THREE)})
         ).to.be.revertedWith("you can't manage this series");
@@ -143,11 +149,12 @@ describe("v1 tests", function () {
         expect(await this.nft.balanceOf(alice.address)).to.be.equal(ZERO);
         expect(await this.nft.balanceOf(bob.address)).to.be.equal(ZERO);
         expect(await this.nft.balanceOf(charlie.address)).to.be.equal(ZERO);
-       
+
+
         await this.nft.connect(owner).setTrustedForwarder(this.nftBulkSale.address);
         await this.nftBulkSale.connect(charlie).distribute(this.nft.address, ids, users, {value: price.mul(THREE)});  
 
-        //await this.nft.connect(charlie).mintAndDistribute(ids, users);
+        //await this.nft.connect(owner).mintAndDistribute(ids, users);
 
         expect(await this.nft.balanceOf(alice.address)).to.be.equal(ONE);
         expect(await this.nft.balanceOf(bob.address)).to.be.equal(ONE);
@@ -157,35 +164,6 @@ describe("v1 tests", function () {
         expect(await this.nft.ownerOf(id2)).to.be.equal(bob.address);
         expect(await this.nft.ownerOf(id3)).to.be.equal(charlie.address);
 
-
-/*
-        const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
-        const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
-        await this.nft.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
-        const balanceAfterBob = await ethers.provider.getBalance(bob.address);
-        const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
-        expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.gt(price);
-        expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(price);
-        const newOwner = await this.nft.ownerOf(id);
-        expect(newOwner).to.be.equal(bob.address);
-
-        const tokenInfoData = await this.nft.tokenInfo(id);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-        expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
-
-        const seriesInfo = await this.nft.seriesInfo(seriesId);
-        expect(seriesInfo.author).to.be.equal(alice.address);
-        expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-        expect(seriesInfo.saleInfo.price).to.be.equal(price);
-        expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
-        expect(seriesInfo.baseURI).to.be.equal(baseURI);
-        expect(seriesInfo.limit).to.be.equal(10000);
-
-        expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
-*/
       });
 
     });

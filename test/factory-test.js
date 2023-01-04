@@ -23,7 +23,7 @@ const SERIES_BITS = 192;
 
 chai.use(require('chai-bignumber')());
 
-describe("v1 tests", function () {
+describe("v2 tests", function () {
     describe("Factory tests", async() => {
         const accounts = waffle.provider.getWallets();
         const owner = accounts[0];                     
@@ -32,19 +32,56 @@ describe("v1 tests", function () {
         const charlie = accounts[3];
 
         beforeEach("deployment", async() => {
-            const FactoryFactory = await ethers.getContractFactory("FactoryV1");
-            const NftFactory = await ethers.getContractFactory("NFTV1");
+            const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
+            const CostManagerGoodF = await ethers.getContractFactory("MockCostManagerGood");
+            const CostManagerBadF = await ethers.getContractFactory("MockCostManagerBad");
+
+            const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
+
+            const FactoryFactory = await ethers.getContractFactory("NFTFactory");
+            const NFTFactory = await ethers.getContractFactory("NFT");
             const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
+
+            const NFTStateFactory = await ethers.getContractFactory("NFTState");
+            const NFTViewFactory = await ethers.getContractFactory("NFTView");
+
+            this.costManagerGood = await CostManagerGoodF.deploy();
+            this.costManagerBad = await CostManagerBadF.deploy();
+
+            let implementationReleaseManager    = await ReleaseManagerF.deploy();
+
+            this.nftState = await NFTStateFactory.deploy();
+            this.nftView = await NFTViewFactory.deploy();
 
             this.costManager = await CostManagerFactory.deploy();
 
-            this.nft = await NftFactory.deploy();
+            this.nft = await NFTFactory.deploy();
 
             const name = "NFT Edition";
             const symbol = "NFT";
 
-            this.factory = await FactoryFactory.deploy(this.nft.address, ZERO_ADDRESS);
+            let releaseManagerFactory   = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.address);
+            let tx,rc,event,instance,instancesCount;
+            //
+            tx = await releaseManagerFactory.connect(owner).produce();
+            rc = await tx.wait(); // 0ms, as tx is already confirmed
+            event = rc.events.find(event => event.event === 'InstanceProduced');
+            [instance, instancesCount] = event.args;
+            let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+
+            this.factory = await FactoryFactory.deploy(this.nft.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS);
             
+            // 
+            const factoriesList = [this.factory.address];
+            const factoryInfo = [
+                [
+                    1,//uint8 factoryIndex; 
+                    1,//uint16 releaseTag; 
+                    "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
+                ]
+            ]
+            await this.factory.connect(owner).registerReleaseManager(releaseManager.address);
+            await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
         })
 
         it("should correct deploy instance and do usual buy test", async() => {
@@ -63,7 +100,7 @@ describe("v1 tests", function () {
             expect(instanceInfo0.symbol).to.be.equal(symbol);
             expect(instanceInfo0.creator).to.be.equal(owner.address);
 
-            const contract = await ethers.getContractAt("NFTV1", instance);
+            const contract = await ethers.getContractAt("NFT", instance);
             expect(await contract.name()).to.be.equal(name);
             expect(await contract.symbol()).to.be.equal(symbol);
             expect(await contract.owner()).to.be.equal(owner.address);
@@ -74,6 +111,7 @@ describe("v1 tests", function () {
             const baseURI = "";
             const suffix = ".json";
             const price = ethers.utils.parseEther('1');
+            const autoincrementPrice = ZERO;
             const now = Math.round(Date.now() / 1000);   
             const name = "NAME 1";
             const symbol = "SMBL1";
@@ -85,6 +123,7 @@ describe("v1 tests", function () {
                 now + 100000, 
                 ZERO_ADDRESS, 
                 price,
+                autoincrementPrice,
                 ZERO, //ownerCommissionValue;
                 ZERO  //authorCommissionValue;
             ];
@@ -103,7 +142,7 @@ describe("v1 tests", function () {
 
             beforeEach("listing series on sale", async() => {
                 
-                const NftFactory = await ethers.getContractFactory("NFTV1");
+                const NftFactory = await ethers.getContractFactory("NFT");
                 await this.factory["produce(string,string,string)"](name, symbol, "");
                 const hash = ethers.utils.solidityKeccak256(["string", "string"], [name, symbol]);
                 const instance = await this.factory.getInstance(hash);
@@ -118,6 +157,7 @@ describe("v1 tests", function () {
                 const tokenId = ONE;
                 const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
                 const price = ethers.utils.parseEther('1');
+                const autoincrementPrice = ZERO;
                 const now = Math.round(Date.now() / 1000);   
                 const baseURI = "";
                 const suffix = ".json";
@@ -125,6 +165,7 @@ describe("v1 tests", function () {
                     now + 100000, 
                     ZERO_ADDRESS, 
                     price,
+                    autoincrementPrice,
                     ZERO, //ownerCommissionValue;
                     ZERO  //authorCommissionValue;
                 ];
@@ -141,11 +182,11 @@ describe("v1 tests", function () {
                     suffix
                 ];
 
-                await this.nftCreatedByFactory.connect(owner).setSeriesInfo(seriesId, seriesParams);
+                await this.nftCreatedByFactory.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
 
                 const balanceBeforeBob = await ethers.provider.getBalance(bob.address);
                 const balanceBeforeAlice = await ethers.provider.getBalance(alice.address);
-                await this.nftCreatedByFactory.connect(bob)["buy(uint256,uint256,bool,uint256)"](id, price, false, ZERO, {value: price.mul(TWO)}); // accidentially send more than needed
+                await this.nftCreatedByFactory.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price.mul(TWO)}); // accidentially send more than needed
                 const balanceAfterBob = await ethers.provider.getBalance(bob.address);
                 const balanceAfterAlice = await ethers.provider.getBalance(alice.address);
                 expect(balanceBeforeBob.sub(balanceAfterBob)).to.be.gt(price);
@@ -153,17 +194,18 @@ describe("v1 tests", function () {
                 const newOwner = await this.nftCreatedByFactory.ownerOf(id);
                 expect(newOwner).to.be.equal(bob.address);
 
-                const salesInfoToken = await this.nftCreatedByFactory.salesInfoToken(id);
-                expect(salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
-                expect(salesInfoToken.saleInfo.price).to.be.equal(ZERO);
-                expect(salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
-                expect(salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
-                expect(salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
+                const tokenInfoData = await this.nftCreatedByFactory.tokenInfo(id);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.price).to.be.equal(ZERO);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.saleInfo.onSaleUntil).to.be.equal(ZERO);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.ownerCommissionValue).to.be.equal(ZERO);
+                expect(tokenInfoData.tokenInfo.salesInfoToken.authorCommissionValue).to.be.equal(ZERO);
 
                 const seriesInfo = await this.nftCreatedByFactory.seriesInfo(seriesId);
                 expect(seriesInfo.author).to.be.equal(alice.address);
                 expect(seriesInfo.saleInfo.currency).to.be.equal(ZERO_ADDRESS);
                 expect(seriesInfo.saleInfo.price).to.be.equal(price);
+                expect(seriesInfo.saleInfo.autoincrement).to.be.equal(autoincrementPrice);
                 expect(seriesInfo.saleInfo.onSaleUntil).to.be.equal(now + 100000);
                 expect(seriesInfo.baseURI).to.be.equal(baseURI);
                 expect(seriesInfo.limit).to.be.equal(10000);

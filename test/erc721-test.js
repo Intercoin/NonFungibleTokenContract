@@ -62,7 +62,7 @@ describe("v2 tests", function () {
         beforeEach("deploying", async() => {
             const ERC20Factory = await ethers.getContractFactory("MockERC20");
 
-            const NFTMainFactory = await ethers.getContractFactory("NFTMain");
+            const NFTFactory = await ethers.getContractFactory("NFT");
             const NFTStateFactory = await ethers.getContractFactory("NFTState");
             const NFTViewFactory = await ethers.getContractFactory("NFTView");
 
@@ -72,7 +72,7 @@ describe("v2 tests", function () {
             this.nftView = await NFTViewFactory.deploy();
 
             this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
-            this.nft = await NFTMainFactory.deploy();
+            this.nft = await NFTFactory.deploy();
             await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address, "NFT Edition", "NFT", "", "", "", ZERO_ADDRESS, ZERO_ADDRESS);
             await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
             const retval = '0x150b7a02';

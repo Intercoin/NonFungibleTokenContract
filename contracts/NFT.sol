@@ -8,7 +8,7 @@ import "./NFTState.sol";
 import "./NFTView.sol";
 //import "hardhat/console.sol";
 
-contract NFTMain is NFTStorage {
+contract NFT is NFTStorage {
     
     NFTState implNFTState;
     NFTView implNFTView;

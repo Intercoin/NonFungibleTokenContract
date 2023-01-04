@@ -55,7 +55,7 @@ describe("nftsale tests", function () {
 
     beforeEach("deploying", async() => {
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
-        const NFTMainFactory = await ethers.getContractFactory("NFTMain");
+        const NFTFactory = await ethers.getContractFactory("NFT");
         const NFTStateFactory = await ethers.getContractFactory("NFTState");
         const NFTViewFactory = await ethers.getContractFactory("NFTView");
 
@@ -88,7 +88,7 @@ describe("nftsale tests", function () {
         const error = ZERO;
         this.buyer = await BuyerFactory.deploy(retval, error);
         this.badBuyer = await BadBuyerFactory.deploy();
-        this.nft = await NFTMainFactory.deploy();
+        this.nft = await NFTFactory.deploy();
 
         await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address,"NFT Edition", "NFT", "", "", "", this.costManager.address, ZERO_ADDRESS);
 
