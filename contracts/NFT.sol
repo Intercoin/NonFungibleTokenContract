@@ -1,1061 +1,1463 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.11;
+pragma abicoder v2;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import "./NFTStorage.sol";
 
-import "./interfaces/ICommunity.sol";
-import "./interfaces/INFT.sol";
+import "./NFTState.sol";
+import "./NFTView.sol";
+//import "hardhat/console.sol";
 
-import "./NFTAuthorship.sol";
-
-contract NFT is INFT, NFTAuthorship {
+contract NFTMain is NFTStorage {
     
-    using SafeMathUpgradeable for uint256;
-    using MathUpgradeable for uint256;
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
-    
-    CommunitySettings communitySettings;
-    
-    struct TokenData {
-        CommissionSettings commissions;
-        SalesData salesData;
-        SaleInfo[] saleHistory;
-        address[] ownersHistory;
+    NFTState implNFTState;
+    NFTView implNFTView;
+
+    /**
+    * @notice initializes contract
+    */
+    function initialize(
+        address implNFTState_,
+        address implNFTView_,
+        string memory name_, 
+        string memory symbol_, 
+        string memory contractURI_, 
+        string memory baseURI_, 
+        string memory suffixURI_, 
+        address costManager_,
+        address producedBy_
+    ) 
+        public 
+        //override
+        initializer 
+    {
+        implNFTState = NFTState(implNFTState_);
+        implNFTView = NFTView(implNFTView_);
+
+        _functionDelegateCall(
+            address(implNFTState), 
+            abi.encodeWithSelector(
+                NFTState.initialize.selector,
+                name_, symbol_, contractURI_, baseURI_, suffixURI_, costManager_, producedBy_
+            )
+            //msg.data
+        );
+
+    }
+
+    /**
+    * @param baseURI_ baseURI
+    * @custom:calledby owner
+    * @custom:shortd set default baseURI
+    */
+    function setBaseURI(
+        string calldata baseURI_
+    ) 
+        external
+    {
+        requireOnlyOwner();
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setBaseURI.selector,
+            //     baseURI_
+            // )
+            msg.data
+        );
+
     }
     
-    mapping (uint256 => TokenData) private tokenData;
-
-    mapping(address => bool) authorized;
-
-    EnumerableSetUpgradeable.AddressSet private totalOwnersList;
-    
-    string constant private MSG_TRANSFERFROM_FAILED = "NFT: Failed when 'transferFrom' funds";
-    
-    event TokenAddedToSale(uint256 tokenId, uint256 amount, address consumeToken);
-    // event TokenAddedToAuctionSale(uint256 tokenId, uint256 amount, address consumeToken, uint256 startTime, uint256 endTime, uint256 minIncrement);
-    event TokenRemovedFromSale(uint256 tokenId);
-    // event OutBid(uint256 tokenId, uint256 newBid);
-    
-    
-    function _validateOnlySale(uint256 tokenId) internal view {
-        require(tokenData[tokenId].salesData.isSale == true, "NFT: Token does not in sale");
-    }
-    function _validateOnlySaleForCoins(uint256 tokenId) internal view {
-        require(tokenData[tokenId].salesData.erc20Address == address(0), "NFT: Token can not be sale for coins");   
-    }
-    function _validateOnlySaleForTokens(uint256 tokenId) internal view {
-        require(tokenData[tokenId].salesData.erc20Address != address(0), "NFT: Token can not be sale for tokens");
-    }
-    function _validateCanClaim(uint256 tokenId) internal view {
-        // can claim if auction time == 0 or expire
-        // can claim if last bidder is sender
-        uint256 len = tokenData[tokenId].salesData.bids.length;
-        require(
-            (
-                tokenData[tokenId].salesData.endTime != 0 && 
-                tokenData[tokenId].salesData.endTime < block.timestamp &&
-                len > 0 && 
-                tokenData[tokenId].salesData.bids[len-1].bidder == _msgSender()
-            ), 
-            "can't claim"
+    /**
+    * @dev sets the default URI suffix for the whole contract
+    * @param suffix_ the suffix to append to URIs
+    * @custom:calledby owner
+    * @custom:shortd set default suffix
+    */
+    function setSuffix(
+        string calldata suffix_
+    ) 
+        external
+    {
+        requireOnlyOwner();
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setSuffix.selector,
+            //     suffix_
+            // )
+            msg.data
         );
     }
-    
-    
+
     /**
-     * @param name name of token ERC721 
-     * @param symbol symbol of token ERC721 
-     * @param communitySettings_ community setting. See {INFT-CommunitySettings}.
-     */
-    function initialize(
-        string memory name,
-        string memory symbol,
-        CommunitySettings memory communitySettings_
-    ) public override initializer {
-        __NFTAuthorship_init(name, symbol);
-        communitySettings = communitySettings_;
-
-    }
-    
-    function buyWithETHAndCreate(
-        string memory tokenURI, 
-        SaleParams memory saleParams,
-        CommissionParams memory commissionParams,
-        bytes memory signature
+    * @dev sets contract URI. 
+    * @param newContractURI new contract URI
+    * @custom:calledby owner
+    * @custom:shortd set default contract URI
+    */
+    function setContractURI(
+        string memory newContractURI
     ) 
-        public 
-        payable
+        external 
     {
-        _createValidate(tokenURI, saleParams, commissionParams, signature);
-
-        require(msg.value >= saleParams.amount, "insufficient amount");
-
-        //TransferHelper.safeTransferETH(saleParams.seller, saleParams.amount);
-        
-        saleParams.seller.transfer(saleParams.amount);
-
-        uint256 refund = msg.value.sub(saleParams.amount);
-        if (refund > 0) {
-            payable(_msgSender()).transfer(refund);
-        }
-
-        _create(tokenURI, saleParams.seller, commissionParams);
-    }
-
-    function buyWithTokenAndCreate(
-        string memory tokenURI, 
-        SaleParams memory saleParams,
-        CommissionParams memory commissionParams,
-        bytes memory signature
-    ) 
-        public 
-    {
-
-        _createValidate(tokenURI, saleParams, commissionParams, signature);
-
-        require(IERC20Upgradeable(saleParams.token).allowance(_msgSender(), address(this)) >= saleParams.amount, "insufficient allowance");
-
-        // TransferHelper.safeTransferFrom(saleParams.token, _msgSender(), address(this), saleParams.amount);
-        // TransferHelper.safeTransfer(saleParams.token, saleParams.seller, saleParams.amount);
-
-        TransferHelper.safeTransferFrom(saleParams.token, _msgSender(), saleParams.seller, saleParams.amount);
-        
-        _create(tokenURI, saleParams.seller, commissionParams);
-
+        requireOnlyOwner();
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setContractURI.selector,
+            //     newContractURI
+            // )
+            msg.data
+        );
 
     }
 
-    function _createValidate(
-        string memory tokenURI, 
-        SaleParams memory saleParams,
-        CommissionParams memory commissionParams,
-        bytes memory signature
-    ) 
-        internal
-    {
-        require(saleParams.seller != address(0), "wrong seller address");
-        bytes memory encoded = abi.encode(tokenURI, saleParams, commissionParams);
-        bytes32 hash = keccak256(encoded);
-        bytes32 esh = getEthSignedMessageHash(hash);
-        
-        
-        address signer = recoverSigner(esh, signature);
-
-        if (signer != owner()) {
-
-            require (isAuthorized(signer) && signer == saleParams.seller, "Invalid signer");
-            
-        }
-
-    }
-
-    
-    function addAuthorized(address addr) public onlyOwner() {
-        require(addr != address(0), "invalid address");
-        authorized[addr] = true;
-    }
-    function removeAuthorized(address addr) public onlyOwner() {
-        delete authorized[addr];
-    }
-    function isAuthorized(address addr) public view returns(bool) {
-        return authorized[addr];
-    }
-
-    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature)
-        public
-        pure
-        returns (address)
-    {
-        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
-
-        return ecrecover(_ethSignedMessageHash, v, r, s);
-    }
-
-    function getEthSignedMessageHash(bytes32 _messageHash)
-        public
-        pure
-        returns (bytes32)
-    {
-        /*
-        Signature is produced by signing a keccak256 hash with the following format:
-        "\x19Ethereum Signed Message\n" + len(msg) + msg
-        */
-        return
-            keccak256(
-                abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash)
-            );
-    }
-
-      function splitSignature(bytes memory sig)
-        public
-        pure
-        returns (
-            bytes32 r,
-            bytes32 s,
-            uint8 v
-        )
-    {
-        require(sig.length == 65, "invalid signature length");
-
-        assembly {
-            /*
-            First 32 bytes stores the length of the signature
-
-            add(sig, 32) = pointer of sig + 32
-            effectively, skips first 32 bytes of signature
-
-            mload(p) loads next 32 bytes starting at the memory address p into memory
-            */
-
-            // first 32 bytes, after the length prefix
-            r := mload(add(sig, 32))
-            // second 32 bytes
-            s := mload(add(sig, 64))
-            // final byte (first byte of the next 32 bytes)
-            v := byte(0, mload(add(sig, 96)))
-        }
-
-        // implicitly return (r, s, v)
-    }
-    
- 
-    
-    /** 
-     * returned commission that will be paid to token's author while transferring NFT
-     * @param tokenId NFT tokenId
-     */
-    function getCommission(
-        uint256 tokenId
-    ) 
-        public
-        view
-        // onlyIfTokenExists(tokenId)
-        returns(address t, uint256 r)
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        (t, r) = _getCommission(tokenId);
-    }
-    
     /**
-     * contract's owner can claim tokens mistekenly sent to this contract
-     * @param erc20address ERC20 address contract
-     */
-    function claimLostToken(
-        address erc20address
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    * @custom:calledby owner or series author
+    * @custom:shortd set series Info
+    */
+    function setSeriesInfo(
+        uint64 seriesId, 
+        SeriesInfo memory info 
     ) 
-        public 
-        onlyOwner 
+        external
     {
-        uint256 funds = IERC20Upgradeable(erc20address).balanceOf(address(this));
-        require(funds > 0, "NFT: There are no lost tokens");
-            
-        bool success = IERC20Upgradeable(erc20address).transfer(_msgSender(), funds);
-        require(success, MSG_TRANSFERFROM_FAILED);
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setSeriesInfo.selector,
+            //     seriesId, info
+            // )
+            msg.data
+        );
+
     }
-    
     /**
-     * put NFT to list for sale. then anyone can buy it
-     * @param tokenId NFT tokenId
-     * @param amount amount that need to be paid to owner when some1 buy token
-     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
-     */
+    * @dev sets information for series with 'seriesId'. 
+    * @param seriesId series ID
+    * @param info new info to set
+    * @custom:calledby owner or series author
+    * @custom:shortd set series Info
+    */
+    function setSeriesInfo(
+        uint64 seriesId, 
+        SeriesInfo memory info,
+        CommunitySettings memory transferWhitelistSettings,
+        CommunitySettings memory buyWhitelistSettings
+    ) 
+        external
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setSeriesInfo.selector,
+            //     seriesId, info
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+    * set commission paid to contract owner
+    * @param commission new commission info
+    * @custom:calledby owner
+    * @custom:shortd set owner commission
+    */
+    function setOwnerCommission(
+        CommissionInfo memory commission
+    ) 
+        external 
+    {
+        requireOnlyOwner();
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setOwnerCommission.selector,
+            //     commission
+            // )
+            msg.data
+        );
+    }
+
+    /**
+    * @dev set commission for series
+    * @param seriesId seriesId
+    * @param commissionData new commission data
+    * @custom:calledby owner or series author
+    * @custom:shortd set new commission
+    */
+    function setCommission(
+        uint64 seriesId, 
+        CommissionData memory commissionData
+    ) 
+        external 
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setCommission.selector,
+            //     seriesId, commissionData
+            // )
+            msg.data
+        );
+    }
+
+    /**
+    * clear commission for series
+    * @param seriesId seriesId
+    * @custom:calledby owner or series author
+    * @custom:shortd remove commission
+    */
+    function removeCommission(
+        uint64 seriesId
+    ) 
+        external 
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.removeCommission.selector,
+            //     seriesId
+            // )
+            msg.data
+        );
+        
+    }
+
+    /**
+    * @dev lists on sale NFT with defined token ID with specified terms of sale
+    * @param tokenId token ID
+    * @param price price for sale 
+    * @param currency currency of sale 
+    * @param duration duration of sale 
+    * @custom:calledby token owner
+    * @custom:shortd list on sale
+    */
     function listForSale(
         uint256 tokenId,
-        uint256 amount,
-        address consumeToken
+        uint256 price,
+        address currency,
+        uint64 duration
     )
-        public
-        // onlyIfTokenExists(tokenId)
-        // onlyNFTOwner(tokenId)
+        external 
     {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateOnlyNFTOwner(tokenId);
-        _listForSale(tokenId, amount, consumeToken);
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.listForSale.selector,
+            //     tokenId, price, currency, duration
+            // )
+            msg.data
+        );
+
     }
-
+    
     /**
-     * put NFT to list for auction sale. then anyone can put a bid to buy it
-     * @param tokenId NFT tokenId
-     * @param amount amount that need to be paid to owner when some1 buy token
-     * @param consumeToken erc20 token. if set address(0) then expected coins to pay for NFT
-     * @param startTime time when auction will start. can be zero, then auction will start immediately
-     * @param endTime time when auction will end. can be zero, then auction will never expire
-     * @param minIncrement every new bid should be more then [previous bid] plus [minIncrement]
-     */
-    // function listForAuction(
-    //     uint256 tokenId,
-    //     uint256 amount,
-    //     address consumeToken,
-    //     uint256 startTime,
-    //     uint256 endTime,
-    //     uint256 minIncrement
-    // )
-    //     public
-    //     // onlyIfTokenExists(tokenId)
-    //     // onlyNFTOwner(tokenId)
-    // {
-    //     _validateOnlyIfTokenExists(tokenId);
-    //     _validateOnlyNFTOwner(tokenId);
-    //     _listForAuction(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
-    // }
-
-    /**
-     * remove NFT from list for sale.
-     * @param tokenId NFT tokenId
-     */
+    * @dev removes from sale NFT with defined token ID
+    * @param tokenId token ID
+    * @custom:calledby token owner
+    * @custom:shortd remove from sale
+    */
     function removeFromSale(
         uint256 tokenId
     )
-        public 
-        // onlyIfTokenExists(tokenId)
-        // onlyNFTOwner(tokenId)
+        external 
     {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateOnlyNFTOwner(tokenId);
-        _removeFromSale(tokenId);
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.removeFromSale.selector,
+            //     tokenId
+            // )
+            msg.data
+        );
+
     }
+
     
     /**
-     * sale info
-     * @param tokenId NFT tokenId
-     * @return erc20Address
-     * @return amount
-     * @return isSale
-     * @return startTime
-     * @return endTime
-     * @return minIncrement
-     * @return isAuction
-     */
-    function saleInfo(
-        uint256 tokenId
-    )   
-        public
-        view
-        //onlyIfTokenExists(tokenId)
-        returns(
-            address erc20Address, 
-            uint256 amount, 
-            bool isSale, 
-            uint256 startTime, 
-            uint256 endTime, 
-            uint256 minIncrement, 
-            bool isAuction
-        )
+    * @dev mints and distributes NFTs with specified IDs
+    * to specified addresses
+    * @param tokenIds list of NFT IDs to be minted
+    * @param addresses list of receiver addresses
+    * @custom:calledby owner or series author
+    * @custom:shortd mint and distribute new tokens
+    */
+    function mintAndDistribute(
+        uint256[] memory tokenIds, 
+        address[] memory addresses
+    )
+        external 
     {
-        _validateOnlyIfTokenExists(tokenId);
-        erc20Address = tokenData[tokenId].salesData.erc20Address;
-        amount = tokenData[tokenId].salesData.amount; 
-        isSale = tokenData[tokenId].salesData.isSale;
-        startTime = tokenData[tokenId].salesData.startTime;
-        endTime = tokenData[tokenId].salesData.endTime;
-        minIncrement = tokenData[tokenId].salesData.minIncrement;
-        isAuction = tokenData[tokenId].salesData.isAuction;
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.mintAndDistribute.selector,
+            //     tokenIds, addresses
+            // )
+            msg.data
+        );
+
     }
-    
+
     /**
-     * buying token. new owner need to pay for nft by coins. Also payment to author is expected
-     * @param tokenId NFT tokenId
-     */
-    function buy(
-        uint256 tokenId
+    * @dev mints and distributes `amount` NFTs by `seriesId` to `account`
+    * @param seriesId seriesId
+    * @param account receiver addresses
+    * @param amount amount of tokens
+    * @custom:calledby owner or series author
+    * @custom:shortd mint and distribute new tokens
+    */
+    function mintAndDistributeAuto(
+        uint64 seriesId, 
+        address account,
+        uint256 amount
     )
-        public 
-        payable
-        nonReentrant
-        // onlyIfTokenExists(tokenId)
-        // onlySale(tokenId)
-        // onlySaleForCoins(tokenId)
+        external
     {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateOnlySale(tokenId);
-        _validateOnlySaleForCoins(tokenId);
-        _validateAuctionActive(tokenId);
-        bool success;
-        uint256 funds = msg.value;
-        require(funds >= tokenData[tokenId].salesData.amount, "NFT: The coins sent are not enough");
-        
-        
-        // if (_isInAuction(tokenId) == 1) {
-        //     putInToAuctionList(tokenId, _msgSender(), funds, 0);
-        // } else {
-            // Refund
-            uint256 refund = (funds).sub(tokenData[tokenId].salesData.amount);
-            if (refund > 0) {
-                (success, ) = (_msgSender()).call{value: refund}("");    
-                require(success, "NFT: Failed when send back coins to caller");
-            }
-            
-            _executeTransfer(tokenId, _msgSender(), tokenData[tokenId].salesData.amount, 0);
-        // }
-       
+        _functionDelegateCall(address(implNFTState), msg.data);
     }
     
-    /**
-     * buying token. new owner need to pay for nft by tokens(See {INFT-SalesData-erc20Address}). Also payment to author is expected
-     * @param tokenId NFT tokenId
-     */
-    function buyWithToken(
-        uint256 tokenId
-    )
-        public 
-        nonReentrant
-        // onlyIfTokenExists(tokenId)
-        // onlySale(tokenId)
-        // onlySaleForTokens(tokenId)
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateOnlySale(tokenId);
-        _validateOnlySaleForTokens(tokenId);
-        _validateAuctionActive(tokenId);
-        uint256 needToObtain = tokenData[tokenId].salesData.amount;
-        
-        IERC20Upgradeable saleToken = IERC20Upgradeable(tokenData[tokenId].salesData.erc20Address);
-        uint256 minAmount = saleToken.allowance(_msgSender(), address(this)).min(saleToken.balanceOf(_msgSender()));
-        
-        require (minAmount >= needToObtain, "NFT: The allowance tokens are not enough");
-       
-        bool success;
-        
-        success = saleToken.transferFrom(_msgSender(), address(this), needToObtain);
-        require(success, MSG_TRANSFERFROM_FAILED);
-        
-        // if (_isInAuction(tokenId) == 1) {
-        //     putInToAuctionList(tokenId, _msgSender(), needToObtain, 1);
-            
-        // } else {
-            _executeTransfer(tokenId, _msgSender(), needToObtain, 1);
-        // }
-        
-    }
-    
-    /**
-     * anyone can offer to pay commission to any tokens transfer
-     * @param tokenId NFT tokenId
-     * @param amount amount of token(See {INFT-ComissionSettings-token}) 
-     */
-    function offerToPayCommission(
-        uint256 tokenId, 
-        uint256 amount 
-    )
-        public 
-        // onlyIfTokenExists(tokenId)
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        if (amount == 0) {
-            if (tokenData[tokenId].commissions.offerAddresses.contains(_msgSender())) {
-                tokenData[tokenId].commissions.offerAddresses.remove(_msgSender());
-                delete tokenData[tokenId].commissions.offerPayAmount[_msgSender()];
-            }
-        } else {
-            tokenData[tokenId].commissions.offerPayAmount[_msgSender()] = amount;
-            tokenData[tokenId].commissions.offerAddresses.add(_msgSender());
-        }
-
-    }
-    
-    /**
-     * reduce commission. author can to allow a token transfer for free to setup reduce commission to 10000(100%)
-     * @param tokenId NFT tokenId
-     * @param reduceCommissionPercent commission in percent. can be in interval [0;10000]
-     */
-    function reduceCommission(
-        uint256 tokenId,
-        uint256 reduceCommissionPercent
-    ) 
-        public
-        // onlyIfTokenExists(tokenId)
-        // onlyNFTAuthor(tokenId)
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateTokenAuthor(tokenId);
-        _validateReduceCommission(reduceCommissionPercent);
-        
-        tokenData[tokenId].commissions.reduceCommission = reduceCommissionPercent;
-    }
-    
-    function claim(
-        uint256 tokenId
-    )
-        public
-        // onlyIfTokenExists(tokenId)
-        // onlySale(tokenId)
-        // canClaim(tokenId)
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateOnlySale(tokenId);
-        _validateCanClaim(tokenId);
-        _claim(tokenId);
-    }
-    
-    function acceptLastBid(
-        uint256 tokenId
-    )
-        public
-        //onlyIfTokenExists(tokenId)
-        //onlySale(tokenId)
-        //onlyNFTOwner(tokenId)
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        _validateOnlySale(tokenId);
-        _validateOnlyNFTOwner(tokenId);
-        
-        uint256 len = tokenData[tokenId].salesData.bids.length;
-        if (len > 0) {
-            _claim(tokenId);
-        } else {
-            revert("there are no any bids");
-        }
-    }
-    
-    function tokensByOwner(
-        address owner
-    ) 
-        public
-        
-        view 
-        returns(uint256[] memory) 
-    {
-        uint256 len = 0;
-        for (uint256 i = 0; i < currentTokenIds(); i++) {
-            if ((_exists(i) == true) && (ownerOf(i) == owner)) {
-                len = len.add(1);
-            }
-        }
-        
-        uint256[] memory ret = new uint256[](len);
-        uint256 index = 0;
-
-        for (uint256 i = 0; i < currentTokenIds(); i++) {
-            if ((_exists(i) == true) && (ownerOf(i) == owner)) {
-                ret[index] = i;
-                index = index.add(1);
-            }
-        }
-        return ret;
-    }
-    
-    function historyOfOwners(
-        uint256 tokenId
-    )
-        public 
-        view
-        returns(address[] memory) 
-    {
-        uint256 len = tokenData[tokenId].ownersHistory.length;
-        address[] memory ret = new address[](len);
-
-        for (uint256 i = 0; i < len; i++) {
-            ret[i] =  tokenData[tokenId].ownersHistory[i];
-        }
-        return ret;
-    }
-    
-    function historyOfBids(
-        uint256 tokenId
-    )
-        public 
-        view
-        returns(Bid[] memory) 
-    {
-        uint256 len = tokenData[tokenId].salesData.bids.length;
-        Bid[] memory ret = new Bid[](len);
-
-        for (uint256 i = 0; i < len; i++) {
-            ret[i] =  tokenData[tokenId].salesData.bids[i];
-        }
-        return ret;
-    }
-    
-    function getAllOwners(
-    ) 
-        public
-        view 
-        returns(address[] memory) 
-    {
-
-        uint256 len = totalOwnersList.length();
-        address[] memory ret = new address[](len);
-
-        for (uint256 i = 0; i < len; i++) {
-            ret[i] = totalOwnersList.at(i);
-        }
-        return ret;
-    }
-   
-    function historyOfSale(
-        uint256 tokenId
-    ) 
-        public 
-        view 
-        //onlyIfTokenExists(tokenId) 
-        returns(SaleInfo[] memory) 
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        return tokenData[tokenId].saleHistory;
-    }
-    
-    function historyOfSale(
-        uint256 tokenId, 
-        uint256 indexFromEnd
-    ) 
-        public 
-        view 
-        //onlyIfTokenExists(tokenId) 
-        returns(SaleInfo[] memory) 
-    {
-        _validateOnlyIfTokenExists(tokenId);
-        return _getSaleInfo(tokenId, indexFromEnd);
-    }
-    
-    function _getSaleInfo(uint256 tokenId, uint256 indexFromEnd) internal view returns(SaleInfo[] memory) {
-        uint256 len;
-        for (uint256 i = 0; i < tokenData[tokenId].saleHistory.length; i++) {
-            if (tokenData[tokenId].saleHistory[i].time > indexFromEnd) {
-                len = len+1;
-            }
-        }
-        
-        SaleInfo[] memory ret = new SaleInfo[](len);
-        uint256 j=0;
-        for (uint256 i = 0; i < tokenData[tokenId].saleHistory.length; i++) {
-            if (tokenData[tokenId].saleHistory[i].time > indexFromEnd) {
-                ret[j] = tokenData[tokenId].saleHistory[i];
-                j = j.add(1);
-            }
-        }
-        
-        return ret;
-    }
-    
-
-   
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    // internal section ///////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    // function putInToAuctionList(
-    //     uint256 tokenId, 
-    //     address sender, 
-    //     uint256 amount,
-    //     uint256 typeTransfer
+    /** 
+    * @dev sets the utility token
+    * @param costManager_ new address of utility token, or 0
+    * @custom:calledby owner or factory that produced instance
+    * @custom:shortd set cost manager address
+    */
+    // function overrideCostManager(
+    //     address costManager_
     // ) 
-    //     internal 
+    //     external 
+        
     // {
-    //     uint256 len = tokenData[tokenId].salesData.bids.length;
-        
-    //     uint256 prevBid = (len > 0) ? tokenData[tokenId].salesData.bids[len-1].bid : tokenData[tokenId].salesData.amount;
-        
-    //     require((prevBid).add(tokenData[tokenId].salesData.minIncrement) <= amount, "bid should be more");
-        
-    //     // tokenData[tokenId].salesData.bids[len].bidder = sender;
-    //     // tokenData[tokenId].salesData.bids[len].bid = amount;
-    //     tokenData[tokenId].salesData.bids.push(Bid({bidder: sender, bid: amount}));
-        
-    //     if (len > 0) {
-    //         bool success;
-    //         address prevBidder = tokenData[tokenId].salesData.bids[len-1].bidder;
-    //         //uint256 prevBid = tokenData[tokenId].salesData.bids[len-1].bid;
-            
-    //         // refund previous
-    //         if (typeTransfer == 0) {
-    //             (success, ) = (prevBidder).call{value: prevBid}("");    
-    //             require(success, "Failed when send coins");
-    //         } else {
-                
-    //             success = IERC20Upgradeable(tokenData[tokenId].salesData.erc20Address).transfer(prevBidder, prevBid);
-    //             // require(success, "Failed when 'transfer' funds to co-author");
-    //             // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-    //             require(success);
-    //         }
-            
-    //         emit OutBid(tokenId, amount);
-    //     }
-        
+
+    //     _functionDelegateCall(
+    //         address(implNFTState), 
+    //         // abi.encodeWithSelector(
+    //         //     NFTState.overrideCostManager.selector,
+    //         //     costManager_
+    //         // )
+    //         msg.data
+    //     );
+
     // }
-    
-    function _claim(
-        uint256 tokenId
-    )
-        internal
+
+    ///////////////////////////////////////
+    //// external view section ////////////
+    ///////////////////////////////////////
+
+
+    /**
+    * @dev returns the list of all NFTs owned by 'account' with limit
+    * @param account address of account
+    * @custom:calledby everyone
+    * @custom:shortd returns the list of all NFTs owned by 'account' with limit
+    */
+    function tokensByOwner(
+        address account,
+        uint32 limit
+    ) 
+        external
+        view
+        returns (uint256[] memory ret)
     {
-        uint256 len = tokenData[tokenId].salesData.bids.length;
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.tokensByOwner.selector, 
+                    account, limit
+                ), 
+                ""
+            ), 
+            (uint256[])
+        );
+
+    }
+
+    /**
+    * @dev returns the list of hooks for series with `seriesId`
+    * @param seriesId series ID
+    * @custom:calledby everyone
+    * @custom:shortd returns the list of hooks for series
+    */
+    function getHookList(
+        uint64 seriesId
+    ) 
+        external 
+        view 
+        returns(address[] memory) 
+    {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.getHookList.selector, 
+                    seriesId
+                ), 
+                ""
+            ), 
+            (address[])
+        );
+
+    }
+
+    /********************************************************************
+    ****** public section ***********************************************
+    *********************************************************************/
+    function buy(
+        uint256[] memory tokenIds,
+        address currency,
+        uint256 totalPrice,
+        bool safe,
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        virtual
+        payable 
+        nonReentrant 
+    {
+        _functionDelegateCall(address(implNFTState), msg.data);
+    }
+
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param price amount of specified native coin to pay
+    * @param safe use safeMint and safeTransfer or not, 
+    * @param hookCount number of hooks 
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for native coin
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        public 
+        virtual
+        payable 
+        nonReentrant 
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,uint256,bool,uint256)"))),
+            //     tokenId, price, safe, hookCount
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param price amount of specified native coin to pay
+    * @param safe use safeMint and safeTransfer or not, 
+    * @param hookCount number of hooks 
+    * @param buyFor address of new nft owner
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for native coin
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        virtual
+        payable 
+        nonReentrant 
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,uint256,bool,uint256)"))),
+            //     tokenId, price, safe, hookCount
+            // )
+            msg.data
+        );
+
+    }
+
+    
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    * @param hookCount number of hooks 
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for specified currency
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount
+    ) 
+        public 
+        virtual
+        nonReentrant 
+    {
+
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,address,uint256,bool,uint256)"))),
+
+            //     tokenId, currency, price, safe, hookCount
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+    * @dev buys NFT for native coin with undefined id. 
+    * Id will be generate as usually by auto inrement but belong to seriesId
+    * and transfer token if it is on sale
+    * @param seriesId series ID whene we can find free token to buy
+    * @param currency address of token to pay with
+    * @param price amount of specified token to pay
+    * @param safe use safeMint and safeTransfer or not
+    * @param hookCount number of hooks 
+    * @param buyFor address of new nft owner
+    * @custom:calledby everyone
+    * @custom:shortd buys NFT for specified currency
+    */
+    function buyAuto(
+        uint64 seriesId, 
+        address currency, 
+        uint256 price, 
+        bool safe, 
+        uint256 hookCount,
+        address buyFor
+    ) 
+        public 
+        virtual
+        nonReentrant 
+    {
+
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.buy.selector,
+            //     bytes4(keccak256(bytes("buy(uint256,address,uint256,bool,uint256)"))),
+
+            //     tokenId, currency, price, safe, hookCount
+            // )
+            msg.data
+        );
+
+    }
+
+
+    /** 
+    * @dev sets name and symbol for contract
+    * @param newName new name 
+    * @param newSymbol new symbol 
+    * @custom:calledby owner
+    * @custom:shortd sets name and symbol for contract
+    */
+    function setNameAndSymbol(
+        string memory newName, 
+        string memory newSymbol
+    ) 
+        public 
+    {
+        requireOnlyOwner();
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setNameAndSymbol.selector,
+            //     newName, newSymbol
+            // )
+            msg.data
+        );
+
+    }
+    
+  
+    /**
+     * @dev Gives permission to `to` to transfer `tokenId` token to another account.
+     * The approval is cleared when the token is transferred.
+     *
+     * Only a single account can be approved at a time, so approving the zero address clears previous approvals.
+     *
+     * Requirements:
+     *
+     * - The caller must own the token or be an approved operator.
+     * - `tokenId` must exist.
+     *
+     * Emits an {Approval} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
+     */
+    function approve(address to, uint256 tokenId) public virtual override {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.approve.selector,
+            //     to, tokenId
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+     * @dev Approve or remove `operator` as an operator for the caller.
+     * Operators can call {transferFrom} or {safeTransferFrom} for any token owned by the caller.
+     *
+     * Requirements:
+     *
+     * - The `operator` cannot be the caller.
+     *
+     * Emits an {ApprovalForAll} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
+     */
+    function setApprovalForAll(address operator, bool approved) public virtual override {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setApprovalForAll.selector,
+            //     operator, approved
+            // )
+            msg.data
+        );
+
+    }
+    /**
+     * @dev Transfers `tokenId` token from `from` to `to`.
+     *
+     * WARNING: Usage of this method is discouraged, use {safeTransferFrom} whenever possible.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must be owned by `from`.
+     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
+     *
+     * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
+     */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public virtual override {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.transferFrom.selector,
+            //     from, to, tokenId
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+     * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
+     * are aware of the ERC721 protocol to prevent tokens from being forever locked.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by `from`.
+     * - If the caller is not `from`, it must be have been allowed to move this token by either {approve} or {setApprovalForAll}.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public virtual override {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.safeTransferFrom.selector,
+            //     bytes4(keccak256(bytes("safeTransferFrom(address,address,uint256,bytes)"))),
+            //     from, to, tokenId, ""
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+     * @dev Safely transfers `tokenId` token from `from` to `to`.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by `from`.
+     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
+     */
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory _data
+    ) public virtual override {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.safeTransferFrom.selector,
+            //     bytes4(keccak256(bytes("safeTransferFrom(address,address,uint256,bytes)"))),
+            //     from, to, tokenId, _data
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+     * @dev Transfers `tokenId` token from sender to `to`.
+     *
+     * WARNING: Usage of this method is discouraged, use {safeTransferFrom} whenever possible.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must be owned by sender.
+     *
+     * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
+     */
+    function transfer(
+        address to,
+        uint256 tokenId
+    ) public virtual {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.transfer.selector,
+            //     to, tokenId
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+     * @dev Safely transfers `tokenId` token from sender to `to`.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must exist and be owned by sender.
+     * - If `to` refers to a smart contract, it must implement {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+     *
+     * Emits a {Transfer} event.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
+     */
+    function safeTransfer(
+        address to,
+        uint256 tokenId
+    ) public virtual override {
         
-        address sender = tokenData[tokenId].salesData.bids[len-1].bidder;
-        uint256 amount = tokenData[tokenId].salesData.bids[len-1].bid;
-        
-        _executeTransfer(
-            tokenId, 
-            sender, 
-            amount, 
-            (tokenData[tokenId].salesData.erc20Address == address(0)? 0 : 1)
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.safeTransfer.selector,
+            //     to, tokenId
+            // )
+            msg.data
         );
         
     }
-    
+
     /**
-     * typeTransfer: 0 - coin;  1 -erc20transfer
+     * @dev Burns `tokenId`. See {ERC721-burn}.
+     * @param tokenId tokenId
+     * Requirements:
+     *
+     * - The caller must own `tokenId` or be an approved operator.
+     *
+     * @custom:calledby token owner 
+     * @custom:shortd part of ERC721
      */
-    function _executeTransfer(
-        uint256 tokenId, 
-        address newOwner,
-        uint256 needToObtain,
-        uint256 typeTransfer
-    ) 
-        internal
-    {
-        bool success;
-        address owner = ownerOf(tokenId);
-        _transfer(owner, newOwner, tokenId);
-        
-        if (needToObtain>0) {
-            if (typeTransfer == 0) {
-                (success, ) = (owner).call{value: needToObtain}("");    
-            } else {
-                
-                success = IERC20Upgradeable(tokenData[tokenId].salesData.erc20Address).transfer(owner, needToObtain);
-                // require(success, "Failed when 'transfer' funds to owner");
-                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-            }
-            require(success);
-        }
-        
-        _removeFromSale(tokenId);
-    }
-    
-    function _removeFromSale(
-        uint256 tokenId
-    )
-        internal
-    {
-        tokenData[tokenId].salesData.isSale = false;
-        tokenData[tokenId].salesData.isAuction = false;
-        
-        emit TokenRemovedFromSale(tokenId);
-    }
-   
-    function _create(
-        string memory URI,
-        address author,
-        CommissionParams memory commissionParams
-    ) 
-        internal 
-        // canRecord(communitySettings.roleMint) 
-        returns(uint256 tokenId)
-    {
-        _validateCanRecord(communitySettings.roleMint);
-        
-        require(commissionParams.token != address(0), "NFT: Token address can not be zero");
-        require(commissionParams.intervalSeconds > 0, "wrong IntervalSeconds");
-        _validateReduceCommission(commissionParams.reduceCommission);
-        
-        tokenId = _createNFT(URI, author);
-        
-        tokenData[tokenId].commissions.token = commissionParams.token;
-        tokenData[tokenId].commissions.amount = commissionParams.amount;
-        tokenData[tokenId].commissions.multiply = (commissionParams.multiply == 0 ? 10000 : commissionParams.multiply);
-        tokenData[tokenId].commissions.accrue = commissionParams.accrue;
-        tokenData[tokenId].commissions.intervalSeconds = commissionParams.intervalSeconds;
-        tokenData[tokenId].commissions.reduceCommission = commissionParams.reduceCommission;
-        tokenData[tokenId].commissions.createdTs = block.timestamp;
-        tokenData[tokenId].commissions.lastTransferTs = block.timestamp;
-      
-        _createAfter();
-    }
-    
-    function _listForSale(
-        uint256 tokenId,
-        uint256 amount,
-        address consumeToken
-    )
-        internal
-    {
-        __listForSale(tokenId, amount, consumeToken);
-        emit TokenAddedToSale(tokenId, amount, consumeToken);
+    function burn(uint256 tokenId) public virtual {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.burn.selector,
+            //     tokenId
+            // )
+            msg.data
+        );
+
     }
 
-    // function _listForAuction(
-    //     uint256 tokenId,
-    //     uint256 amount,
-    //     address consumeToken,
-    //     uint256 startTime,
-    //     uint256 endTime,
-    //     uint256 minIncrement
-    // )
-    //     internal
-    // {
-    //     require(startTime == 0 || startTime >= block.timestamp, 'wrong startTime' );
-    //     startTime = (startTime == 0) ? block.timestamp : startTime;
-        
-    //     require(startTime < endTime || endTime == 0, 'wrong endTime' );
-        
-    //     __listForSale(tokenId, amount, consumeToken);
-        
-    //     emit TokenAddedToSale(tokenId, amount, consumeToken);
-        
-    //     tokenData[tokenId].salesData.startTime = startTime;
-    //     tokenData[tokenId].salesData.endTime = endTime;
-    //     tokenData[tokenId].salesData.minIncrement = minIncrement;
-    //     tokenData[tokenId].salesData.isAuction = true;
-        
-    //     emit TokenAddedToAuctionSale(tokenId, amount, consumeToken, startTime, endTime, minIncrement);
-    // }
-
-    
     /**
-     * commission amount that need to be paid while NFT token transferring
-     * @param tokenId NFT tokenId
-     */
-    function _getCommission(
-        uint256 tokenId
-    ) 
-        internal 
-        virtual
-        view
-        returns(address t, uint256 r)
-    {
-        
-        //initialCommission
-        r = tokenData[tokenId].commissions.amount;
-        t = tokenData[tokenId].commissions.token;
-        if (r == 0) {
-            
-        } else {
-            if (tokenData[tokenId].commissions.multiply == 10000) {
-                // left initial commission
-            } else {
-                
-                uint256 intervalsSinceCreate = (block.timestamp.sub(tokenData[tokenId].commissions.createdTs)).div(tokenData[tokenId].commissions.intervalSeconds);
-                uint256 intervalsSinceLastTransfer = (block.timestamp.sub(tokenData[tokenId].commissions.lastTransferTs)).div(tokenData[tokenId].commissions.intervalSeconds);
-                
-                // (   
-                //     initialValue * (multiply ^ intervals) + (intervalsSinceLastTransfer * accrue)
-                // ) * (10000 - reduceCommission) / 10000
-                
-                for(uint256 i = 0; i < intervalsSinceCreate; i++) {
-                    r = r.mul(tokenData[tokenId].commissions.multiply).div(10000);
-                    
-                }
-                
-                r = r.add(
-                        intervalsSinceLastTransfer.mul(tokenData[tokenId].commissions.accrue)
-                    );
-                
-                
-            }
-            
-            r = r.mul(
-                    uint256(10000).sub(tokenData[tokenId].commissions.reduceCommission)
-                ).div(uint256(10000));
-                
-        }
-        
-    }
-  
-    function _beforeTokenTransfer(
-        address from, 
-        address to, 
-        uint256 tokenId
-    ) 
-        internal 
-        virtual 
-        override 
-    {
-        tokenData[tokenId].ownersHistory.push(to);
-        
-        if (to != address(0)) {
-            totalOwnersList.add(to);
-        } 
-        
-        if ((from != address(0)) && (balanceOf(from) == 1)) {
-            totalOwnersList.remove(from);    
-        }    
-        
-        // adding saleHistory 
-        tokenData[tokenId].saleHistory.push(SaleInfo(
-            //tokenId,
-            block.timestamp,
-            from,
-            to,
-            tokenData[tokenId].salesData.amount,
-            tokenData[tokenId].salesData.erc20Address,
-            tokenData[tokenId].commissions.amount,
-            tokenData[tokenId].commissions.token
-        ));
-        
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-    /**
-     * method realized collect commission logic
-     * @param tokenId token ID
-     */
-    function _transferHook(
-        uint256 tokenId
-    ) 
-        internal 
-        virtual
+    * @dev the owner should be absolutely sure they trust the trustedForwarder
+    * @param trustedForwarder_ must be a smart contract that was audited
+    *
+    * @custom:calledby owner 
+    * @custom:shortd set trustedForwarder address 
+    */
+    function setTrustedForwarder(
+        address trustedForwarder_
+    )
+        public 
         override
     {
-        
-        address author = authorOf(tokenId);
-        address owner = ownerOf(tokenId);
-        
-        address commissionToken;
-        uint256 commissionAmount;
-        (commissionToken, commissionAmount) = _getCommission(tokenId);
-        
-        if (author == address(0) || commissionAmount == 0) {
-            
-        } else {
-            
-            uint256 commissionAmountLeft = commissionAmount;
-            if (tokenData[tokenId].commissions.offerAddresses.contains(owner)) {
-                commissionAmountLeft = _transferPay(tokenId, owner, commissionToken, commissionAmountLeft);
-            }
-            uint256 i;
-            uint256 len = tokenData[tokenId].commissions.offerAddresses.length();
-            uint256 tmpCommission;
-            
-            for (i = 0; i < len; i++) {
-                tmpCommission = commissionAmountLeft;
-                if (tmpCommission > 0) {
-                    commissionAmountLeft  = _transferPay(tokenId, tokenData[tokenId].commissions.offerAddresses.at(i), commissionToken, tmpCommission);
-                }
-                if (commissionAmountLeft == 0) {
-                    break;
-                }
-            }
-            
-            require(commissionAmountLeft == 0, "NFT: author's commission should be paid");
-            
-            bool success;
-            
-            if (commissionAmount > 0) {    
-                success = IERC20Upgradeable(commissionToken).transfer(author, commissionAmount);
-                // require(success, "Failed when 'transfer' funds to author");
-                // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-                require(success);
-            }
-        }
-        
+        requireOnlyOwner();
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.setTrustedForwarder.selector,
+            //     trustedForwarder_
+            // )
+            msg.data
+        );
+
     }
-    
-    // function _isInAuction(
-    //     uint256 tokenId
-    // ) 
-    //     internal 
-    //     view 
-    //     returns(uint256)
-    // {
-    //     return tokenData[tokenId].salesData.isAuction == true ? 1 : 0;
-    // }
-    
-    function _validateReduceCommission(
-        uint256 _reduceCommission
-    ) 
-        internal 
-        pure
+
+    /**
+    * @dev link safeHook contract to certain series
+    * @param seriesId series ID
+    * @param contractAddress address of SafeHook contract
+    * @custom:calledby owner 
+    * @custom:shortd link safeHook contract to series
+    */
+    function pushTokenTransferHook(
+        uint64 seriesId, 
+        address contractAddress
+    )
+        public 
     {
-        require(_reduceCommission >= 0 && _reduceCommission <= 10000, "wrong reduceCommission");
+        requireOnlyOwner();
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.pushTokenTransferHook.selector,
+            //     seriesId, contractAddress
+            // )
+            msg.data
+        );
+
     }
-       
-    function _validateAuctionActive(
+
+    /**
+    * @dev hold baseURI and suffix as values as in current series that token belong
+    * @param tokenId token ID to freeze
+    * @custom:calledby token owner 
+    * @custom:shortd hold series URI and suffix for token
+    */
+    function freeze(
         uint256 tokenId
     ) 
-        internal
-        view
+        public 
     {
-        if (tokenData[tokenId].salesData.isAuction == true) {
-            require(
-                tokenData[tokenId].salesData.startTime <= block.timestamp &&
-                (
-                    tokenData[tokenId].salesData.endTime >= block.timestamp
-                    ||
-                    tokenData[tokenId].salesData.endTime == 0
-                ), 
-                "Auction out of time"
-            );
-        }
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.freeze.selector,
+            //     bytes4(keccak256(bytes("freeze(uint256)"))),
+            //     tokenId
+            // )
+            msg.data
+        );
+
+    }
+
+    /**
+    * @dev hold baseURI and suffix as values baseURI_ and suffix_
+    * @param tokenId token ID to freeze
+    * @param baseURI_ baseURI to hold
+    * @param suffix_ suffixto hold
+    * @custom:calledby token owner 
+    * @custom:shortd hold URI and suffix for token
+    */
+    function freeze(
+        uint256 tokenId, 
+        string memory baseURI_, 
+        string memory suffix_
+    ) 
+        public 
+    {
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     //NFTState.freeze.selector,
+            //     bytes4(keccak256(bytes("freeze(uint256,string,string)"))),
+            //     tokenId, baseURI_, suffix_
+            // )
+            msg.data
+        );
         
     }
-    
+
     /**
-     * doing one interation to transfer commission from {addr} to this contract and returned {commissionAmountNeedToPay} that need to pay
-     * @param tokenId token ID
-     * @param addr payer's address 
-     * @param commissionToken token's address
-     * @param commissionAmountNeedToPay left commission that need to pay after transfer
-     */
-    function _transferPay(
-        uint256 tokenId,
-        address addr,
-        address commissionToken,
-        uint256 commissionAmountNeedToPay
+    * @dev unhold token
+    * @param tokenId token ID to unhold
+    * @custom:calledby token owner 
+    * @custom:shortd unhold URI and suffix for token
+    */
+    function unfreeze(
+        uint256 tokenId
     ) 
-        private
-        returns(uint256 commissionAmountLeft)
+        public 
     {
-        uint256 minAmount = (tokenData[tokenId].commissions.offerPayAmount[addr]).min(IERC20Upgradeable(commissionToken).allowance(addr, address(this))).min(IERC20Upgradeable(commissionToken).balanceOf(addr));
-        if (minAmount > 0) {
-            if (minAmount > commissionAmountNeedToPay) {
-                minAmount = commissionAmountNeedToPay;
-                commissionAmountLeft = 0;
-            } else {
-                commissionAmountLeft = commissionAmountNeedToPay.sub(minAmount);
-            }
-            bool success = IERC20Upgradeable(commissionToken).transferFrom(addr, address(this), minAmount);
-            require(success, MSG_TRANSFERFROM_FAILED);
-            
-            tokenData[tokenId].commissions.offerPayAmount[addr] = tokenData[tokenId].commissions.offerPayAmount[addr].sub(minAmount);
-            if (tokenData[tokenId].commissions.offerPayAmount[addr] == 0) {
-                delete tokenData[tokenId].commissions.offerPayAmount[addr];
-                tokenData[tokenId].commissions.offerAddresses.remove(addr);
-            }
-            
-        }
+        _functionDelegateCall(
+            address(implNFTState), 
+            // abi.encodeWithSelector(
+            //     NFTState.unfreeze.selector,
+            //     tokenId
+            // )
+            msg.data
+        );
+    }
+      
+
+    ///////////////////////////////////////
+    //// public view section //////////////
+    ///////////////////////////////////////
+
+    function getSeriesInfo(
+        uint64 seriesId
+    ) 
+        external 
+        view 
+        returns (
+            address payable author,
+            uint32 limit,
+            //SaleInfo saleInfo;
+            uint64 onSaleUntil,
+            address currency,
+            uint256 price,
+            ////
+            //CommissionData commission;
+            uint64 value,
+            address recipient,
+            /////
+            string memory baseURI,
+            string memory suffix
+        ) 
+    {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.getSeriesInfo.selector, 
+                    seriesId
+                ), 
+                ""
+            ), 
+            (address,uint32,uint64,address,uint256,uint64,address,string,string)
+        );
+
+    }
+    /**
+    * @dev tells the caller whether they can set info for a series,
+    * manage amount of commissions for the series,
+    * mint and distribute tokens from it, etc.
+    * @param account address to check
+    * @param seriesId the id of the series being asked about
+    * @custom:calledby everyone
+    * @custom:shortd tells the caller whether they can manage a series
+    */
+    function canManageSeries(address account, uint64 seriesId) public view returns (bool) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.canManageSeries.selector, 
+                    account, 
+                    seriesId
+                ), 
+                ""
+            ), 
+            (bool)
+        );
+
+    }
+
+    /**
+    * @dev tells the caller whether they can transfer an existing token,
+    * list it for sale and remove it from sale.
+    * Tokens can be managed by their owner
+    * or approved accounts via {approve} or {setApprovalForAll}.
+    * @param account address to check
+    * @param tokenId the id of the tokens being asked about
+    * @custom:calledby everyone
+    * @custom:shortd tells the caller whether they can transfer an existing token
+    */
+    function canManageToken(address account, uint256 tokenId) public view returns (bool) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.canManageToken.selector, 
+                    account,
+                    tokenId
+                ), 
+                ""
+            ), 
+            (bool)
+        );
         
+    }
+
+    /**
+     * @dev Returns whether `tokenId` exists.
+     * Tokens start existing when they are minted (`_mint`),
+     * and stop existing when they are burned (`_burn`).
+     * @custom:calledby everyone
+     * @custom:shortd returns whether `tokenId` exists.
+     */
+    function tokenExists(uint256 tokenId) public view virtual returns (bool) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.tokenExists.selector, 
+                    tokenId
+                ), 
+                ""
+            ), 
+            (bool)
+        );
+    }
+
+    /**
+    * @dev returns contract URI. 
+    * @custom:calledby everyone
+    * @custom:shortd return contract uri
+    */
+    function contractURI() public view returns(string memory){
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.contractURI.selector
+                ), 
+                ""
+            ), 
+            (string)
+        );
+    }
+
+    /**
+     * @dev Returns a token ID owned by `owner` at a given `index` of its token list.
+     * Use along with {balanceOf} to enumerate all of ``owner``'s tokens.
+     * @custom:calledby everyone
+     * @custom:shortd token of owner by index
+     */
+    function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual override returns (uint256) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.tokenOfOwnerByIndex.selector, 
+                    owner, index
+                ), 
+                ""
+            ), 
+            (uint256)
+        );
+    }
+
+    /**
+     * @dev Returns the total amount of tokens stored by the contract.
+     * @custom:calledby everyone
+     * @custom:shortd totalsupply
+     */
+    function totalSupply() public view virtual override returns (uint256) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.totalSupply.selector
+                ), 
+                ""
+            ), 
+            (uint256)
+        );
+    }
+
+    /**
+     * @dev Returns a token ID at a given `index` of all the tokens stored by the contract.
+     * Use along with {totalSupply} to enumerate all tokens.
+     * @custom:calledby everyone
+     * @custom:shortd token by index
+     */
+    function tokenByIndex(uint256 index) public view virtual override returns (uint256) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.tokenByIndex.selector, 
+                    index
+                ), 
+                ""
+            ), 
+            (uint256)
+        );
+    }
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     * @custom:calledby everyone
+     * @custom:shortd see {IERC165-supportsInterface}
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override /*override(ERC165Upgradeable, IERC165Upgradeable)*/ returns (bool) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.supportsInterface.selector, 
+                    interfaceId
+                ), 
+                ""
+            ), 
+            (bool)
+        );
+      
+    }
+
+    /**
+     * @dev Returns the number of tokens in ``owner``'s account.
+     * @custom:calledby everyone
+     * @custom:shortd owner balance
+     */
+    function balanceOf(address owner) public view virtual override returns (uint256) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.balanceOf.selector, 
+                    owner
+                ), 
+                ""
+            ), 
+            (uint256)
+        );
+    }
+
+    /**
+     * @dev Returns the owner of the `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     * @custom:calledby everyone
+     * @custom:shortd owner address by token id
+     */
+
+    function ownerOf(uint256 tokenId) public view virtual override returns (address) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.ownerOf.selector, 
+                    tokenId
+                ), 
+                ""
+            ), 
+            (address)
+        );
+    }
+
+    /**
+     * @dev Returns the token collection name.
+     * @custom:calledby everyone
+     * @custom:shortd token's name
+     */
+    function name() public view virtual override returns (string memory) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.name.selector
+                ), 
+                ""
+            ), 
+            (string)
+        );
+    }
+
+    /**
+     * @dev Returns the token collection symbol.
+     * @custom:calledby everyone
+     * @custom:shortd token's symbol
+     */
+    function symbol() public view virtual override returns (string memory) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.symbol.selector
+                ), 
+                ""
+            ), 
+            (string)
+        );
+    }
+
+   
+    /**
+     * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+     * @param tokenId token id
+     * @custom:calledby everyone
+     * @custom:shortd return token's URI
+     */
+    function tokenURI(
+        uint256 tokenId
+    ) 
+        public 
+        view 
+        virtual 
+        override
+        returns (string memory) 
+    {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.tokenURI.selector,
+                    tokenId
+                ), 
+                ""
+            ), 
+            (string)
+        );
+
+    }
+
+    /**
+     * @dev Returns the account approved for `tokenId` token.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     * @custom:calledby everyone
+     * @custom:shortd account approved for `tokenId` token
+     */
+    function getApproved(uint256 tokenId) public view virtual override returns (address) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.getApproved.selector,
+                    tokenId
+                ), 
+                ""
+            ), 
+            (address)
+        );
+    }
+
+
+ 
+
+    /**
+     * @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
+     *
+     * See {setApprovalForAll}
+     * @custom:calledby everyone
+     * @custom:shortd see {setApprovalForAll}
+     */
+    function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.isApprovedForAll.selector,
+                    owner, operator
+                ), 
+                ""
+            ), 
+            (bool)
+        );
+    }
+
+    /**
+    * @dev returns if token is on sale or not, 
+    * whether it exists or not,
+    * as well as data about the sale and its owner
+    * @param tokenId token ID 
+    * @custom:calledby everyone
+    * @custom:shortd return token's sale info
+    */
+    function getTokenSaleInfo(uint256 tokenId) 
+        public 
+        view 
+        returns
+        (
+            bool isOnSale,
+            bool exists, 
+            SaleInfo memory data,
+            address owner
+        ) 
+    {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.getTokenSaleInfo.selector,
+                    tokenId
+                ), 
+                ""
+            ), 
+            (bool, bool, SaleInfo, address)
+        );  
+    }
+
+    /**
+    * @dev returns info for token and series that belong to
+    * @param tokenId token ID 
+    * @custom:calledby everyone
+    * @custom:shortd full info by token id
+    */
+    function tokenInfo(
+        uint256 tokenId
+    )
+        public 
+        view
+        returns(TokenData memory )
+    {
+        return abi.decode(
+            _functionDelegateCallView(
+                address(implNFTView), 
+                abi.encodeWithSelector(
+                    NFTView.tokenInfo.selector,
+                    tokenId
+                ), 
+                ""
+            ), 
+            (TokenData)
+        );  
+
     }
      
-    function __listForSale(
-        uint256 tokenId,
-        uint256 amount,
-        address consumeToken
-    )
-        private
-    {
-        tokenData[tokenId].salesData.amount = amount;
-        tokenData[tokenId].salesData.isSale = true;
-        tokenData[tokenId].salesData.erc20Address = consumeToken;
-        tokenData[tokenId].salesData.isAuction = false;
-        
-        delete tokenData[tokenId].salesData.bids;
-    }
-   
-    /**
-     * return true if {roleName} exist in Community contract for msg.sender
-     * @param roleName role name
-     */
-    function _validateCanRecord(
-        string memory roleName
-    ) 
-        private 
-        view
-    {
-        bool s = false;
-        if (communitySettings.addr == address(0)) {
-            // if the community address set to zero then we must skip the check
-            s = true;
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    function _verifyCallResult(
+        bool success,
+        bytes memory returndata,
+        string memory errorMessage
+    ) internal pure returns (bytes memory) {
+        if (success) {
+            return returndata;
         } else {
-            string[] memory roles = ICommunity(communitySettings.addr).getRoles(msg.sender);
-            for (uint256 i=0; i< roles.length; i++) {
-                
-                if (keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked(roles[i]))) {
-                    s = true;
+            // Look for revert reason and bubble it up if present
+            if (returndata.length > 0) {
+                // The easiest way to bubble the revert reason is using memory via assembly
+
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
                 }
+            } else {
+                revert(errorMessage);
             }
         }
-
-        require(s == true, "Sender has not in accessible List");
     }
-    
-   
+    function _functionDelegateCall(address target, bytes memory data) private returns (bytes memory) {
+        //require(AddressUpgradeable.isContract(target), "Address: delegate call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = target.delegatecall(data);
+        return _verifyCallResult(success, returndata, "Address: low-level delegate call failed");
+    }
+    function _functionDelegateCallView(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal view returns (bytes memory) {
+        //require(isContract(target), "Address: static call to non-contract");
+        data = abi.encodePacked(target,data,msg.sender);    
+        (bool success, bytes memory returndata) = address(this).staticcall(data);
+        return _verifyCallResult(success, returndata, errorMessage);
+    }
+
+    fallback() external {
+        
+        if (msg.sender == address(this)) {
+
+            address implementationLogic;
+            
+            bytes memory msgData = msg.data;
+            bytes memory msgDataPure;
+            uint256 offsetnew;
+            uint256 offsetold;
+            uint256 i;
+            
+            // extract address implementation;
+            assembly {
+                implementationLogic:= mload(add(msgData,0x14))
+            }
+            
+            msgDataPure = new bytes(msgData.length-20);
+            uint256 max = msgData.length + 31;
+            offsetold=20+32;        
+            offsetnew=32;
+            // extract keccak256 of methods's hash
+            assembly { mstore(add(msgDataPure, offsetnew), mload(add(msgData, offsetold))) }
+            
+            // extract left data
+            for (i=52+32; i<=max; i+=32) {
+                offsetnew = i-20;
+                offsetold = i;
+                assembly { mstore(add(msgDataPure, offsetnew), mload(add(msgData, offsetold))) }
+            }
+            
+            // finally make call
+            (bool success, bytes memory data) = address(implementationLogic).delegatecall(msgDataPure);
+            assembly {
+                switch success
+                    // delegatecall returns 0 on error.
+                    case 0 { revert(add(data, 32), returndatasize()) }
+                    default { return(add(data, 32), returndatasize()) }
+            }
+            
+        }
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

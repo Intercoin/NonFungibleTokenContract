@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 
 // import "./ERC721ReceiverMock.sol";
 // import "../extensions/ERC721SafeHooksUpgradeable.sol";
-import "../../sales/INFTSalesFactory.sol";
+import "../../v2/sales/INFTSalesFactory.sol";
 
 contract BadNFTSale {
 
@@ -16,7 +16,7 @@ contract BadNFTSale {
         public
         payable
     {
-        INFTSalesFactory(factoryAddress).mintAndDistribute(tokenIds, addresses);
+        INFTSalesFactory(factoryAddress)._doMintAndDistribute(tokenIds, addresses);
     }
 
 }
