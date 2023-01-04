@@ -101,7 +101,7 @@ contract NFTState is NFTStorage, INFTState {
     ) 
         external
     {
-        CommunitySettings memory emptySettings = CommunitySettings(address(0), "");
+        CommunitySettings memory emptySettings = CommunitySettings(address(0), 0);
         _setSeriesInfo(seriesId, info, emptySettings, emptySettings);
     }
 
@@ -828,7 +828,7 @@ contract NFTState is NFTStorage, INFTState {
     function validateBuyer(uint64 seriesId) internal {
 
         if (seriesWhitelists[seriesId].buy.community != address(0)) {
-            bool success = ICommunity(seriesWhitelists[seriesId].buy.community).isMemberHasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);
+            bool success = ICommunity(seriesWhitelists[seriesId].buy.community).hasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);
             //require(success, "buyer not in whitelist");
             require(success, "BUYER_INVALID");
         }
@@ -1174,7 +1174,7 @@ contract NFTState is NFTStorage, INFTState {
         }
         ////
         if (to != address(0) && seriesWhitelists[seriesId].transfer.community != address(0)) {
-            bool success = ICommunity(seriesWhitelists[seriesId].transfer.community).isMemberHasRole(to, seriesWhitelists[seriesId].transfer.role);
+            bool success = ICommunity(seriesWhitelists[seriesId].transfer.community).hasRole(to, seriesWhitelists[seriesId].transfer.role);
             //require(success, "recipient not in whitelist");
             require(success, "RECIPIENT_INVALID");
             

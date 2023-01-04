@@ -13,7 +13,7 @@ import "./INFTSalesFactory.sol";
 import "./INFTSales.sol";
 import "../INFTView.sol";
 
-import "../../lib/StringsW0x.sol";
+import "../lib/StringsW0x.sol";
 
 /**
 *****************

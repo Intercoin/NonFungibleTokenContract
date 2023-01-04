@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
-import "../interfaces/IFactory.sol";
+import "./interfaces/IFactory.sol";
 
 
 abstract contract NFTFactoryBase is Ownable, IFactory {

@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 
 // import "./ERC721ReceiverMock.sol";
 // import "../extensions/ERC721SafeHooksUpgradeable.sol";
-import "../../v2/sales/INFTSalesFactory.sol";
+import "../../sales/INFTSalesFactory.sol";
 
 contract BadNFTSale {
 
