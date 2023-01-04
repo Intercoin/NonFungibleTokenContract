@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.11;
 
 interface ICommunity {
-    function memberCount(string calldata role) external view returns(uint256);
-    function getRoles(address member)external view returns(string[] memory);
-    function getMember(string calldata role) external view returns(address[] memory);
+    function isMemberHasRole(address account, string memory rolename) external returns(bool);
 }

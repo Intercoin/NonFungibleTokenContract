@@ -1,0 +1,12 @@
+###23.03.2022
+- added freeze implementation
+- removed public function "getSaleInfo"
+- added public function "tokenInfo" which return struct (
+    tuple salesInfo, 
+    tuple freezeInfo, 
+    uint256 hooksCountByToken; // hooks count
+    uint256 allTokensIndex; // position in the allTokens array
+    uint256 ownedTokensIndex; // index of the owner tokens list
+    address owner; //owner address
+    address tokenApproval; // approved address
+)
