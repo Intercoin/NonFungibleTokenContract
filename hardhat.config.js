@@ -27,7 +27,7 @@ module.exports = {
     local: {
       url: "http://localhost:8545", //rinkebyURL,
       chainId: 1337,
-      gasPrice: "auto",
+      //gasPrice: "auto",
       //accounts: {mnemonic: process.env.MNEMONIC,initialIndex:1},
       accounts: [process.env.private_key],
       saveDeployments: true
@@ -84,7 +84,7 @@ module.exports = {
     mainnet: {
       url: mainnetURL,
       chainId: 1,
-      gasPrice: 20000000000,
+      //gasPrice: 20000000000,
       accounts: [process.env.private_key],
       saveDeployments: true
     }
@@ -102,8 +102,8 @@ module.exports = {
   },
   etherscan: {
     //apiKey: process.env.MATIC_API_KEY  
-    //apiKey: process.env.ETHERSCAN_API_KEY
-    apiKey: process.env.BSCSCAN_API_KEY
+    apiKey: process.env.ETHERSCAN_API_KEY
+    //apiKey: process.env.BSCSCAN_API_KEY
   },
   solidity: {
     compilers: [
