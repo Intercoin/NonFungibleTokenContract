@@ -72,7 +72,7 @@ async function main() {
 	let deployerBalanceAtBegin = await deployer.getBalance();
 	console.log("Started account balance:", (deployerBalanceAtBegin).toString());
 
-	const FactoryFactory = await ethers.getContractFactory("Factory");
+	const FactoryFactory = await ethers.getContractFactory("NFTFactory");
 	this.factory = await FactoryFactory.connect(deployer).deploy(...params);
 	await this.factory.connect(deployer).registerReleaseManager(data_object.releaseManager);
 

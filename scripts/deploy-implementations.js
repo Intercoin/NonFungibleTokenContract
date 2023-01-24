@@ -60,18 +60,13 @@ async function main() {
 
 	console.log("Account balance:", (await deployer.getBalance()).toString());
 
-	const NftFactory = await ethers.getContractFactory("NFT");
-	const NFTStateFactory = await ethers.getContractFactory("NFTState");
+    const NFTStateFactory = await ethers.getContractFactory("NFTState");
 	const NFTViewFactory = await ethers.getContractFactory("NFTView");
-        
-	let nftState= await NFTStateFactory.connect(deployer).deploy();
-    await nftState.wait();
+    const NftFactory = await ethers.getContractFactory("NFT");
 
-	let nftView = await NFTViewFactory.connect(deployer).deploy();
-    await nftView.wait();
-
-	let nft 	= await NftFactory.connect(deployer).deploy();
-    await nft.wait();
+	const nftState= await NFTStateFactory.connect(deployer).deploy();
+	const nftView = await NFTViewFactory.connect(deployer).deploy();
+	const nft 	= await NftFactory.connect(deployer).deploy();
     
 	console.log("Implementations:");
 	console.log("  NFT deployed at:       ", nft.address);

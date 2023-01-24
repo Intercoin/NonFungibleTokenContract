@@ -4,15 +4,20 @@
     "nftSales": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
     "time_updated": 1672840937325
   },
-  "time_updated": 1672841106790,
+  "time_updated": 1673993411244,
   "matic": {
     "time_created": 1672840955622,
-    "nftSales": "0x8Beb3aB330B0b248E5b81a8FD44371eDDd1bC6a9",
-    "time_updated": 1672840959386
+    "nftSales": "0x66f6Ad32184a5754622D4bB739e9FCA0c0E54cD8",
+    "time_updated": 1673988898081
   },
   "mainnet": {
     "time_created": 1672841103282,
     "nftSales": "0x20c89f2f31DCF780d5B82Db72B89566d10d6594f",
     "time_updated": 1672841106790
+  },
+  "bsc": {
+    "time_created": 1673993401285,
+    "nftSales": "0x7aDf19a32434D7063dDC2A8eD8E8C88c29855dEc",
+    "time_updated": 1673993411244
   }
 }
