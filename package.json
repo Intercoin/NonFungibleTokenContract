@@ -1,5 +1,5 @@
 {
-  "name": "nonfungibletokencontract",
+  "name": "@artman325/nonfungibletokencontract",
   "version": "1.0.0",
   "description": "NFT contracts that support a new ERC token standard for paying commissions to authors",
   "main": "index.js",
