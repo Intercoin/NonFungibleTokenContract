@@ -4,8 +4,8 @@ pragma solidity 0.8.11;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "releasemanager/contracts/CostManagerFactoryHelper.sol";
-import "releasemanager/contracts/ReleaseManagerHelper.sol";
+import "@artman325/releasemanager/contracts/CostManagerFactoryHelper.sol";
+import "@artman325/releasemanager/contracts/ReleaseManagerHelper.sol";
 
 import "./INFTInstanceContract.sol";
 import "./NFTState.sol";
@@ -37,8 +37,12 @@ contract NFTFactory is Ownable, CostManagerFactoryHelper, ReleaseManagerHelper {
         address instance, 
         address implState, 
         address implView, 
-        address costManager_
-    ) CostManagerFactoryHelper(costManager_) {
+        address costManager_,
+        address releaseManager_
+    ) 
+        CostManagerFactoryHelper(costManager_) 
+        ReleaseManagerHelper(releaseManager_) 
+    {
         implementation = instance;
         costManager = costManager_;
 

@@ -825,7 +825,7 @@ contract NFTState is NFTStorage, INFTState {
     ****** internal section *********************************************
     *********************************************************************/
 
-    function validateBuyer(uint64 seriesId) internal {
+    function validateBuyer(uint64 seriesId) internal view {
 
         if (seriesWhitelists[seriesId].buy.community != address(0)) {
             bool success = ICommunity(seriesWhitelists[seriesId].buy.community).hasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);

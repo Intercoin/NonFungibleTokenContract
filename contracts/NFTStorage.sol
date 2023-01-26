@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeab
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 // import "../interfaces/ICostManager.sol";
 // import "../interfaces/IFactory.sol";
-import "releasemanager/contracts/CostManagerHelperERC2771Support.sol";
+import "@artman325/releasemanager/contracts/CostManagerHelperERC2771Support.sol";
 
 import "./interfaces/ISafeHook.sol";
 import "@artman325/community/contracts/interfaces/ICommunity.sol";
