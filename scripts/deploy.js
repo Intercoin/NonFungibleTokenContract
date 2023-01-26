@@ -69,8 +69,8 @@ async function main() {
 		options
 	]
 
-	let deployerBalanceAtBegin = await deployer.getBalance();
-	console.log("Started account balance:", (deployerBalanceAtBegin).toString());
+	const deployerBalanceBefore = await deployer.getBalance();
+    console.log("Account balance:", (deployerBalanceBefore).toString());
 
 	const FactoryFactory = await ethers.getContractFactory("NFTFactory");
 	this.factory = await FactoryFactory.connect(deployer).deploy(...params);
@@ -80,8 +80,10 @@ async function main() {
 	console.log("with params:", [..._params]);
 	console.log("registered with release manager:", data_object.releaseManager);
 
-	let deployerBalanceInTheEnd = await deployer.getBalance();
-	console.log("ETH spent: ", ethers.utils.formatEther(BigNumber.from(deployerBalanceAtBegin).sub(BigNumber.from(deployerBalanceInTheEnd))));
+    const deployerBalanceAfter = await deployer.getBalance();
+    console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
+    console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
+    
 }
 
 main()

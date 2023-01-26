@@ -1,10 +1,10 @@
 {
   "hardhat": {
     "time_created": 1672840474727,
-    "nftSales": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-    "time_updated": 1672840937325
+    "nftSales": "0xbe18A1B61ceaF59aEB6A9bC81AB4FB87D56Ba167",
+    "time_updated": 1674746019062
   },
-  "time_updated": 1673993411244,
+  "time_updated": 1674746019062,
   "matic": {
     "time_created": 1672840955622,
     "nftSales": "0x66f6Ad32184a5754622D4bB739e9FCA0c0E54cD8",

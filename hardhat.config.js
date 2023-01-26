@@ -27,7 +27,7 @@ module.exports = {
     local: {
       url: "http://localhost:8545", //rinkebyURL,
       chainId: 1337,
-      //gasPrice: "auto",
+      gasPrice: "auto",
       //accounts: {mnemonic: process.env.MNEMONIC,initialIndex:1},
       accounts: [process.env.private_key],
       saveDeployments: true
@@ -36,7 +36,6 @@ module.exports = {
       allowUnlimitedContractSize: false,
       forking: {
         url: mainnetURL,
-        blockNumber: 13539017
       }
     },
     kovan: {
