@@ -47,7 +47,7 @@ async function main() {
 	const [deployer] = await ethers.getSigners();
 	
 	const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-    const RELEASE_MANAGER = process.env.RELEASE_MANAGER;
+    const RELEASE_MANAGER = hre.network.name == 'mumbai'? process.env.RELEASE_MANAGER_MUMBAI : process.env.RELEASE_MANAGER;
 	console.log(
 		"Deploying contracts with the account:",
 		deployer.address
@@ -58,7 +58,8 @@ async function main() {
 	// 	gasLimit: 10e6
 	// };
 
-	console.log("Account balance:", (await deployer.getBalance()).toString());
+	const deployerBalanceBefore = await deployer.getBalance();
+    console.log("Account balance:", (deployerBalanceBefore).toString());
 
     const NFTStateFactory = await ethers.getContractFactory("NFTState");
 	const NFTViewFactory = await ethers.getContractFactory("NFTView");
@@ -79,7 +80,10 @@ async function main() {
 	data_object.nftState	    = nftState.address;
 	data_object.nftView		    = nftView.address;
     data_object.releaseManager  = RELEASE_MANAGER;
-
+    
+    const deployerBalanceAfter = await deployer.getBalance();
+    console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
+    console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
 
 	//---
 	const ts_updated = Date.now();

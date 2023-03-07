@@ -62,7 +62,8 @@ async function main() {
 		data_object.nft,
 		data_object.nftState,
 		data_object.nftView,
-		ZERO_ADDRESS
+		ZERO_ADDRESS,
+        data_object.releaseManager
 	]
 	let params = [
 		..._params,
@@ -74,7 +75,6 @@ async function main() {
 
 	const FactoryFactory = await ethers.getContractFactory("NFTFactory");
 	this.factory = await FactoryFactory.connect(deployer).deploy(...params);
-	await this.factory.connect(deployer).registerReleaseManager(data_object.releaseManager);
 
 	console.log("Factory deployed at:", this.factory.address);
 	console.log("with params:", [..._params]);

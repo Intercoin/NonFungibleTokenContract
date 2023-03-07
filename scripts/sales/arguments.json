@@ -4,7 +4,7 @@
     "nftSales": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
     "time_updated": 1672840937325
   },
-  "time_updated": 1673993411244,
+  "time_updated": 1678197909246,
   "matic": {
     "time_created": 1672840955622,
     "nftSales": "0x66f6Ad32184a5754622D4bB739e9FCA0c0E54cD8",
@@ -19,5 +19,10 @@
     "time_created": 1673993401285,
     "nftSales": "0x7aDf19a32434D7063dDC2A8eD8E8C88c29855dEc",
     "time_updated": 1673993411244
+  },
+  "mumbai": {
+    "time_created": 1678197905974,
+    "nftSales": "0x98ab762d4b5685E34EF53E1fe0D91E3210E2cD52",
+    "time_updated": 1678197909246
   }
 }
