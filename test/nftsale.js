@@ -64,8 +64,8 @@ describe("nftsale tests", function () {
         const FalseHookFactory = await ethers.getContractFactory("MockFalseHook");
         const NotSupportingHookFactory = await ethers.getContractFactory("MockNotSupportingHook");
         const WithoutFunctionHookFactory = await ethers.getContractFactory("MockWithoutFunctionHook");
-        const BuyerFactory = await ethers.getContractFactory("Buyer");
-        const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
+        //const BuyerFactory = await ethers.getContractFactory("Buyer");
+        
         const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
         const MockCommunityFactory = await ethers.getContractFactory("MockCommunity");
 
@@ -86,8 +86,8 @@ describe("nftsale tests", function () {
 
         const retval = '0x150b7a02';
         const error = ZERO;
-        this.buyer = await BuyerFactory.deploy(retval, error);
-        this.badBuyer = await BadBuyerFactory.deploy();
+        //this.buyer = await BuyerFactory.deploy(retval, error);
+        
         this.nft = await NFTFactory.deploy();
 
         await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address,"NFT Edition", "NFT", "", "", "", this.costManager.address, ZERO_ADDRESS);

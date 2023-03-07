@@ -97,7 +97,7 @@ describe("v2 tests", function () {
             [instance, instancesCount] = event.args;
             let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
 
-            this.factory = await NFTFactoryFactory.deploy(this.nftimpl.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS);
+            this.factory = await NFTFactoryFactory.deploy(this.nftimpl.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS, releaseManager.address);
 
             // 
             const factoriesList = [this.factory.address];
@@ -108,7 +108,7 @@ describe("v2 tests", function () {
                     "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
                 ]
             ]
-            await this.factory.connect(owner).registerReleaseManager(releaseManager.address);
+            
             await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
 
             tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
