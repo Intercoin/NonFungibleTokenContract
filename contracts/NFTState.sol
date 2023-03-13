@@ -11,6 +11,8 @@ contract NFTState is NFTStorage, INFTState {
     using AddressUpgradeable for address;
     using StringsW0x for uint256;
     
+    mapping (uint256 => uint64) public forked;
+    mapping (uint64 => uint256) public forkedFrom;
 
     function initialize(
         string memory name_, 
@@ -119,6 +121,26 @@ contract NFTState is NFTStorage, INFTState {
         external
     {
         _setSeriesInfo(seriesId, info, transferWhitelistSettings, buyWhitelistSettings);
+    }
+    
+    /**
+     * @dev fork a forkable series, if you own a token from it, and become its author
+     * @param tokenId an existing token that you own
+     * @param forkedSeriesId the new series ID, but not already have an author
+     */
+    function forkSeries(uint256 tokenId, uint16 forkedSeriesId)
+    {
+	require(forked[tokenId] == 0, "ALREADY_FORKED");
+	require(_ownerOf(tokenId) == _msgCaller(), "NOT_TOKEN_OWNER");
+	uint64 seriesId = getSeriesId(tokenId);
+	require (seriesId & 0x0000000F == 0, "SERIES_NOT_FORKABLE");
+	require (seriesInfo[forkedSeriesId].author == address(0), "FORK_ALREADY_EXISTS");
+	seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
+	seriesInfo[forkedSeriesId].author = _msgSender();
+	seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
+	seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
+	forked[tokenId] = forkedSeriesId;
+	forkedFrom[forkedSeriesId] = tokenId;
     }
 
     /**
