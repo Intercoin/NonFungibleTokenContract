@@ -11,6 +11,8 @@ contract NFTState is NFTStorage, INFTState {
     using AddressUpgradeable for address;
     using StringsW0x for uint256;
     
+    mapping (uint256 => uint64) public forked;
+    mapping (uint64 => uint256) public forkedFrom;
 
     function initialize(
         string memory name_, 
@@ -120,6 +122,26 @@ contract NFTState is NFTStorage, INFTState {
     {
         _setSeriesInfo(seriesId, info, transferWhitelistSettings, buyWhitelistSettings);
     }
+    
+    /**
+     * @dev fork a forkable series, if you own a token from it, and become its author
+     * @param tokenId an existing token that you own
+     * @param forkedSeriesId the new series ID, but not already have an author
+     */
+    function forkSeries(uint256 tokenId, uint16 forkedSeriesId)
+    {
+	require(forked[tokenId] == 0, "ALREADY_FORKED");
+	require(_ownerOf(tokenId) == _msgCaller(), "NOT_TOKEN_OWNER");
+	uint64 seriesId = getSeriesId(tokenId);
+	require (seriesId & 0x0000000F == 0, "SERIES_NOT_FORKABLE");
+	require (seriesInfo[forkedSeriesId].author == address(0), "FORK_ALREADY_EXISTS");
+	seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
+	seriesInfo[forkedSeriesId].author = _msgSender();
+	seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
+	seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
+	forked[tokenId] = forkedSeriesId;
+	forkedFrom[forkedSeriesId] = tokenId;
+    }
 
     /**
     * @dev sets information for series with 'seriesId'. 
@@ -198,7 +220,8 @@ contract NFTState is NFTStorage, INFTState {
             (
                 commissionData.value <= commissionInfo.maxValue &&
                 commissionData.value >= commissionInfo.minValue &&
-                commissionData.value + commissionInfo.ownerCommission.value < FRACTION
+                (seriesId & 0x0000000F == 0 ? commissionData * 8 : commissionData.value)
+		+ commissionInfo.ownerCommission.value < FRACTION &&
             ),
             "COMMISSION_INVALID"
         );
@@ -1320,7 +1343,8 @@ contract NFTState is NFTStorage, INFTState {
     * @dev calculate commission for `tokenId`
     *  if param exists equal true, then token doesn't exists yet. 
     *  otherwise we should use snapshot parameters: ownerCommission/authorCommission, that hold during listForSale.
-    *  used to prevent increasing commissions
+    *  used to prevent increasing commissions after token was listed for sale.
+    *  If this series was forked, also calculates commissions for all parent series.
     * @param tokenId token ID to calculate commission
     * @param price amount of specified token to pay 
     */
@@ -1332,13 +1356,14 @@ contract NFTState is NFTStorage, INFTState {
         view 
         returns(
             address[2] memory addresses, 
-            uint256[2] memory values,
+            uint256[2] memory prices,
             uint256 length
         ) 
     {
         uint64 seriesId = getSeriesId(tokenId);
         length = 0;
         uint256 sum;
+	
         // contract owner commission
         if (commissionInfo.ownerCommission.recipient != address(0)) {
             uint256 oc = tokensInfo[tokenId].salesInfoToken.ownerCommissionValue;
@@ -1347,7 +1372,7 @@ contract NFTState is NFTStorage, INFTState {
             if (oc != 0) {
                 addresses[length] = commissionInfo.ownerCommission.recipient;
                 sum += oc;
-                values[length] = oc * price / FRACTION;
+                prices[length] = oc * price / FRACTION;
                 length++;
             }
         }
@@ -1358,10 +1383,12 @@ contract NFTState is NFTStorage, INFTState {
             if (seriesInfo[seriesId].commission.value < ac) 
                 ac = seriesInfo[seriesId].commission.value;
             if (ac != 0) {
-                addresses[length] = seriesInfo[seriesId].commission.recipient;
-                sum += ac;
-                values[length] = ac * price / FRACTION;
-                length++;
+		do { // pay authors from whom the series forked, too
+                        addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+	                sum += ac;
+	                prices[length] = ac * price / FRACTION;
+	                length++;
+		} while (seriesId = forkedFrom[forkedSeriesId];
             }
         }
 

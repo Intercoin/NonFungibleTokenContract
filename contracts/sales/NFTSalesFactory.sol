@@ -75,7 +75,7 @@ contract NFTSalesFactory is INFTSalesFactory {
     // instances list which can call mintAndDistribute.
     // items can be add only by NFT owner(not NFTsales'owner!)
     // items can be removed only by NFT owner(not NFTsales'owner!)
-    EnumerableSet.AddressSet whitelist;
+    mapping(address => EnumerableSet.AddressSet) whitelist;
 
     event InstanceCreated(address instance);
 
@@ -84,7 +84,8 @@ contract NFTSalesFactory is INFTSalesFactory {
     error UnknownInstance();
 
     modifier onlyInstance() {
-        if (!whitelist.contains(msg.sender)) {
+        address NFTContract = instancesInfo[msg.sender].NFTContract;
+        if (NFTContract == 0) {
             revert InstancesOnly();
         }
         _;
@@ -124,32 +125,15 @@ contract NFTSalesFactory is INFTSalesFactory {
 
     /**
      * @notice view NFT contrac address. used by instances in external calls
-     * @custom:calledby instance
      * @custom:shortd view NFT contract address
      */
-    function instanceToNFTContract(address instanceAddress) external view onlyInstance returns (address) {
+    function instanceToNFTContract(address instanceAddress) external view returns (address) {
         return instancesInfo[instanceAddress].NFTContract;
     }
 
     function whitelistByNFTContract(address NFTContract) external view returns (address[] memory instances) {
-        uint256 len;
-        address iAddr;
-        uint256 j;
-        for (uint256 i = 0; i < whitelist.length(); i++) {
-            iAddr = whitelist.at(i);
-            if (instancesInfo[iAddr].NFTContract == NFTContract) {
-                len++;
-            }
-        }
-
-        instances = new address[](len);
-
-        for (uint256 i = 0; i < whitelist.length(); i++) {
-            iAddr = whitelist.at(i);
-            if (instancesInfo[iAddr].NFTContract == NFTContract) {
-                instances[j] = iAddr;
-                j++;
-            }
+        for (uint256 i = 0; i < whitelist[NFTContract].length(); i++) {
+            instances[i] = whitelist.at(i);
         }
     }
 
@@ -189,7 +173,7 @@ contract NFTSalesFactory is INFTSalesFactory {
         instance = address(implementationNFTSale).clone();
 
         require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
-        whitelist.add(instance);
+        whitelist[NFTcontract].add(instance);
         instancesInfo[instance] = InstanceInfo(NFTContract, seriesId, owner, duration, currency, price, beneficiary, autoIndex, rateInterval, rateAmount);
 
         emit InstanceCreated(instance);
@@ -214,7 +198,7 @@ contract NFTSalesFactory is INFTSalesFactory {
         if (NFTOwner != msg.sender) {
             revert OwnerOfNFTContractOnly(NFTContract, NFTOwner);
         }
-        whitelist.remove(instance);
+        whitelist[NFTContract].remove(instance);
     }
 
     ////////////////////////////////////////////////////////////////////////
