@@ -220,7 +220,8 @@ contract NFTState is NFTStorage, INFTState {
             (
                 commissionData.value <= commissionInfo.maxValue &&
                 commissionData.value >= commissionInfo.minValue &&
-                commissionData.value + commissionInfo.ownerCommission.value < FRACTION
+                (seriesId & 0x0000000F == 0 ? commissionData * 8 : commissionData.value)
+		+ commissionInfo.ownerCommission.value < FRACTION &&
             ),
             "COMMISSION_INVALID"
         );
@@ -1342,7 +1343,8 @@ contract NFTState is NFTStorage, INFTState {
     * @dev calculate commission for `tokenId`
     *  if param exists equal true, then token doesn't exists yet. 
     *  otherwise we should use snapshot parameters: ownerCommission/authorCommission, that hold during listForSale.
-    *  used to prevent increasing commissions
+    *  used to prevent increasing commissions after token was listed for sale.
+    *  If this series was forked, also calculates commissions for all parent series.
     * @param tokenId token ID to calculate commission
     * @param price amount of specified token to pay 
     */
@@ -1354,13 +1356,14 @@ contract NFTState is NFTStorage, INFTState {
         view 
         returns(
             address[2] memory addresses, 
-            uint256[2] memory values,
+            uint256[2] memory prices,
             uint256 length
         ) 
     {
         uint64 seriesId = getSeriesId(tokenId);
         length = 0;
         uint256 sum;
+	
         // contract owner commission
         if (commissionInfo.ownerCommission.recipient != address(0)) {
             uint256 oc = tokensInfo[tokenId].salesInfoToken.ownerCommissionValue;
@@ -1369,7 +1372,7 @@ contract NFTState is NFTStorage, INFTState {
             if (oc != 0) {
                 addresses[length] = commissionInfo.ownerCommission.recipient;
                 sum += oc;
-                values[length] = oc * price / FRACTION;
+                prices[length] = oc * price / FRACTION;
                 length++;
             }
         }
@@ -1380,10 +1383,12 @@ contract NFTState is NFTStorage, INFTState {
             if (seriesInfo[seriesId].commission.value < ac) 
                 ac = seriesInfo[seriesId].commission.value;
             if (ac != 0) {
-                addresses[length] = seriesInfo[seriesId].commission.recipient;
-                sum += ac;
-                values[length] = ac * price / FRACTION;
-                length++;
+		do { // pay authors from whom the series forked, too
+                        addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+	                sum += ac;
+	                prices[length] = ac * price / FRACTION;
+	                length++;
+		} while (seriesId = forkedFrom[forkedSeriesId];
             }
         }
 
