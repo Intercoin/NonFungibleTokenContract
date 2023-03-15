@@ -39,6 +39,7 @@
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.4.7",
     "hardhat": "^2.7.0",
+    "hardhat-contract-sizer": "^2.8.0",
     "hardhat-deploy": "^0.9.4",
     "hardhat-deploy-ethers": "^0.3.0-beta.11",
     "hardhat-docgen": "^1.2.0",
@@ -59,7 +60,7 @@
     "@openzeppelin/contracts-upgradeable": "^4.1.0",
     "@openzeppelin/test-helpers": "^0.5.15",
     "@uniswap/lib": "^4.0.1-alpha",
-    "trustedforwarder": "^1.0.0",
-    "releasemanager": "^1.0.5"
+    "releasemanager": "^1.0.5",
+    "trustedforwarder": "^1.0.0"
   }
 }

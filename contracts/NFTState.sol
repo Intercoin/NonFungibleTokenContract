@@ -128,19 +128,18 @@ contract NFTState is NFTStorage, INFTState {
      * @param tokenId an existing token that you own
      * @param forkedSeriesId the new series ID, but not already have an author
      */
-    function forkSeries(uint256 tokenId, uint16 forkedSeriesId)
-    {
-	require(forked[tokenId] == 0, "ALREADY_FORKED");
-	require(_ownerOf(tokenId) == _msgCaller(), "NOT_TOKEN_OWNER");
-	uint64 seriesId = getSeriesId(tokenId);
-	require (seriesId & 0x0000000F == 0, "SERIES_NOT_FORKABLE");
-	require (seriesInfo[forkedSeriesId].author == address(0), "FORK_ALREADY_EXISTS");
-	seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
-	seriesInfo[forkedSeriesId].author = _msgSender();
-	seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
-	seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
-	forked[tokenId] = forkedSeriesId;
-	forkedFrom[forkedSeriesId] = tokenId;
+    function forkSeries(uint256 tokenId, uint64 forkedSeriesId) public {
+        require(forked[tokenId] == 0, "ALREADY_FORKED");
+        require(_ownerOf(tokenId) == _msgSender(), "NOT_TOKEN_OWNER");
+        uint64 seriesId = getSeriesId(tokenId);
+        require (seriesId & 0x0000000F == 0, "SERIES_NOT_FORKABLE");
+        require (seriesInfo[forkedSeriesId].author == address(0), "FORK_ALREADY_EXISTS");
+        seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
+        seriesInfo[forkedSeriesId].author = payable(_msgSender());
+        seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
+        seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
+        forked[tokenId] = forkedSeriesId;
+        forkedFrom[forkedSeriesId] = tokenId;
     }
 
     /**
@@ -220,8 +219,7 @@ contract NFTState is NFTStorage, INFTState {
             (
                 commissionData.value <= commissionInfo.maxValue &&
                 commissionData.value >= commissionInfo.minValue &&
-                (seriesId & 0x0000000F == 0 ? commissionData * 8 : commissionData.value)
-		+ commissionInfo.ownerCommission.value < FRACTION &&
+                (seriesId & 0x0000000F == 0 ? commissionData.value * 8 : commissionData.value) + commissionInfo.ownerCommission.value < FRACTION
             ),
             "COMMISSION_INVALID"
         );
@@ -848,7 +846,7 @@ contract NFTState is NFTStorage, INFTState {
     ****** internal section *********************************************
     *********************************************************************/
 
-    function validateBuyer(uint64 seriesId) internal {
+    function validateBuyer(uint64 seriesId) internal view {
 
         if (seriesWhitelists[seriesId].buy.community != address(0)) {
             bool success = ICommunity(seriesWhitelists[seriesId].buy.community).hasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);
@@ -1380,17 +1378,23 @@ contract NFTState is NFTStorage, INFTState {
         // author commission
         if (seriesInfo[seriesId].commission.recipient != address(0)) {
             uint256 ac = tokensInfo[tokenId].salesInfoToken.authorCommissionValue;
-            if (seriesInfo[seriesId].commission.value < ac) 
+            if (seriesInfo[seriesId].commission.value < ac) {
                 ac = seriesInfo[seriesId].commission.value;
+            }
             if (ac != 0) {
-		do { // pay authors from whom the series forked, too
-                        addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
-	                sum += ac;
-	                prices[length] = ac * price / FRACTION;
-	                length++;
-		} while (seriesId = forkedFrom[forkedSeriesId];
+                uint64 forkedSeriesId = seriesId;
+                while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
+                    addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+                    sum += ac;
+                    prices[length] = ac * price / FRACTION;
+                    forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
+		        }
+
+                length++;
             }
         }
+
+
 
         require(sum < FRACTION, "invalid commission");
 

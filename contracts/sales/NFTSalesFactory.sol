@@ -85,7 +85,7 @@ contract NFTSalesFactory is INFTSalesFactory {
 
     modifier onlyInstance() {
         address NFTContract = instancesInfo[msg.sender].NFTContract;
-        if (NFTContract == 0) {
+        if (NFTContract == address(0)) {
             revert InstancesOnly();
         }
         _;
@@ -132,8 +132,10 @@ contract NFTSalesFactory is INFTSalesFactory {
     }
 
     function whitelistByNFTContract(address NFTContract) external view returns (address[] memory instances) {
+
+        instances = new address[](whitelist[NFTContract].length());
         for (uint256 i = 0; i < whitelist[NFTContract].length(); i++) {
-            instances[i] = whitelist.at(i);
+            instances[i] = whitelist[NFTContract].at(i);
         }
     }
 
@@ -173,7 +175,7 @@ contract NFTSalesFactory is INFTSalesFactory {
         instance = address(implementationNFTSale).clone();
 
         require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
-        whitelist[NFTcontract].add(instance);
+        whitelist[NFTContract].add(instance);
         instancesInfo[instance] = InstanceInfo(NFTContract, seriesId, owner, duration, currency, price, beneficiary, autoIndex, rateInterval, rateAmount);
 
         emit InstanceCreated(instance);
