@@ -152,6 +152,9 @@ abstract contract NFTStorage  is
 
     mapping(uint64 => SeriesWhitelists) internal seriesWhitelists;
     
+    mapping (uint256 => uint64) public forked;
+    mapping (uint64 => uint256) public forkedFrom;
+
     // vars from ownable.sol
     address private _owner;
 
@@ -207,6 +210,38 @@ abstract contract NFTStorage  is
     // event from ownable.sol
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     
+    error AddressInvalid();
+    error AlreadyInSale();
+    error AlreadyForked();
+    error BuyerInvalid();
+    error CommissionInvalid();
+    error CurrencyInvalid();
+    error DurationInvalid();
+    error ForkAlreadyExists();
+    error InsufficientAmountSent();
+    error LengthsShouldBeTheSame();
+    error NotTokenOwner();
+    error RecipientInvalid();
+    error SeriesMaxTokenLimitExceeded();
+    error SeriesNotForkable();
+    error SeriesTokenLimitExceeded();
+    error TokenAlreadyMinted();
+    error TokenIdsInvalid();
+    error TokenDoesNotExists();
+    error TokenIsNotOwnedBySender();
+    error TokenIsNotOnSale();
+    error WrongInterface();
+
+    error TokenIsntOwnedByFromAddress();
+    error CantTransferToTheZeroAddress();
+    error TransferNotAuthorized();
+    error CantManageThisSeries();
+    error CantManageThisToken();
+    error TransferCommissionFailed();
+    error TransferToOwnerFailed();
+    error RefundFailed();
+
+            
     //stubs
 
     function approve(address/* to*/, uint256/* tokenId*/) public virtual override {revert("stub");}

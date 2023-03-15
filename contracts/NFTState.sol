@@ -11,9 +11,6 @@ contract NFTState is NFTStorage, INFTState {
     using AddressUpgradeable for address;
     using StringsW0x for uint256;
     
-    mapping (uint256 => uint64) public forked;
-    mapping (uint64 => uint256) public forkedFrom;
-
     function initialize(
         string memory name_, 
         string memory symbol_, 
@@ -129,11 +126,21 @@ contract NFTState is NFTStorage, INFTState {
      * @param forkedSeriesId the new series ID, but not already have an author
      */
     function forkSeries(uint256 tokenId, uint64 forkedSeriesId) public {
-        require(forked[tokenId] == 0, "ALREADY_FORKED");
-        require(_ownerOf(tokenId) == _msgSender(), "NOT_TOKEN_OWNER");
+        if (forked[tokenId] != 0) {
+            revert AlreadyForked(); 
+        }
+        if (_ownerOf(tokenId) != _msgSender()) {
+            revert NotTokenOwner(); 
+        }
+        
         uint64 seriesId = getSeriesId(tokenId);
-        require (seriesId & 0x0000000F == 0, "SERIES_NOT_FORKABLE");
-        require (seriesInfo[forkedSeriesId].author == address(0), "FORK_ALREADY_EXISTS");
+        if (seriesId & 0x0000000F != 0) { 
+            revert SeriesNotForkable();
+        }
+        if (seriesInfo[forkedSeriesId].author != address(0)) {
+            revert ForkAlreadyExists(); 
+        }
+        
         seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
         seriesInfo[forkedSeriesId].author = payable(_msgSender());
         seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
@@ -215,15 +222,18 @@ contract NFTState is NFTStorage, INFTState {
         external 
     {
         _requireCanManageSeries(seriesId);
-        require(
-            (
-                commissionData.value <= commissionInfo.maxValue &&
-                commissionData.value >= commissionInfo.minValue &&
-                (seriesId & 0x0000000F == 0 ? commissionData.value * 8 : commissionData.value) + commissionInfo.ownerCommission.value < FRACTION
-            ),
-            "COMMISSION_INVALID"
-        );
-        require(commissionData.recipient != address(0), "RECIPIENT_INVALID");
+        
+        if  (
+            commissionData.value <= commissionInfo.maxValue &&
+            commissionData.value >= commissionInfo.minValue &&
+            (seriesId & 0x0000000F == 0 ? commissionData.value * 8 : commissionData.value) + commissionInfo.ownerCommission.value < FRACTION
+        ) {
+            //ok
+        } else {
+            revert CommissionInvalid();
+        }
+
+        if (commissionData.recipient == address(0)) {revert RecipientInvalid(); }
         seriesInfo[seriesId].commission = commissionData;
         
         _accountForOperation(
@@ -269,11 +279,12 @@ contract NFTState is NFTStorage, INFTState {
     )
         external 
     {
-        (bool success, /*bool isExists*/, /*SaleInfo memory data*/, /*address owner*/) = _getTokenSaleInfo(tokenId);
+        (bool isOnSale, /*bool isExists*/, /*SaleInfo memory data*/, /*address owner*/) = _getTokenSaleInfo(tokenId);
         
         _requireCanManageToken(tokenId);
-        require(!success, "already on sale");
-        require(duration > 0, "invalid duration");
+        
+        if (isOnSale) {revert AlreadyInSale(); }
+        if (duration == 0) {revert DurationInvalid(); }
 
         uint64 seriesId = getSeriesId(tokenId);
         SaleInfo memory newSaleInfo = SaleInfo({
@@ -314,7 +325,9 @@ contract NFTState is NFTStorage, INFTState {
         external 
     {
         (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _getTokenSaleInfo(tokenId);
-        require(success, "token not on sale");
+        
+        if (!success) { revert TokenIsNotOnSale(); }
+        
         _requireCanManageToken(tokenId);
         clearOnSaleUntil(tokenId);
 
@@ -341,7 +354,7 @@ contract NFTState is NFTStorage, INFTState {
         external 
     {
         uint256 len = addresses.length;
-        require(tokenIds.length == len, "lengths should be the same");
+        if (tokenIds.length != len) { revert LengthsShouldBeTheSame(); }
 
         for(uint256 i = 0; i < len; i++) {
             _requireCanManageSeries(getSeriesId(tokenIds[i]));
@@ -389,7 +402,8 @@ contract NFTState is NFTStorage, INFTState {
                 
             }
             // unreachable but must be
-            if (j == MAX_TOKEN_INDEX) { revert("series max token limit exceeded");}
+            if (j == MAX_TOKEN_INDEX) { revert SeriesMaxTokenLimitExceeded(); }
+
             _mint(account, tokenId);
         }
 
@@ -418,7 +432,7 @@ contract NFTState is NFTStorage, INFTState {
         payable 
         //nonReentrant 
     {
-        require(tokenIds.length > 0, "invalid tokenIds");
+        if (tokenIds.length == 0) { revert TokenIdsInvalid(); }
         uint64 seriesId = getSeriesId(tokenIds[0]);
 
         validateBuyer(seriesId);
@@ -430,7 +444,7 @@ contract NFTState is NFTStorage, INFTState {
             (bool success, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenIds[i]);
 
             //require(currency == data.currency, "wrong currency for sale");
-            require(left >= data.price, "insufficient amount sent");
+            if (left < data.price) { revert InsufficientAmountSent(); }
             left -= data.price;
 
             _commissions_payment(
@@ -801,10 +815,10 @@ contract NFTState is NFTStorage, INFTState {
             if (success) {
                 hooks[seriesId].add(contractAddress);
             } else {
-                revert("wrong interface");
+                revert WrongInterface();
             }
         } catch {
-            revert("wrong interface");
+            revert WrongInterface();
         }
 
         emit NewHook(seriesId, contractAddress);
@@ -851,13 +865,18 @@ contract NFTState is NFTStorage, INFTState {
         if (seriesWhitelists[seriesId].buy.community != address(0)) {
             bool success = ICommunity(seriesWhitelists[seriesId].buy.community).hasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);
             //require(success, "buyer not in whitelist");
-            require(success, "BUYER_INVALID");
+            if (!success) { revert BuyerInvalid(); }
         }
     }
 
-    function _freeze(uint256 tokenId, string memory baseURI_, string memory suffix_) internal 
+    function _freeze(
+        uint256 tokenId, 
+        string memory baseURI_, 
+        string memory suffix_
+    ) 
+        internal 
     {
-        require(_ownerOf(tokenId) == _msgSender(), "token isn't owned by sender");
+        if (_ownerOf(tokenId) != _msgSender()) { revert TokenIsNotOwnedBySender(); }
         tokensInfo[tokenId].freezeInfo.exists = true;
         tokensInfo[tokenId].freezeInfo.baseURI = baseURI_;
         tokensInfo[tokenId].freezeInfo.suffix = suffix_;
@@ -1025,8 +1044,8 @@ contract NFTState is NFTStorage, INFTState {
     {
         _storeHookCount(tokenId);
 
-        require(to != address(0), "can't mint to the zero address");
-        require(tokensInfo[tokenId].owner == address(0), "token already minted");
+        if (to == address(0)) { revert AddressInvalid(); }
+        if (tokensInfo[tokenId].owner != address(0)) {revert TokenAlreadyMinted(); }
 
         _beforeTokenTransfer(address(0), to, tokenId);
 
@@ -1038,10 +1057,10 @@ contract NFTState is NFTStorage, INFTState {
         mintedCountBySetSeriesInfo[seriesId] += 1;
 
         if (seriesInfo[seriesId].limit != 0) {
-            require(
-                mintedCountBySeries[seriesId] <= seriesInfo[seriesId].limit, 
-                "series token limit exceeded"
-            );
+            
+            if (mintedCountBySeries[seriesId] > seriesInfo[seriesId].limit) {
+                revert SeriesTokenLimitExceeded();
+            }
         }
         
 
@@ -1093,8 +1112,8 @@ contract NFTState is NFTStorage, INFTState {
         uint256 tokenId
     ) internal virtual {
 
-        require(_ownerOf(tokenId) == from, "token isn't owned by from address");
-        require(to != address(0), "can't transfer to the zero address");
+        if (_ownerOf(tokenId) != from) {revert TokenIsntOwnedByFromAddress(); }
+        if (to == address(0)) {revert CantTransferToTheZeroAddress(); }
 
         _beforeTokenTransfer(from, to, tokenId);
 
@@ -1184,20 +1203,20 @@ contract NFTState is NFTStorage, INFTState {
             try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
 			returns (bool success) {
                 if (!success) {
-                    revert("Transfer Not Authorized");
+                    revert TransferNotAuthorized();
                 }
             } catch Error(string memory reason) {
                 // This is executed in case revert() was called with a reason
 	            revert(reason);
 	        } catch {
-                revert("Transfer Not Authorized");
+                revert TransferNotAuthorized();
             }
         }
         ////
         if (to != address(0) && seriesWhitelists[seriesId].transfer.community != address(0)) {
             bool success = ICommunity(seriesWhitelists[seriesId].transfer.community).hasRole(to, seriesWhitelists[seriesId].transfer.role);
             //require(success, "recipient not in whitelist");
-            require(success, "RECIPIENT_INVALID");
+            if (!success) {revert RecipientInvalid(); } 
             
         }
     ////
@@ -1221,12 +1240,19 @@ contract NFTState is NFTStorage, INFTState {
     }
 
     function _requireCanManageSeries(uint64 seriesId) internal view virtual {
-        require(_canManageSeries(seriesId), "you can't manage this series");
+        if (!_canManageSeries(seriesId)) {
+            revert CantManageThisSeries();
+        }
+        
     }
              
     function _requireCanManageToken(uint256 tokenId) internal view virtual {
-        require(_exists(tokenId), "token doesn't exist");
-        require(_canManageToken(tokenId), "you can't manage this token");
+        if(!_exists(tokenId)) {
+            revert TokenDoesNotExists();
+        }
+        if (!_canManageToken(tokenId)) {
+            revert CantManageThisToken();
+        }
     }
 
     function _canManageToken(uint256 tokenId) internal view returns (bool) {
@@ -1295,14 +1321,23 @@ contract NFTState is NFTStorage, INFTState {
     {
         require(success, "token is not on sale");
 
-        require(
+        if (
             (isPayable && address(0) == data.currency) ||
-            (!isPayable && currency == data.currency),
-            "wrong currency for sale"
-        );
+            (!isPayable && currency == data.currency)
+        ) {
+            //ok
+        } else {
+            revert CurrencyInvalid();
+        }
+        
 
         uint256 amount = (isPayable ? msg.value : IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this)));
-        require(amount >= data.price && price >= data.price, "insufficient amount sent");
+        
+        if (amount >= data.price && price >= data.price) {
+            // ok
+        } else {
+            revert InsufficientAmountSent();
+        }
 
         uint256 left = data.price;
         (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
@@ -1312,7 +1347,7 @@ contract NFTState is NFTStorage, INFTState {
         for(uint256 i = 0; i < length; i++) {
             if (isPayable) {
                 (transferSuccess, ) = addresses[i].call{gas: 3000, value: values[i]}(new bytes(0));
-                require(transferSuccess, "TRANSFER_COMMISSION_FAILED");
+                if (!transferSuccess) {revert TransferCommissionFailed(); }
             } else {
                 IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
             }
@@ -1322,13 +1357,13 @@ contract NFTState is NFTStorage, INFTState {
         // payment to beneficiary and refund
         if (isPayable) {
             (transferSuccess, ) = beneficiary.call{gas: 3000, value: left}(new bytes(0));
-            require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
+            if (!transferSuccess) {revert TransferToOwnerFailed(); }
 
             // try to refund
             if (amount > data.price) {
                 // todo 0: if  EIP-2771 using. to whom refund will be send? msg.sender or trusted forwarder
                 (transferSuccess, ) = msg.sender.call{gas: 3000, value: (amount - data.price)}(new bytes(0));
-                require(transferSuccess, "REFUND_FAILED");
+                if (!transferSuccess) {revert RefundFailed(); }
             }
 
         } else {
@@ -1394,9 +1429,7 @@ contract NFTState is NFTStorage, INFTState {
             }
         }
 
-
-
-        require(sum < FRACTION, "invalid commission");
+        if (sum >= FRACTION) { revert CommissionInvalid(); }
 
     }
 
