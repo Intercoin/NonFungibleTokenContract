@@ -217,6 +217,7 @@ abstract contract NFTStorage  is
     error CommissionInvalid();
     error CurrencyInvalid();
     error DurationInvalid();
+    error ForkSeriesId();
     error ForkAlreadyExists();
     error InsufficientAmountSent();
     error LengthsShouldBeTheSame();
