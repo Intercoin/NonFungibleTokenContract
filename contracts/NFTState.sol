@@ -134,12 +134,22 @@ contract NFTState is NFTStorage, INFTState {
         }
         
         uint64 seriesId = getSeriesId(tokenId);
-        if (seriesId & 0x0000000F != 0) { 
+        if (seriesId & 0x00000000000000FF != 0) { 
             revert SeriesNotForkable();
         }
         if (seriesInfo[forkedSeriesId].author != address(0)) {
             revert ForkAlreadyExists(); 
         }
+        for (uint8 i = 7*8; i > 0; i -= 8) {
+            if (seriesId >> i << i !== seriesId) {
+	    	break;
+	    }
+        }
+	if (i == 8
+	|| forkedSeriesId < seriesId + (1 << (i - 8))
+	|| forkedSeriesId >= seriesId + (1 << i)) {
+	    revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
+	}
         
         seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
         seriesInfo[forkedSeriesId].author = payable(_msgSender());
