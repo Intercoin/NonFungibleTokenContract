@@ -321,6 +321,22 @@ contract NFT is NFTStorage {
     {
         _functionDelegateCall(address(implNFTState), msg.data);
     }
+
+    /**
+    * @dev makes forked series from series which contains tokenId
+    * @param tokenId token id
+    * @param forkedSeriesId desired series id
+    * @custom:calledby token owner
+    * @custom:shortd fork series from exist token
+    */
+    function forkSeries(
+        uint256 tokenId, 
+        uint64 forkedSeriesId
+    )
+        external
+    {
+        _functionDelegateCall(address(implNFTState), msg.data);
+    }
     
     /** 
     * @dev sets the utility token
