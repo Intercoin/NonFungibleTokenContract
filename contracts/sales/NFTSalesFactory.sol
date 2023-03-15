@@ -57,6 +57,8 @@ contract NFTSalesFactory is INFTSalesFactory {
      */
     address public immutable implementationNFTSale;
 
+    address[] public instances;
+
     struct InstanceInfo {
         address NFTContract;
         uint64 seriesId;
@@ -175,6 +177,9 @@ contract NFTSalesFactory is INFTSalesFactory {
         instance = address(implementationNFTSale).clone();
 
         require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
+
+        instances.push(instance);
+        
         whitelist[NFTContract].add(instance);
         instancesInfo[instance] = InstanceInfo(NFTContract, seriesId, owner, duration, currency, price, beneficiary, autoIndex, rateInterval, rateAmount);
 
@@ -202,6 +207,14 @@ contract NFTSalesFactory is INFTSalesFactory {
         }
         whitelist[NFTContract].remove(instance);
     }
+
+    /**
+    * @dev returns the count of instances
+    */
+    function instancesCount() external view returns (uint256) {
+        return instances.length;
+    }
+    
 
     ////////////////////////////////////////////////////////////////////////
     // public section //////////////////////////////////////////////////////

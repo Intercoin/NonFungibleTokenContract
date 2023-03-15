@@ -327,7 +327,7 @@ contract NFTState is NFTStorage, INFTState {
         (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _getTokenSaleInfo(tokenId);
         
         if (!success) { revert TokenIsNotOnSale(); }
-        
+
         _requireCanManageToken(tokenId);
         clearOnSaleUntil(tokenId);
 
@@ -1319,7 +1319,7 @@ contract NFTState is NFTStorage, INFTState {
     )
         internal
     {
-        require(success, "token is not on sale");
+        if (!success) {revert TokenIsNotOnSale(); }
 
         if (
             (isPayable && address(0) == data.currency) ||

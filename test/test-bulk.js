@@ -87,7 +87,7 @@ describe("v2 tests", function () {
           const NotSupportingHookFactory = await ethers.getContractFactory("MockNotSupportingHook");
           const WithoutFunctionHookFactory = await ethers.getContractFactory("MockWithoutFunctionHook");
           const BuyerFactory = await ethers.getContractFactory("Buyer");
-          const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
+          //const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
           const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
 
             this.nftBulkSale = await NFTBulkSaleFactory.deploy();
@@ -144,7 +144,7 @@ describe("v2 tests", function () {
         // try to distribte without setForwarder before
         await expect(
             this.nftBulkSale.connect(charlie).distribute(this.nft.address, ids, users, {value: price.mul(THREE)})
-        ).to.be.revertedWith("you can't manage this series");
+        ).to.be.revertedWith("CantManageThisSeries()");
 
         expect(await this.nft.balanceOf(alice.address)).to.be.equal(ZERO);
         expect(await this.nft.balanceOf(bob.address)).to.be.equal(ZERO);
