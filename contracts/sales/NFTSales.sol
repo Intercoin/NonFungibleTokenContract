@@ -568,7 +568,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         // generate token ids
         (uint256[] memory tokenIds, address currencyAddr, uint256 currencyTotalPrice, uint192 lastIndex) = _getTokenIds(amount, isSpecialPurchase);
         currentAutoIndex = lastIndex + 1;
-        
+
         // confirm pay
         _confirmPay(currencyTotalPrice, currencyAddr, buyer);
 
@@ -588,8 +588,8 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
             address[] memory selfAddresses = new address[](tokenIds.length);
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 selfAddresses[i] = address(this);
-                pending[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
                 _mint(addresses[i], tokenIds[i]);
+                pending[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
             }
             INFTSalesFactory(factoryAddress)._doMintAndDistribute(tokenIds, selfAddresses);
         }
@@ -766,7 +766,6 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         }
 
         while (lastIndex != MAX_TOKEN_INDEX) {
-
             tokenId = seriesPart + lastIndex;
 
             //exists means that  _owners[tokenId] != address(0) && _owners[tokenId] != DEAD_ADDRESS;
@@ -786,6 +785,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
                 tokenIds[amountLeft] = tokenId; // did it slightly cheaper and do fill from "N-1" to "0" and avoid "stack too deep" error
 
             }
+
             if (amountLeft == 0) {
                 break;
             }

@@ -87,7 +87,7 @@ contract NFTSalesFactory is INFTSalesFactory {
 
     modifier onlyInstance() {
         address NFTContract = instancesInfo[msg.sender].NFTContract;
-        if (NFTContract == address(0)) {
+        if (!whitelist[NFTContract].contains(msg.sender)) {
             revert InstancesOnly();
         }
         _;

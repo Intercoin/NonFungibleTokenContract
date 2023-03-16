@@ -173,8 +173,8 @@ describe("nftsale tests", function () {
         beforeEach("put into sale", async() => {
             await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
         });
-/*
-        describe.only("test", async() => {
+
+        describe("test", async() => {
             var now = async function(){
                 return parseInt((await ethers.provider.getBlock(await ethers.provider.getBlockNumber())).timestamp);
             }
@@ -204,33 +204,37 @@ describe("nftsale tests", function () {
 
                 await expect(
                     badNFTSale.connect(charlie).specialPurchase(this.nftSaleFactory.address, [id], [charlie.address], {value: price.mul(TWO)})
-                ).to.be.revertedWith("onlyInstance()");
+                ).to.be.revertedWith("InstancesOnly()");
                 // accidentially send more than needed
             });  
-            
+       
 
-            it("should't special purchase if factory's owner have put nftsale instance into blacklist ", async() => {
-                await this.nftsale.connect(bob).whitelistAdd([charlie.address])
+            it.only("should't special purchase if factory's owner have remove nftsale instance from whitelist ", async() => {
+                await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
 
-                await this.nftSaleFactory.connect(owner).addToBlackList(this.nftsale.address);
-
+                //await this.nftSaleFactory.connect(owner).addToBlackList(this.nftsale.address);
+                //--- make sure that instance is not in whitelist, so just try to remove
+                await this.nftSaleFactory.connect(owner).removeFromWhiteList(this.nftsale.address);
+                //----
                 await expect(
-                    this.nftsale.connect(charlie).specialPurchase([id], [charlie.address], {value: price.mul(TWO)})
-                ).to.be.revertedWith("instance in black list");
+                    this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)})
+                ).to.be.revertedWith("InstancesOnly()");
             });  
 
             it("should't special purchase if factory's owner remove nftsale instance from blacklist ", async() => {
-                await this.nftsale.connect(bob).whitelistAdd([charlie.address])
+                await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
 
-                await this.nftSaleFactory.connect(owner).addToBlackList(this.nftsale.address);
+                await this.nftSaleFactory.connect(owner).removeFromWhiteList(this.nftsale.address);
 
                 await expect(
-                    this.nftsale.connect(charlie).specialPurchase([id], [charlie.address], {value: price.mul(TWO)})
-                ).to.be.revertedWith("instance in black list");
+                    this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)})
+                ).to.be.revertedWith("InstancesOnly()");
 
+                /*
+                // uncomment this code when factory be able to push instance to whitelist back
                 await this.nftSaleFactory.connect(owner).removeFromBlackList(this.nftsale.address);
 
-                await this.nftsale.connect(charlie).specialPurchase([id], [charlie.address], {value: price.mul(TWO)});
+                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
                 
                 expect(await this.nft.ownerOf(id)).to.be.eq(this.nftsale.address);
                 expect(await this.nft.ownerOf(id)).not.to.be.eq(charlie.address);
@@ -247,19 +251,20 @@ describe("nftsale tests", function () {
 
                 expect(await this.nft.ownerOf(id)).not.to.be.eq(this.nftsale.address);
                 expect(await this.nft.ownerOf(id)).to.be.eq(charlie.address);
+                */
 
             }); 
 
             it("should special purchase ", async() => {
-                await this.nftsale.connect(bob).whitelistAdd([charlie.address])
-                await this.nftsale.connect(charlie).specialPurchase([id], [charlie.address], {value: price.mul(TWO)});
+                await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
+                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
 
             });  
 
             it("should locked up token after special purchase ", async() => {
 
-                await this.nftsale.connect(bob).whitelistAdd([charlie.address])
-                await this.nftsale.connect(charlie).specialPurchase([id], [charlie.address], {value: price.mul(TWO)});
+                await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
+                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
                 
                 expect(await this.nft.ownerOf(id)).to.be.eq(this.nftsale.address);
                 expect(await this.nft.ownerOf(id)).not.to.be.eq(charlie.address);
@@ -274,8 +279,8 @@ describe("nftsale tests", function () {
 
             it("should distributeUnlockedTokens", async() => {
 
-                await this.nftsale.connect(bob).whitelistAdd([charlie.address])
-                await this.nftsale.connect(charlie).specialPurchase([id], [charlie.address], {value: price.mul(TWO)});
+                await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
+                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
 
                 // jump forvard to an hour
                 await network.provider.send("evm_mine", [await now() + 3600]);
@@ -295,7 +300,7 @@ describe("nftsale tests", function () {
             it("should claim", async() => {
 
                 await this.nftsale.connect(bob).whitelistAdd([charlie.address])
-                await this.nftsale.connect(charlie).specialPurchase([id], [charlie.address], {value: price.mul(TWO)});
+                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
 
                 // jump forvard to an hour
                 await network.provider.send("evm_mine", [await now() + 3600]);
@@ -316,10 +321,10 @@ describe("nftsale tests", function () {
                 
             }); 
 
-
-
-        });  
+/*     
 */
+        });  
+
     });  
     
     
