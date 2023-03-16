@@ -209,7 +209,7 @@ describe("nftsale tests", function () {
             });  
        
 
-            it.only("should't special purchase if factory's owner have remove nftsale instance from whitelist ", async() => {
+            it("should't special purchase if factory's owner have remove nftsale instance from whitelist ", async() => {
                 await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
 
                 //await this.nftSaleFactory.connect(owner).addToBlackList(this.nftsale.address);
@@ -264,65 +264,83 @@ describe("nftsale tests", function () {
             it("should locked up token after special purchase ", async() => {
 
                 await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
-                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
+                let tx = await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
+                let rc = await tx.wait();
+
+                let transferredToken = rc.logs[0].topics[3];
+                // @dev here two txs: 
+                // 1 - in NFTcontract transfer tokenID from zero to NFTsale (as pending for recipient)
+                // 2 - in NFTSale transfer tokenID from zero to recipient.
+                // in boths tokenId the same so we can touch any tx
                 
-                expect(await this.nft.ownerOf(id)).to.be.eq(this.nftsale.address);
-                expect(await this.nft.ownerOf(id)).not.to.be.eq(charlie.address);
+                expect(await this.nft.ownerOf(transferredToken)).to.be.eq(this.nftsale.address);
+                expect(await this.nft.ownerOf(transferredToken)).not.to.be.eq(charlie.address);
 
                 // jump forvard to an hour
                 await network.provider.send("evm_mine", [await now() + 3600]);
-
-                // after locking to and six day, and waiting for an hour -> remainingDays will return five days left
-                expect(await this.nftsale.remainingDays(id)).to.be.eq(this.nft_day_duration.sub(ONE));
+                
+                // // after locking to and six day, and waiting for an hour -> remainingDays will return five days left
+                // expect(await this.nftsale.remainingDays(transferredToken)).to.be.eq(this.nft_day_duration.sub(ONE));
+                //[UPD] after new fixes, remainingDays will return "day plus one". for example if 2 hours left - method will return 1 day instead 0 day.  and so on
+                expect(await this.nftsale.remainingDays(transferredToken)).to.be.eq(this.nft_day_duration);
 
             });  
 
             it("should distributeUnlockedTokens", async() => {
 
                 await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
-                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
-
+                let tx = await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
+                let rc = await tx.wait();
+                let transferredToken = rc.logs[0].topics[3];
+                // let purchasedBlockTime = await rc.events[0].getBlock();
+                // let expectedTimestamp = BigNumber.from(purchasedBlockTime.timestamp).add(86400*6); // six day
+                
                 // jump forvard to an hour
                 await network.provider.send("evm_mine", [await now() + 3600]);
 
-                await expect(this.nftsale.connect(alice).distributeUnlockedTokens([id])).to.be.revertedWith("Tokens can be claimed after " + this.nft_day_duration.sub(ONE) + " more days.")
+                //await expect(this.nftsale.connect(alice).distributeUnlockedTokens([id])).to.be.revertedWith("Tokens can be claimed after " + this.nft_day_duration.sub(ONE) + " more days.")
+                await expect(this.nftsale.connect(alice).distributeUnlockedTokens([transferredToken])).to.be.revertedWith(`StillPending(6, ${this.nft_day_duration.mul(86400).sub(3600).sub(1)})`);
+
+                //UnknownTokenIdForClaim(${transferredToken})
 
                 // jump forvard to end period 
                 await network.provider.send("evm_mine", [await now() + parseInt(this.nft_day_duration.mul(86400))]);
                 
-                await this.nftsale.connect(alice).distributeUnlockedTokens([id]);
+                await this.nftsale.connect(alice).distributeUnlockedTokens([transferredToken]);
 
-                expect(await this.nft.ownerOf(id)).not.to.be.eq(this.nftsale.address);
-                expect(await this.nft.ownerOf(id)).to.be.eq(charlie.address);
+                expect(await this.nft.ownerOf(transferredToken)).not.to.be.eq(this.nftsale.address);
+                expect(await this.nft.ownerOf(transferredToken)).to.be.eq(charlie.address);
                 
             }); 
             
             it("should claim", async() => {
 
-                await this.nftsale.connect(bob).whitelistAdd([charlie.address])
-                await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
+                await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
+                let tx = await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
+                let rc = await tx.wait();
+                let transferredToken = rc.logs[0].topics[3];
 
                 // jump forvard to an hour
                 await network.provider.send("evm_mine", [await now() + 3600]);
 
-                await expect(this.nftsale.connect(alice).claim([id])).to.be.revertedWith("Tokens can be claimed after " + this.nft_day_duration.sub(ONE) + " more days.")
+                //await expect(this.nftsale.connect(alice).claim([id])).to.be.revertedWith("Tokens can be claimed after " + this.nft_day_duration.sub(ONE) + " more days.");
+                await expect(this.nftsale.connect(alice).claim([transferredToken])).to.be.revertedWith(`StillPending(6, ${SIX.mul(86400).sub(3600).sub(1)})`);
+                
 
                 // jump forvard to end period 
                 await network.provider.send("evm_mine", [await now() + parseInt(this.nft_day_duration.mul(86400))]);
                 
-                await expect(this.nftsale.connect(alice).claim([id])).to.be.revertedWith("should be owner")
+                await expect(this.nftsale.connect(alice).claim([transferredToken])).to.be.revertedWith(`ShouldBeTokenOwner("${alice.address}")`);
 
-                await this.nftsale.connect(charlie).claim([id]);
+                await this.nftsale.connect(charlie).claim([transferredToken]);
 
 
 
-                expect(await this.nft.ownerOf(id)).not.to.be.eq(this.nftsale.address);
-                expect(await this.nft.ownerOf(id)).to.be.eq(charlie.address);
+                expect(await this.nft.ownerOf(transferredToken)).not.to.be.eq(this.nftsale.address);
+                expect(await this.nft.ownerOf(transferredToken)).to.be.eq(charlie.address);
                 
             }); 
 
-/*     
-*/
         });  
 
     });  

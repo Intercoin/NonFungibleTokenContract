@@ -1192,6 +1192,32 @@ describe("v2 tests", function () {
 
       })
 
+      describe.only("forked Series tests", async() => {
+        beforeEach("before", async() => {
+          const saleParams = [
+            now + 100000, 
+            this.erc20.address, 
+            price,
+            ZERO //autoincrement price
+          ];
+          const seriesParams = [
+            alice.address,  
+            10000,
+            saleParams,
+            commissions,
+            baseURI,
+            suffix
+          ];
+          await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
+          await this.erc20.connect(alice).approve(this.nft.address, price);
+          await this.nft.connect(alice).buy([id], this.erc20.address, price, false, ZERO, alice.address); 
+        });
+
+        it("shouldnt forked Series if sender isnt token's owner", async() => {
+
+        });
+      });
+
       describe("hooks tests", async() => {
         it("should correct set hook (ETH test)", async() => {
           await this.nft.pushTokenTransferHook(seriesId, this.hook1.address);
