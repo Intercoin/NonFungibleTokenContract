@@ -140,8 +140,8 @@ contract NFTState is NFTStorage, INFTState {
         if (seriesInfo[forkedSeriesId].author != address(0)) {
             revert ForkAlreadyExists(); 
         }
-        uint8 p = 0;
-        for (uint8 i = 7*8; i > 0; i -= 8) {
+        uint8 p = 8;
+        for (uint8 i = 7*8; i > 8; i -= 8) {
             if (seriesId >> i << i == seriesId) {
 	    	p = i;
                 break;
