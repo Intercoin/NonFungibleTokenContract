@@ -147,9 +147,8 @@ contract NFTState is NFTStorage, INFTState {
                 break;
 	    }
         }
-	if (p == 0
-	|| forkedSeriesId < seriesId + (1 << (i - 8))
-	|| forkedSeriesId >= seriesId + (1 << i)) {
+	if (forkedSeriesId < seriesId + (1 << (p - 8))
+	|| forkedSeriesId >= seriesId + (1 << p)) {
 	    revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
 	}
         
