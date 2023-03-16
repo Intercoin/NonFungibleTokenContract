@@ -142,15 +142,18 @@ contract NFTState is NFTStorage, INFTState {
         }
         uint8 p = 8;
         for (uint8 i = 7*8; i > 8; i -= 8) {
-            if (seriesId >> i << i == seriesId) {
-	    	p = i;
+            if (((seriesId >> i) << i) == seriesId) {
+	    	    p = i;
                 break;
-	    }
+	        }
         }
-	if (forkedSeriesId < seriesId + (1 << (p - 8))
-	|| forkedSeriesId >= seriesId + (1 << p)) {
-	    revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
-	}
+
+	    if (
+            forkedSeriesId < seriesId + (1 << (p - 8)) || 
+            forkedSeriesId >= seriesId + (1 << p)
+        ) {
+            revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
+        }
         
         seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
         seriesInfo[forkedSeriesId].author = payable(_msgSender());

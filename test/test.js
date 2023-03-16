@@ -1598,7 +1598,7 @@ describe("v2 tests", function () {
       ];
       this.disableWhitelist = [
         ZERO_ADDRESS,
-        ""
+        255
       ];
 
       const roleForTransfer=14;
@@ -1630,11 +1630,10 @@ describe("v2 tests", function () {
 
         await expect(
           this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price})
-        ).to.be.revertedWith("BUYER_INVALID");
+        ).to.be.revertedWith("BuyerInvalid()");
         
 
       });
-
 
       it("shouldnt transfer if recipient not in whitelist(while buying)", async() => {
         await this.mockCommunity.connect(owner).setRoles(bob.address, [roleForBuy]);
@@ -1675,7 +1674,8 @@ describe("v2 tests", function () {
       });
 
       it("should buy and transfer", async() => {
-        await this.mockCommunity.connect(owner).setRoles(bob.address, [roleForBuy,roleForTransfer]);
+        await this.mockCommunity.connect(owner).setRoles(bob.address, [roleForBuy, roleForTransfer]);
+        await this.mockCommunity.connect(owner).setRoles(alice.address, [roleForTransfer]);
         await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string),(address,uint8),(address,uint8))"](
           seriesId, 
           seriesParams,
