@@ -50,6 +50,8 @@ describe("v2 tests", function () {
     const bob = accounts[2];
     const charlie = accounts[3];
     const commissionReceiver = accounts[4];
+    const frank = accounts[5];
+    const buyer = accounts[6];
 
     beforeEach("deploying", async() => {
         const ERC20Factory = await ethers.getContractFactory("MockERC20");
@@ -99,6 +101,7 @@ describe("v2 tests", function () {
         await this.erc20.transfer(alice.address, ethers.utils.parseEther('100'));
         await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
         await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
+        await this.erc20.transfer(frank.address, ethers.utils.parseEther('100'));
     })
 
     describe("put series on sale", async() => {
@@ -198,7 +201,7 @@ describe("v2 tests", function () {
 
 
     describe("buy tests", async() => {
-      const seriesId = BigNumber.from('1000');
+      const seriesId = BigNumber.from('0x1000000000');
       const tokenId = TEN;
       const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
       const price = ethers.utils.parseEther('1');
@@ -1192,7 +1195,45 @@ describe("v2 tests", function () {
 
       })
 
-      describe.only("forked Series tests", async() => {
+      it("shouldnt forked Series if desired seriesID is not forkable", async() => {
+
+        const seriesIdThatCanNotBeForked = BigNumber.from('4102'); //  4102 & 0xff != 0
+        const tokenId = TEN;
+        const id = seriesIdThatCanNotBeForked.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+        const price = ethers.utils.parseEther('1');
+        const now = Math.round(Date.now() / 1000);   
+        const baseURI = "";
+        const suffix = ".json";
+        const saleParams = [
+          now + 100000, 
+          ZERO_ADDRESS, 
+          price,
+          ZERO //autoincrement price
+        ];
+        const commissions = [
+          ZERO,
+          ZERO_ADDRESS
+        ];
+        const seriesParams = [
+          alice.address,  
+          10000,
+          saleParams,
+          commissions,
+          baseURI,
+          suffix
+        ];
+        
+    
+        await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesIdThatCanNotBeForked, seriesParams);
+
+        await this.nft.connect(alice).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price}); 
+
+        const forkedSeriesId = BigNumber.from('6000');
+        await expect(this.nft.connect(bob).forkSeries(id, forkedSeriesId)).to.be.revertedWith('SeriesNotForkable()');
+
+      });
+      
+      describe("forked Series tests", async() => {
         beforeEach("before", async() => {
           const saleParams = [
             now + 100000, 
@@ -1214,6 +1255,34 @@ describe("v2 tests", function () {
         });
 
         it("shouldnt forked Series if sender isnt token's owner", async() => {
+          //const seriesId = BigNumber.from('1000');
+          const forkedSeriesId = BigNumber.from('6000');
+          await expect(this.nft.connect(bob).forkSeries(id, forkedSeriesId)).to.be.revertedWith('NotTokenOwner()');
+          
+        });
+
+        
+        it("shouldnt forked Series that have forked already", async() => {
+          
+          const forkedSeriesId = BigNumber.from('0x10A00');
+          await this.nft.connect(alice).forkSeries(id, forkedSeriesId);
+
+          await expect(this.nft.connect(alice).forkSeries(id, forkedSeriesId)).to.be.revertedWith('AlreadyForked()');
+
+        });
+
+        it("shouldnt forked Series that have forked already for another token", async() => {
+          
+          const forkedSeriesId = BigNumber.from('0x10A00');
+          
+          await this.nft.connect(alice).forkSeries(id, forkedSeriesId);
+          const anotherTokenId = id.add(ONE);
+          
+
+          await this.erc20.connect(bob).approve(this.nft.address, price);
+          await this.nft.connect(bob).buy([anotherTokenId], this.erc20.address, price, false, ZERO, bob.address); 
+
+          await expect(this.nft.connect(bob).forkSeries(anotherTokenId, forkedSeriesId)).to.be.revertedWith('ForkAlreadyExists()');
 
         });
       });
@@ -1482,7 +1551,6 @@ describe("v2 tests", function () {
           expect(await this.nft.mintedCountBySeries(seriesId)).to.be.equal(ONE);
         });
 
-
         it("should correct buy minted NFT for ETH with commission", async() => {
           await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
           await this.nft.connect(alice).setCommission(seriesId, seriesCommissions);
@@ -1517,8 +1585,6 @@ describe("v2 tests", function () {
           expect(newOwner).to.be.equal(charlie.address);
     
         });
-
-        
 
         it("should correct buy minted NFT for ETH with commission", async() => {
           await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
@@ -1555,6 +1621,160 @@ describe("v2 tests", function () {
           const newOwner = await this.nft.ownerOf(id);
           expect(newOwner).to.be.equal(charlie.address);
     
+        });
+
+        it.only("should correct consume commission when user buy nft of forked chains", async() => {
+          await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
+          const commissions = [
+            ethers.utils.parseEther('0.025'),
+            ZERO_ADDRESS
+          ];
+          const authors = [alice,bob,charlie,frank];
+          
+          const forkedSeriesIds = [
+            // series id = 0x1000000000
+            BigNumber.from(0x100A000000), //alice,
+            BigNumber.from(0x100A0B0000), //bob,
+            BigNumber.from(0x100A0B0C00), //charlies,
+            BigNumber.from(0x100A0B0C0D), //frank
+          ];
+
+          await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
+          await this.nft.connect(buyer).buy([id], ZERO_ADDRESS, price, false, ZERO, authors[0].address, {value: price});
+
+          //return;
+          //plan
+          // 1. fork series and setup
+          // 2. put some token on sale
+          // 3. some1 buy token 
+          // got to 1 until forked series are enough
+          //--------------------------------
+// const saleParams = [
+//   now + 100000, 
+//   ZERO_ADDRESS, 
+//   price,
+//   ZERO //autoincrement price
+// ];
+// const commissions = [
+//   ZERO,
+//   ZERO_ADDRESS
+// ];
+// const seriesParams = [
+//   alice.address,  
+//   10000,
+//   saleParams,
+//   commissions,
+//   baseURI,
+//   suffix
+// ];
+          let iTokenId = id;
+          let idFromForkedSeries;
+          for (let i = 0; i < authors.length; i++) {
+console.log("[JS]", "iteration #",i);
+            if (i == authors.length-1)  {
+              break;
+            }
+            //1
+            await this.nft.connect(authors[i]).forkSeries(iTokenId, forkedSeriesIds[i]);
+            
+            await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](
+              forkedSeriesIds[i], 
+              [
+                authors[i].address,  
+                10000,
+                saleParams,
+                commissions,
+                baseURI,
+                suffix
+              ]
+            );
+            //2
+            idFromForkedSeries = forkedSeriesIds[i].mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+            //await this.nft.connect(authors[i]).setCommission(forkedSeriesIds[i], seriesCommissions);
+            // await this.nft.connect(authors[i]).listForSale(idFromForkedSeries, saleParams[2], saleParams[1], saleParams[0]);
+            iTokenId = idFromForkedSeries;
+            // 3 
+
+            let buyerBalanceBefore = await ethers.provider.getBalance(buyer.address);
+            
+            await this.nft.connect(buyer).buy([idFromForkedSeries], ZERO_ADDRESS, price, false, ZERO, authors[i+1].address, {value: price.mul(THREE)});// accidentially send more than needed
+            let buyerBalanceAfter = await ethers.provider.getBalance(buyer.address);
+            if (i+2 == authors.length) {
+              console.log("last buy")
+            }
+            console.log("spent for buy =", (buyerBalanceBefore.sub(buyerBalanceAfter)).toString());
+            console.log("tokenid#",idFromForkedSeries," Owner=", authors[i+1].address);
+            let q = await this.nft.getSeriesInfo(forkedSeriesIds[i]);
+            console.log("author series#",q[0]);
+          }
+         
+          
+          return;
+          
+/*
+          const saleParams = [
+            now + 100000,
+            this.erc20.address, 
+            price.mul(TWO),
+            ZERO //autoincrement price
+          ];      
+    
+          //await this.nft.connect(bob).setSaleInfo(id, saleParams);
+          await this.nft.connect(bob).listForSale(id, saleParams[2], saleParams[1], saleParams[0]);
+
+          const forkedSeriesId = BigNumber.from('0x10A00');
+          
+          await this.nft.connect(bob).forkSeries(id, forkedSeriesId);
+          const saleParamsForked = [
+            now + 100000, 
+            this.erc20.address, 
+            price,
+            ZERO //autoincrement price
+          ];
+
+         
+          const seriesParamsForked = [
+            bob.address,  
+            10000,
+            saleParams,
+            commissions,
+            baseURI,
+            suffix
+          ];
+
+          
+          await this.nft.connect(bob)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](forkedSeriesId, seriesParamsForked);
+
+          const idFromForkedSeries = forkedSeriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
+//          await this.nft.connect(bob).listForSale(idFromForkedSeries, saleParamsForked[2], saleParamsForked[1], saleParamsForked[0]);
+
+//---------------------------
+         const balanceBeforeAlice = await this.erc20.balanceOf(alice.address);
+          const balanceBeforeBob = await this.erc20.balanceOf(bob.address);
+          const balanceBeforeCharlie = await this.erc20.balanceOf(charlie.address);
+          const balanceBeforeReceiver = await this.erc20.balanceOf(commissionReceiver.address);
+          await this.erc20.connect(charlie).approve(this.nft.address, price.mul(THREE));
+console.log("buy from forked series");
+          await this.nft.connect(charlie).buy([idFromForkedSeries], this.erc20.address, price.mul(THREE), false, ZERO, charlie.address); // accidentially send more than needed
+          const balanceAfterAlice = await this.erc20.balanceOf(alice.address);
+          const balanceAfterBob = await this.erc20.balanceOf(bob.address);
+          const balanceAfterCharlie = await this.erc20.balanceOf(charlie.address);
+          const balanceAfterReceiver = await this.erc20.balanceOf(commissionReceiver.address);
+          const defaultCommission = FIVE_PERCENTS.mul(price.mul(TWO)).div(FRACTION); 
+          const authorCommission = TEN_PERCENTS.mul(price.mul(TWO)).div(FRACTION); 
+
+console.log("balanceBeforeAlice = ", balanceBeforeAlice.toString());
+console.log("balanceAfterAlice  = ", balanceAfterAlice.toString());
+console.log("balanceBeforeBob = ", balanceBeforeBob.toString());
+console.log("balanceAfterBob  = ", balanceAfterBob.toString());
+          //expect(balanceAfterBob.sub(balanceBeforeBob)).to.be.equal(price.mul(TWO).sub(defaultCommission).sub(authorCommission));
+          //expect(balanceBeforeCharlie.sub(balanceAfterCharlie)).to.be.equal(price.mul(TWO));
+          //expect(balanceAfterReceiver.sub(balanceBeforeReceiver)).to.be.equal(defaultCommission);
+          expect(balanceAfterAlice.sub(balanceBeforeAlice)).to.be.equal(authorCommission);
+    
+          const newOwner = await this.nft.ownerOf(idFromForkedSeries);
+          expect(newOwner).to.be.equal(charlie.address);
+          */
         });
 
         it("should correct remove commission", async() => {

@@ -20,7 +20,7 @@ import "releasemanager/contracts/CostManagerHelperERC2771Support.sol";
 import "./interfaces/ISafeHook.sol";
 import "@artman325/community/contracts/interfaces/ICommunity.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
-import "./INFT.sol";
+import "./interfaces/INFT.sol";
 
 /**
 * @dev

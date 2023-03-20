@@ -33,7 +33,7 @@ module.exports = {
       saveDeployments: true
     },
     hardhat: {
-      allowUnlimitedContractSize: false,
+      allowUnlimitedContractSize: true,
       forking: {
         url: mainnetURL,
         blockNumber: 13539017

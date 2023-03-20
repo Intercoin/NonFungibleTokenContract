@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import "./NFTStorage.sol";
 import "./INFTState.sol";
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract NFTState is NFTStorage, INFTState {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -147,14 +147,13 @@ contract NFTState is NFTStorage, INFTState {
                 break;
 	        }
         }
-
 	    if (
             forkedSeriesId < seriesId + (1 << (p - 8)) || 
             forkedSeriesId >= seriesId + (1 << p)
         ) {
             revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
         }
-        
+
         seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
         seriesInfo[forkedSeriesId].author = payable(_msgSender());
         seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
@@ -1354,7 +1353,11 @@ contract NFTState is NFTStorage, INFTState {
         }
 
         uint256 left = data.price;
-        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
+        (address[9] memory addresses, uint256[9] memory values, uint256 length) = calculateCommission(tokenId, data.price);
+        
+console.log("commission results");
+console.log("tokenId = ",tokenId);
+console.log("length = ",length);
 
         // commissions payment
         bool transferSuccess;
@@ -1392,6 +1395,7 @@ contract NFTState is NFTStorage, INFTState {
     *  otherwise we should use snapshot parameters: ownerCommission/authorCommission, that hold during listForSale.
     *  used to prevent increasing commissions after token was listed for sale.
     *  If this series was forked, also calculates commissions for all parent series.
+    * Keep in mind that maximum commission amount are 9. one for owner commission and eight for author commissions(forked series)
     * @param tokenId token ID to calculate commission
     * @param price amount of specified token to pay 
     */
@@ -1402,8 +1406,8 @@ contract NFTState is NFTStorage, INFTState {
         internal 
         view 
         returns(
-            address[2] memory addresses, 
-            uint256[2] memory prices,
+            address[9] memory addresses, 
+            uint256[9] memory prices,
             uint256 length
         ) 
     {
@@ -1414,6 +1418,8 @@ contract NFTState is NFTStorage, INFTState {
         // contract owner commission
         if (commissionInfo.ownerCommission.recipient != address(0)) {
             uint256 oc = tokensInfo[tokenId].salesInfoToken.ownerCommissionValue;
+console.log("commissionInfo.ownerCommission.value = ", commissionInfo.ownerCommission.value);
+console.log("oc                                   = ", oc);
             if (commissionInfo.ownerCommission.value < oc)
                 oc = commissionInfo.ownerCommission.value;
             if (oc != 0) {
@@ -1433,7 +1439,9 @@ contract NFTState is NFTStorage, INFTState {
             if (ac != 0) {
                 uint64 forkedSeriesId = seriesId;
                 while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
-                    addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+                    //addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+                    addresses[length] = (forkedFrom[forkedSeriesId] == 0) ? ownerOf(forkedFrom[forkedSeriesId]) : seriesInfo[forkedSeriesId].commission.recipient;
+
                     sum += ac;
                     prices[length] = ac * price / FRACTION;
                     forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
@@ -1447,6 +1455,7 @@ contract NFTState is NFTStorage, INFTState {
 
     }
 
+   
     /********************************************************************
     ****** private section **********************************************
     *********************************************************************/
