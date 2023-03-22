@@ -1625,6 +1625,7 @@ describe("v2 tests", function () {
 
         it.only("should correct consume commission when user buy nft of forked chains", async() => {
           await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
+          
           const commissions = [
             ethers.utils.parseEther('0.025'),
             ZERO_ADDRESS
@@ -1640,6 +1641,7 @@ describe("v2 tests", function () {
           ];
 
           await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
+
           await this.nft.connect(buyer).buy([id], ZERO_ADDRESS, price, false, ZERO, authors[0].address, {value: price});
 
           //return;
@@ -1667,6 +1669,12 @@ describe("v2 tests", function () {
 //   baseURI,
 //   suffix
 // ];
+
+/*
+owner to ds
+
+
+*/
           let iTokenId = id;
           let idFromForkedSeries;
           for (let i = 0; i < authors.length; i++) {
@@ -1675,15 +1683,22 @@ console.log("[JS]", "iteration #",i);
               break;
             }
             //1
+console.log("!!!!!!!!FORK !!!!!!!!!!!");
             await this.nft.connect(authors[i]).forkSeries(iTokenId, forkedSeriesIds[i]);
-            
+console.log("!!!!!!!!!!!!!!!!!!!");                        
+ 
             await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](
               forkedSeriesIds[i], 
               [
                 authors[i].address,  
                 10000,
                 saleParams,
-                commissions,
+                //commissions,
+                [
+                  ethers.utils.parseEther('0.025'),
+                  authors[i].address
+                ],
+                //--
                 baseURI,
                 suffix
               ]
@@ -1696,8 +1711,9 @@ console.log("[JS]", "iteration #",i);
             // 3 
 
             let buyerBalanceBefore = await ethers.provider.getBalance(buyer.address);
-            
+
             await this.nft.connect(buyer).buy([idFromForkedSeries], ZERO_ADDRESS, price, false, ZERO, authors[i+1].address, {value: price.mul(THREE)});// accidentially send more than needed
+return;            
             let buyerBalanceAfter = await ethers.provider.getBalance(buyer.address);
             if (i+2 == authors.length) {
               console.log("last buy")

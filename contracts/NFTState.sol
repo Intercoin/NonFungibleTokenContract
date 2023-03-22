@@ -153,8 +153,9 @@ contract NFTState is NFTStorage, INFTState {
         ) {
             revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
         }
-
+console.log("[C] seriesId.commission.value      =", seriesInfo[seriesId].commission.value);
         seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
+console.log("[C] forkedSeriesId.commission.value=", seriesInfo[forkedSeriesId].commission.value);
         seriesInfo[forkedSeriesId].author = payable(_msgSender());
         seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
         seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
@@ -239,7 +240,7 @@ contract NFTState is NFTStorage, INFTState {
         if  (
             commissionData.value <= commissionInfo.maxValue &&
             commissionData.value >= commissionInfo.minValue &&
-            (seriesId & 0x0000000F == 0 ? commissionData.value * 8 : commissionData.value) + commissionInfo.ownerCommission.value < FRACTION
+            (seriesId & 0x00000000000000FF == 0 ? commissionData.value * 8 : commissionData.value) + commissionInfo.ownerCommission.value < FRACTION
         ) {
             //ok
         } else {
@@ -337,9 +338,9 @@ contract NFTState is NFTStorage, INFTState {
     )
         external 
     {
-        (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _getTokenSaleInfo(tokenId);
+        (bool isOnSale, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _getTokenSaleInfo(tokenId);
         
-        if (!success) { revert TokenIsNotOnSale(); }
+        if (!isOnSale) { revert TokenIsNotOnSale(); }
 
         _requireCanManageToken(tokenId);
         clearOnSaleUntil(tokenId);
@@ -454,7 +455,8 @@ contract NFTState is NFTStorage, INFTState {
         uint256 left = totalPrice;
 
         for(uint256 i = 0; i < tokenIds.length; i ++) {
-            (bool success, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenIds[i]);
+            
+            (bool isOnSale, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenIds[i]);
 
             //require(currency == data.currency, "wrong currency for sale");
             if (left < data.price) { revert InsufficientAmountSent(); }
@@ -465,7 +467,8 @@ contract NFTState is NFTStorage, INFTState {
                 currency, 
                 (currency == address(0) ? true : false), 
                 data.price, 
-                success, 
+                isOnSale, 
+                exists,
                 data, 
                 beneficiary
             );
@@ -543,9 +546,18 @@ contract NFTState is NFTStorage, INFTState {
         validateBuyer(seriesId);
         validateHookCount(seriesId, hookCount);
 
-        (bool success, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
+        (bool isOnSale, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
 
-        _commissions_payment(tokenId, currency, (currency == address(0) ? true : false), price, success, data, beneficiary);
+        _commissions_payment(
+            tokenId, 
+            currency, 
+            (currency == address(0) ? true : false), 
+            price, 
+            isOnSale, 
+            exists,
+            data, 
+            beneficiary
+        );
         
         _buy(tokenId, exists, data, beneficiary, buyFor, safe);
         
@@ -1275,7 +1287,16 @@ contract NFTState is NFTStorage, INFTState {
     }
 
     function _canManageSeries(uint64 seriesId) internal view returns(bool) {
-        return owner() == _msgSender() || seriesInfo[seriesId].author == _msgSender();
+        //return owner() == _msgSender() || seriesInfo[seriesId].author == _msgSender();
+        return 
+            (owner() == _msgSender()) || 
+            (
+                (forkedFrom[seriesId] == 0) 
+                ? 
+                __ownerOf(forkedFrom[seriesId]) 
+                : 
+                seriesInfo[seriesId].author
+            ) == _msgSender();
     }
     
     /**
@@ -1326,13 +1347,14 @@ contract NFTState is NFTStorage, INFTState {
         address currency,
         bool isPayable,
         uint256 price, 
-        bool success,
+        bool isOnSale,
+        bool exists,
         SaleInfo memory data, 
         address beneficiary
     )
         internal
     {
-        if (!success) {revert TokenIsNotOnSale(); }
+        if (!isOnSale) {revert TokenIsNotOnSale(); }
 
         if (
             (isPayable && address(0) == data.currency) ||
@@ -1345,7 +1367,7 @@ contract NFTState is NFTStorage, INFTState {
         
 
         uint256 amount = (isPayable ? msg.value : IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this)));
-        
+
         if (amount >= data.price && price >= data.price) {
             // ok
         } else {
@@ -1353,7 +1375,7 @@ contract NFTState is NFTStorage, INFTState {
         }
 
         uint256 left = data.price;
-        (address[9] memory addresses, uint256[9] memory values, uint256 length) = calculateCommission(tokenId, data.price);
+        (address[9] memory addresses, uint256[9] memory values, uint256 length) = calculateCommission(tokenId, data.price, exists);
         
 console.log("commission results");
 console.log("tokenId = ",tokenId);
@@ -1398,10 +1420,14 @@ console.log("length = ",length);
     * Keep in mind that maximum commission amount are 9. one for owner commission and eight for author commissions(forked series)
     * @param tokenId token ID to calculate commission
     * @param price amount of specified token to pay 
+    * @param exists token exists or no. Such token is already on sale, but 
+        if not exists - it's primary sale (just setSeriesInfo by owner)
+        if exists - it's secondary sale (token's owner call listForSale before and fix owner commission)
     */
     function calculateCommission(
         uint256 tokenId,
-        uint256 price
+        uint256 price,
+        bool exists
     ) 
         internal 
         view 
@@ -1414,14 +1440,31 @@ console.log("length = ",length);
         uint64 seriesId = getSeriesId(tokenId);
         length = 0;
         uint256 sum;
-	
+
         // contract owner commission
         if (commissionInfo.ownerCommission.recipient != address(0)) {
-            uint256 oc = tokensInfo[tokenId].salesInfoToken.ownerCommissionValue;
-console.log("commissionInfo.ownerCommission.value = ", commissionInfo.ownerCommission.value);
-console.log("oc                                   = ", oc);
-            if (commissionInfo.ownerCommission.value < oc)
+
+// if secondary sale
+//      token exists and owner call listForSale to sell token. so we can view at fixed state in tokensInfo mapping
+// else (primary sale)
+//      token not exists and we need to view commission in series
+
+            // if primary sale - take global owner commission
+            // if secondary sale - take owner commission that was fixed when owner had called `listForSale`. 
+            //                  and if global commission less that was fixed - we will take global commission
+            uint256 oc = 
+                exists
+                ?
+                tokensInfo[tokenId].salesInfoToken.ownerCommissionValue
+                :
+                //0
+                commissionInfo.ownerCommission.value
+                ;
+// console.log("commissionInfo.ownerCommission.value = ", commissionInfo.ownerCommission.value);
+// console.log("oc                                   = ", oc);
+            if (commissionInfo.ownerCommission.value < oc) {
                 oc = commissionInfo.ownerCommission.value;
+            }
             if (oc != 0) {
                 addresses[length] = commissionInfo.ownerCommission.recipient;
                 sum += oc;
@@ -1430,17 +1473,29 @@ console.log("oc                                   = ", oc);
             }
         }
 
+console.log("[C] seriesInfo[seriesId].commission.recipient = ", seriesInfo[seriesId].commission.recipient);
         // author commission
         if (seriesInfo[seriesId].commission.recipient != address(0)) {
-            uint256 ac = tokensInfo[tokenId].salesInfoToken.authorCommissionValue;
+            //uint256 ac = tokensInfo[tokenId].salesInfoToken.authorCommissionValue;
+            uint256 ac = 
+                exists 
+                ?
+                tokensInfo[tokenId].salesInfoToken.authorCommissionValue
+                :
+                seriesInfo[seriesId].commission.value
+                ;
+
+console.log("tokensInfo[tokenId].salesInfoToken.authorCommissionValue   = ", tokensInfo[tokenId].salesInfoToken.authorCommissionValue);
+console.log("ac                                                         = ", ac);
             if (seriesInfo[seriesId].commission.value < ac) {
                 ac = seriesInfo[seriesId].commission.value;
             }
             if (ac != 0) {
+
                 uint64 forkedSeriesId = seriesId;
                 while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
                     //addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
-                    addresses[length] = (forkedFrom[forkedSeriesId] == 0) ? ownerOf(forkedFrom[forkedSeriesId]) : seriesInfo[forkedSeriesId].commission.recipient;
+                    addresses[length] = (forkedFrom[forkedSeriesId] != 0) ? _ownerOf(forkedFrom[forkedSeriesId]) : seriesInfo[forkedSeriesId].commission.recipient;
 
                     sum += ac;
                     prices[length] = ac * price / FRACTION;

@@ -9,14 +9,14 @@ interface INFT {
         uint256 autoincrement;
     }
 
-    struct CommissionInfo {
+    struct CommissionInfo { // using to setup global commission
         uint64 maxValue;
         uint64 minValue;
         CommissionData ownerCommission;
     }
 
     struct CommissionData {
-        uint64 value;
+        uint64 value; // TODO: may be need a uint256 ?   it's not fraction
         address recipient;
     }
 
