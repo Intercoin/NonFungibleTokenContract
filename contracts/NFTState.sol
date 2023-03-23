@@ -1384,11 +1384,19 @@ console.log("length = ",length);
         // commissions payment
         bool transferSuccess;
         for(uint256 i = 0; i < length; i++) {
+            if (addresses[i] == address(0)) { 
+                console.log("commission payments was skipped at ",i," iteration");
+                // if no commission in some iteration we will skip. can be if commission recipient equal address(0)
+                continue;
+            }
             if (isPayable) {
                 (transferSuccess, ) = addresses[i].call{gas: 3000, value: values[i]}(new bytes(0));
                 if (!transferSuccess) {revert TransferCommissionFailed(); }
             } else {
+                // TODO 0: need to avoid epection and return own like "TransferCommissionFailed()" 
                 IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
+console.log("commission payments ", values[i]," was sent to", addresses[i]);
+console.log("commission token is '", data.currency,"'");
             }
             left -= values[i];
         }
@@ -1494,18 +1502,25 @@ console.log("ac                                                         = ", ac)
 
                 uint64 forkedSeriesId = seriesId;
                 while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
+console.log("[C].while forkedSeriesId = ", forkedSeriesId);
                     //addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
                     addresses[length] = (forkedFrom[forkedSeriesId] != 0) ? _ownerOf(forkedFrom[forkedSeriesId]) : seriesInfo[forkedSeriesId].commission.recipient;
 
                     sum += ac;
                     prices[length] = ac * price / FRACTION;
+console.log("[C].while key = ", length);
+console.log("[C].while addr = ", addresses[length]);
+console.log("[C].while price = ", prices[length]);
                     forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
+
+                    length++;
 		        }
 
-                length++;
+                
             }
         }
-
+console.log("sum        = ", sum);
+console.log("FRACTION   = ", FRACTION);
         if (sum >= FRACTION) { revert CommissionInvalid(); }
 
     }

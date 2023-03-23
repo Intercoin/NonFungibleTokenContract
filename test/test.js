@@ -102,6 +102,7 @@ describe("v2 tests", function () {
         await this.erc20.transfer(bob.address, ethers.utils.parseEther('100'));
         await this.erc20.transfer(charlie.address, ethers.utils.parseEther('100'));
         await this.erc20.transfer(frank.address, ethers.utils.parseEther('100'));
+        await this.erc20.transfer(buyer.address, ethers.utils.parseEther('100'));
     })
 
     describe("put series on sale", async() => {
@@ -113,6 +114,12 @@ describe("v2 tests", function () {
       const baseURI = "someURI";
       const suffix = ".json";
       const saleParams = [
+        now + 100000, 
+        ZERO_ADDRESS, 
+        price,
+        ZERO //autoincrement price
+      ];
+      const saleParamsWithToken = [
         now + 100000, 
         ZERO_ADDRESS, 
         price,
@@ -1624,12 +1631,10 @@ describe("v2 tests", function () {
         });
 
         it.only("should correct consume commission when user buy nft of forked chains", async() => {
+          
           await this.nft.connect(owner).setOwnerCommission(defaultCommissionInfo);
           
-          const commissions = [
-            ethers.utils.parseEther('0.025'),
-            ZERO_ADDRESS
-          ];
+          
           const authors = [alice,bob,charlie,frank];
           
           const forkedSeriesIds = [
@@ -1677,25 +1682,38 @@ owner to ds
 */
           let iTokenId = id;
           let idFromForkedSeries;
+console.log("[JS]", "Balances");
+          for (let i = 0; i < authors.length; i++) {
+console.log("[JS]", "Balances");
+          }
+
+          const saleParamsForked = [
+            now + 100000, 
+            this.erc20.address, 
+            price,
+            ZERO //autoincrement price
+          ];
+
+
+          // loop over authors and every person(except last one) will buy token and fork series from that token.
+          // we will expect that buyer from last stage will pay commission to (0,n-1) people in array
           for (let i = 0; i < authors.length; i++) {
 console.log("[JS]", "iteration #",i);
-            if (i == authors.length-1)  {
-              break;
-            }
+            
             //1
-console.log("!!!!!!!!FORK !!!!!!!!!!!");
+console.log("FORK ");
             await this.nft.connect(authors[i]).forkSeries(iTokenId, forkedSeriesIds[i]);
-console.log("!!!!!!!!!!!!!!!!!!!");                        
+console.log("FOKREND");                        
  
             await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](
               forkedSeriesIds[i], 
               [
                 authors[i].address,  
                 10000,
-                saleParams,
+                saleParamsForked,
                 //commissions,
                 [
-                  ethers.utils.parseEther('0.025'),
+                  FIVE_PERCENTS, //fraction
                   authors[i].address
                 ],
                 //--
@@ -1710,21 +1728,53 @@ console.log("!!!!!!!!!!!!!!!!!!!");
             iTokenId = idFromForkedSeries;
             // 3 
 
-            let buyerBalanceBefore = await ethers.provider.getBalance(buyer.address);
+            // buy with eth
+            //await this.nft.connect(buyer).buy([idFromForkedSeries], ZERO_ADDRESS, price, false, ZERO, authors[i+1].address, {value: price.mul(THREE)});// accidentially send more than needed
+            //
 
-            await this.nft.connect(buyer).buy([idFromForkedSeries], ZERO_ADDRESS, price, false, ZERO, authors[i+1].address, {value: price.mul(THREE)});// accidentially send more than needed
-return;            
-            let buyerBalanceAfter = await ethers.provider.getBalance(buyer.address);
             if (i+2 == authors.length) {
-              console.log("last buy")
+              // last buy we will do outside loop
+              break;
             }
-            console.log("spent for buy =", (buyerBalanceBefore.sub(buyerBalanceAfter)).toString());
-            console.log("tokenid#",idFromForkedSeries," Owner=", authors[i+1].address);
-            let q = await this.nft.getSeriesInfo(forkedSeriesIds[i]);
-            console.log("author series#",q[0]);
+            // "buy from forked series"
+            await this.erc20.connect(buyer).approve(this.nft.address, price.mul(THREE));
+            await this.nft.connect(buyer).buy([idFromForkedSeries], this.erc20.address, price.mul(THREE), false, ZERO, authors[i+1].address); // accidentially send more than needed
+            //----------
+            //let buyerBalanceAfter = await ethers.provider.getBalance(buyer.address);
+            // let buyerBalanceAfter = await this.erc20.balanceOf(buyer.address);
+           
+            // console.log("spent for buy =", (buyerBalanceBefore.sub(buyerBalanceAfter)).toString());
+            
           }
-         
+
           
+          let authorsBalancesBefore = [];
+          let authorsBalancesAfter = [];
+          const buyerBalanceBefore = await this.erc20.balanceOf(buyer.address);
+          for (let i = 0; i < authors.length; i++) {
+            authorsBalancesBefore[i] = await this.erc20.balanceOf(authors[i].address);
+          }
+console.log("BEFORE");
+console.log("Buyer          = ", buyerBalanceBefore);
+for (let i = 0; i < authors.length; i++) {
+console.log("Authors[",i,"] = ", authorsBalancesBefore[i].toString());
+}
+console.log("ENDBEFORE");
+
+          await this.erc20.connect(buyer).approve(this.nft.address, price.mul(THREE));
+          await this.nft.connect(buyer).buy([idFromForkedSeries], this.erc20.address, price.mul(THREE), false, ZERO, authors[authors.length-1].address); // accidentially send more than needed
+
+          const buyerBalanceAfter = await this.erc20.balanceOf(buyer.address);
+          for (let i = 0; i < authors.length; i++) {
+            authorsBalancesAfter[i] = await this.erc20.balanceOf(authors[i].address);
+          }
+console.log("AFTER");
+console.log("Buyer          = ", buyerBalanceAfter);
+for (let i = 0; i < authors.length; i++) {
+console.log("Authors[",i,"] = ", authorsBalancesAfter[i].toString());
+}
+console.log("ENDAFTER");
+
           return;
           
 /*
