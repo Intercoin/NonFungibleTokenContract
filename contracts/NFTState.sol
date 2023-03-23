@@ -1498,26 +1498,34 @@ console.log("ac                                                         = ", ac)
             if (seriesInfo[seriesId].commission.value < ac) {
                 ac = seriesInfo[seriesId].commission.value;
             }
-            if (ac != 0) {
+            sum += ac;
+            addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+            prices[length] = ac * price / FRACTION;
+	    length++;
 
-                uint64 forkedSeriesId = seriesId;
+                uint64 forkedSeriesId = getSeriesId(forkedFrom[seriesId]);
                 while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
 console.log("[C].while forkedSeriesId = ", forkedSeriesId);
                     //addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
-                    addresses[length] = (forkedFrom[forkedSeriesId] != 0) ? _ownerOf(forkedFrom[forkedSeriesId]) : seriesInfo[forkedSeriesId].commission.recipient;
+		    uint256 forkedFromTokenId = forkedFrom[forkedSeriesId];
+                    addresses[length] = (forkedFromTokenId != 0)
+		        ? _ownerOf(forkedFromTokenId)
+			: seriesInfo[forkedSeriesId].commission.recipient;
 
-                    sum += ac;
-                    prices[length] = ac * price / FRACTION;
+uint256 acForked = seriesInfo[forkedSeriesId].commission.value;
+
+                    sum += acForked;
+                    prices[length] = acForked * price / FRACTION;
 console.log("[C].while key = ", length);
 console.log("[C].while addr = ", addresses[length]);
 console.log("[C].while price = ", prices[length]);
                     forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
 
                     length++;
-		        }
+		 }
 
                 
-            }
+
         }
 console.log("sum        = ", sum);
 console.log("FRACTION   = ", FRACTION);
