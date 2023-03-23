@@ -473,7 +473,7 @@ console.log("[C] forkedSeriesId.commission.value=", seriesInfo[forkedSeriesId].c
                 beneficiary
             );
 
-            _buy(tokenIds[i], exists, data, beneficiary, buyFor, safe);
+            _sendDuringBuy(tokenIds[i], exists, data, beneficiary, buyFor, safe);
             
             
             _accountForOperation(
@@ -559,7 +559,7 @@ console.log("[C] forkedSeriesId.commission.value=", seriesInfo[forkedSeriesId].c
             beneficiary
         );
         
-        _buy(tokenId, exists, data, beneficiary, buyFor, safe);
+        _sendDuringBuy(tokenId, exists, data, beneficiary, buyFor, safe);
         
         
         _accountForOperation(
@@ -919,7 +919,7 @@ console.log("[C] forkedSeriesId.commission.value=", seriesInfo[forkedSeriesId].c
         _setTrustedForwarder(address(0));
     }
 
-    function _buy(
+    function _sendDuringBuy(
         uint256 tokenId, 
         bool exists, 
         SaleInfo memory data, 
