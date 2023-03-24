@@ -1499,30 +1499,33 @@ console.log("ac                                                         = ", ac)
                 ac = seriesInfo[seriesId].commission.value;
             }
             sum += ac;
-            addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+            addresses[length] = seriesInfo[seriesId].commission.recipient;
             prices[length] = ac * price / FRACTION;
-	    length++;
+	        length++;
 
-                uint64 forkedSeriesId = getSeriesId(forkedFrom[seriesId]);
-                while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
+            uint64 forkedSeriesId = getSeriesId(forkedFrom[seriesId]);
+            while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
 console.log("[C].while forkedSeriesId = ", forkedSeriesId);
                     //addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
-		    uint256 forkedFromTokenId = forkedFrom[forkedSeriesId];
-                    addresses[length] = (forkedFromTokenId != 0)
-		        ? _ownerOf(forkedFromTokenId)
-			: seriesInfo[forkedSeriesId].commission.recipient;
+		        uint256 forkedFromTokenId = forkedFrom[forkedSeriesId];
+                addresses[length] = 
+                    (forkedFromTokenId != 0)
+		            ? 
+                    _ownerOf(forkedFromTokenId)
+			        : 
+                    seriesInfo[forkedSeriesId].commission.recipient;
 
-uint256 acForked = seriesInfo[forkedSeriesId].commission.value;
+                uint256 acForked = seriesInfo[forkedSeriesId].commission.value;
 
-                    sum += acForked;
-                    prices[length] = acForked * price / FRACTION;
+                sum += acForked;
+                prices[length] = acForked * price / FRACTION;
 console.log("[C].while key = ", length);
 console.log("[C].while addr = ", addresses[length]);
 console.log("[C].while price = ", prices[length]);
-                    forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
+                forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
 
-                    length++;
-		 }
+                length++;
+		    }
 
                 
 
