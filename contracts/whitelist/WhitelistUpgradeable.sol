@@ -5,13 +5,14 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+
 /**
  * Realization a addresses whitelist
- * 
+ *
  */
 abstract contract WhitelistUpgradeable is Initializable, ContextUpgradeable {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
-    
+
     struct List {
         address addr;
         bool alsoGradual;
@@ -20,29 +21,27 @@ abstract contract WhitelistUpgradeable is Initializable, ContextUpgradeable {
         EnumerableSetUpgradeable.AddressSet indexes;
         mapping(address => List) data;
     }
-    
+
     bytes32 internal commonGroupName;
-    
+
     mapping(bytes32 => ListStruct) list;
 
     modifier onlyWhitelist(bytes32 groupName) {
         require(
-            list[groupName].indexes.contains(_msgSender()) == true, 
+            list[groupName].indexes.contains(_msgSender()) == true,
             "Sender is not in whitelist"
         );
         _;
     }
-   
-    function __Whitelist_init(
-    )
-        internal 
-        onlyInitializing
-    {
+
+    function __Whitelist_init() internal onlyInitializing {
         commonGroupName = "common";
     }
-    
-    
-    function _whitelistAdd(bytes32 groupName, address[] memory _addresses) internal returns (bool) {
+
+    function _whitelistAdd(
+        bytes32 groupName,
+        address[] memory _addresses
+    ) internal returns (bool) {
         for (uint i = 0; i < _addresses.length; i++) {
             _whitelistAddSingle(groupName, _addresses[i]);
         }
@@ -58,8 +57,11 @@ abstract contract WhitelistUpgradeable is Initializable, ContextUpgradeable {
             list[groupName].data[addr].addr = addr;
         }
     }
-    
-    function _whitelistRemove(bytes32 groupName, address[] memory _addresses) internal returns (bool) {
+
+    function _whitelistRemove(
+        bytes32 groupName,
+        address[] memory _addresses
+    ) internal returns (bool) {
         for (uint i = 0; i < _addresses.length; i++) {
             _whitelistRemoveSingle(groupName, _addresses[i]);
         }
@@ -71,13 +73,17 @@ abstract contract WhitelistUpgradeable is Initializable, ContextUpgradeable {
             delete list[groupName].data[addr];
         }
     }
-    
-    function _isWhitelisted(bytes32 groupName, address addr) internal view returns (bool) {
+
+    function _isWhitelisted(
+        bytes32 groupName,
+        address addr
+    ) internal view returns (bool) {
         return list[groupName].indexes.contains(addr);
     }
-    
-    function _whitelistCount(bytes32 groupName) internal view returns (uint256) {
+
+    function _whitelistCount(
+        bytes32 groupName
+    ) internal view returns (uint256) {
         return list[groupName].indexes.length();
     }
-  
 }

@@ -14,3 +14,4 @@ TODO.txt
 /bin
 *DS_Store
 /scripts/arguments.json
+coverage.json

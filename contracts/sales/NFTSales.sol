@@ -51,7 +51,13 @@ This Agreement shall continue to apply to any successors or assigns of either pa
 ARBITRATION
 All disputes related to this agreement shall be governed by and interpreted in accordance with the laws of New York, without regard to principles of conflict of laws. The parties to this agreement will submit all disputes arising under this agreement to arbitration in New York City, New York before a single arbitrator of the American Arbitration Association (“AAA”). The arbitrator shall be selected by application of the rules of the AAA, or by mutual agreement of the parties, except that such arbitrator shall be an attorney admitted to practice law New York. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section. No party to this agreement will challenge the jurisdiction or venue provisions as provided in this section.
 **/
-contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales, IERC721ReceiverUpgradeable, ReentrancyGuardUpgradeable {
+contract NFTSales is
+    ERC721EnumerableUpgradeable,
+    OwnableUpgradeable,
+    INFTSales,
+    IERC721ReceiverUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
     using StringsW0x for uint256;
@@ -78,7 +84,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         address recipient;
         uint64 untilTimestamp;
     }
-    
+
     uint256 purchaseBucketLastIntervalIndex;
     uint256 purchaseBucketLastIntervalAmount;
 
@@ -103,7 +109,11 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     error NotInWhiteList(address account);
     error NotInListForAutoMint(address account, uint64 seriesId);
     error SeriesMaxTokenLimitExceeded(uint64 seriesId);
-    error TooMuchBoughtInCurrentInterval(uint256 currentInterval, uint256 willBeBought, uint32 maxAmount);
+    error TooMuchBoughtInCurrentInterval(
+        uint256 currentInterval,
+        uint256 willBeBought,
+        uint32 maxAmount
+    );
     error SeriesIsNotOnSale(uint64 seriesId);
     error IncorrectInputParameters();
     error NoTransfersAllowed();
@@ -113,7 +123,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      * @param _currency currency for every sale NFT token
      * @param _price price amount for every sale NFT token
      * @param _beneficiary address where which receive funds after sale
-     * @param _autoindex from what index contract will start autoincrement from each series(if owner doesnot set before) 
+     * @param _autoindex from what index contract will start autoincrement from each series(if owner doesnot set before)
      * @param _duration locked time when NFT will be locked after sale
      * @param _rateInterval interval in which contract should sell not more than `_rateAmount` tokens
      * @param _rateAmount amount of tokens that can be minted in each `_rateInterval`
@@ -139,9 +149,16 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
 
         factoryAddress = owner();
 
-        __NFTSales_init(_seriesId, _currency, _price, _beneficiary, _autoindex, _duration, _rateInterval, _rateAmount);
-
-        
+        __NFTSales_init(
+            _seriesId,
+            _currency,
+            _price,
+            _beneficiary,
+            _autoindex,
+            _duration,
+            _rateInterval,
+            _rateAmount
+        );
     }
 
     /********************************************************************
@@ -169,7 +186,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
             _purchase(amount, accounts[i], buyer, true);
         }
     }
-    
+
     /**
      * @notice purchase tokens using special promotion from this instance
      * @param amount the number per address
@@ -195,7 +212,7 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         }
         for (uint256 i = 0; i < cl; ++i) {
             if (
-                usedLicenses[contracts[i]][tokenIds[i]] > 0 || 
+                usedLicenses[contracts[i]][tokenIds[i]] > 0 ||
                 IERC721Upgradeable(contracts[i]).ownerOf(tokenIds[i]) != buyer
             ) {
                 continue;
@@ -267,9 +284,9 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     }
 
     function onERC721Received(
-        address, /*operator*/
-        address, /*from*/
-        uint256, /*tokenId*/
+        address /*operator*/,
+        address /*from*/,
+        uint256 /*tokenId*/,
         bytes calldata /*data*/
     ) external pure returns (bytes4) {
         return IERC721ReceiverUpgradeable.onERC721Received.selector;
@@ -284,7 +301,9 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      *
      * @param addresses list of addresses which will be added to specialPurchasesList
      */
-    function specialPurchasesListAdd(address[] memory addresses) external onlyOwner {
+    function specialPurchasesListAdd(
+        address[] memory addresses
+    ) external onlyOwner {
         _whitelistManage(specialPurchasesList, addresses, true);
     }
 
@@ -297,10 +316,12 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      *
      * @param addresses list of addresses which will be removed from specialPurchasesList
      */
-    function specialPurchasesListRemove(address[] memory addresses) external onlyOwner {
+    function specialPurchasesListRemove(
+        address[] memory addresses
+    ) external onlyOwner {
         _whitelistManage(specialPurchasesList, addresses, false);
     }
-    
+
     /**
      * Adding external NFT contract to specialPurchaseLicenses list
      *
@@ -311,10 +332,13 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      * @param contract_ address of external NFT contract
      * @param amount number of tokens that can be minted per external NFT
      */
-    function specialPurchaseLicensesAdd(address contract_, uint16 amount) external onlyOwner {
+    function specialPurchaseLicensesAdd(
+        address contract_,
+        uint16 amount
+    ) external onlyOwner {
         specialPurchaseLicenses[contract_] = amount;
     }
-    
+
     /**
      * Removing external NFT contract from specialPurchaseLicenses list
      *
@@ -324,7 +348,9 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      *
      * @param contract_ address of external NFT contract
      */
-    function specialPurchaseLicensesRemove(address contract_) external onlyOwner {
+    function specialPurchaseLicensesRemove(
+        address contract_
+    ) external onlyOwner {
         delete specialPurchaseLicenses[contract_];
     }
 
@@ -345,103 +371,103 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
     }
 
     /**
-    * @dev whether tokens can be minted through `specialPurchase` even if series is not on sale
-    * @param flag boolean
-    */
+     * @dev whether tokens can be minted through `specialPurchase` even if series is not on sale
+     * @param flag boolean
+     */
     function setEvenIfNotOnSale(bool flag) external onlyOwner {
         evenIfNotOnSale = flag;
     }
 
     /**
-    * @dev whether to allow transfers of NFTs to other recipients while they are pending.
-    *  When the pending period comes to an end, the recipient at that time can claim it.
-    * @param allow boolean
-    */
+     * @dev whether to allow transfers of NFTs to other recipients while they are pending.
+     *  When the pending period comes to an end, the recipient at that time can claim it.
+     * @param allow boolean
+     */
     function setAllowTransfers(bool allow) external onlyOwner {
         allowTransfers = allow;
     }
 
     /**
-    * getting array of whitelisted addresses. used by frontend. return all addresses
-    */
-    function whitelisted() external view returns(address[] memory ret) {
+     * getting array of whitelisted addresses. used by frontend. return all addresses
+     */
+    function whitelisted() external view returns (address[] memory ret) {
         uint256 len = specialPurchasesList.length();
         ret = new address[](len);
-        for (uint256 i = 0; i<len; i++) {
-           ret[i] = specialPurchasesList.at(i);
+        for (uint256 i = 0; i < len; i++) {
+            ret[i] = specialPurchasesList.at(i);
         }
     }
 
     /**
-    * getting array of whitelisted addresses. overloaded. used by frontend. supports pagination
-    * @param page number of page
-    * @param count amount of addresess of page number
-    * @return ret array of whitelisted addresses
-    * note that 
-    *   if there are no any addresses on the page - method will return zero array
-    *   if addresses exists but their amounts less than `count` - returns array will be without zero values and size will be less
-    *   else returns array will be with length equal `count`
-    */
-    function whitelisted(uint256 page, uint256 count) external view returns(address[] memory ret) {
+     * getting array of whitelisted addresses. overloaded. used by frontend. supports pagination
+     * @param page number of page
+     * @param count amount of addresess of page number
+     * @return ret array of whitelisted addresses
+     * note that
+     *   if there are no any addresses on the page - method will return zero array
+     *   if addresses exists but their amounts less than `count` - returns array will be without zero values and size will be less
+     *   else returns array will be with length equal `count`
+     */
+    function whitelisted(
+        uint256 page,
+        uint256 count
+    ) external view returns (address[] memory ret) {
         if (page == 0 || count == 0) {
             revert IncorrectInputParameters();
         }
 
         uint256 len = specialPurchasesList.length();
-        uint256 ifrom = page*count-count;
+        uint256 ifrom = page * count - count;
 
-        if (
-            len == 0 || 
-            ifrom >= len
-        ) {
+        if (len == 0 || ifrom >= len) {
             ret = new address[](0);
         } else {
-
-            count = ifrom+count > len ? len-ifrom : count ;
+            count = ifrom + count > len ? len - ifrom : count;
             ret = new address[](count);
 
-            for (uint256 i = ifrom; i<ifrom+count; i++) {
-                ret[i-ifrom] = specialPurchasesList.at(i);
-                
+            for (uint256 i = ifrom; i < ifrom + count; i++) {
+                ret[i - ifrom] = specialPurchasesList.at(i);
             }
         }
     }
 
     /**
-    * @notice tokens data for pending tokens
-    * @param tokenId tokenId
-    * @return recipient recipient address
-    * @return secondsLeft seconds left to unlock
-    */
-    function tokenInfo(uint256 tokenId) external view returns(address recipient, uint64 secondsLeft) {
-        return(
+     * @notice tokens data for pending tokens
+     * @param tokenId tokenId
+     * @return recipient recipient address
+     * @return secondsLeft seconds left to unlock
+     */
+    function tokenInfo(
+        uint256 tokenId
+    ) external view returns (address recipient, uint64 secondsLeft) {
+        return (
             pending[tokenId].recipient,
-            pending[tokenId].untilTimestamp > block.timestamp ? uint64(pending[tokenId].untilTimestamp-block.timestamp) : 0
+            pending[tokenId].untilTimestamp > block.timestamp
+                ? uint64(pending[tokenId].untilTimestamp - block.timestamp)
+                : 0
         );
     }
 
-
     /**
-    * @return amount addresses from the special purchases list
-    */
-    function whitelistedCount() external view returns(uint256) {
+     * @return amount addresses from the special purchases list
+     */
+    function whitelistedCount() external view returns (uint256) {
         return specialPurchasesList.length();
     }
 
-
     /**
-    * @dev sets the default baseURI for the whole contract
-    * @param baseURI_ the prefix to prepend to URIs
-    */
-    function setBaseURI(string calldata baseURI_) onlyOwner external {
+     * @dev sets the default baseURI for the whole contract
+     * @param baseURI_ the prefix to prepend to URIs
+     */
+    function setBaseURI(string calldata baseURI_) external onlyOwner {
         baseURI = baseURI_;
     }
-    
+
     /**
-    * @dev sets the default URI suffix for the whole contract
-    * @param suffix_ the suffix to append to URIs
-    */
-    function setSuffix(string calldata suffix_) onlyOwner external {
+     * @dev sets the default URI suffix for the whole contract
+     * @param suffix_ the suffix to append to URIs
+     */
+    function setSuffix(string calldata suffix_) external onlyOwner {
         suffix = suffix_;
     }
 
@@ -449,9 +475,12 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      ****** public section ***********************************************
      *********************************************************************/
 
-    function remainingToBuyInCurrentInterval() public view returns(uint256) {
+    function remainingToBuyInCurrentInterval() public view returns (uint256) {
         uint256 currentInterval = currentBucketInterval();
-        return purchaseBucketLastIntervalIndex == currentInterval ? rateAmount - purchaseBucketLastIntervalAmount : rateAmount;
+        return
+            purchaseBucketLastIntervalIndex == currentInterval
+                ? rateAmount - purchaseBucketLastIntervalAmount
+                : rateAmount;
     }
 
     /********************************************************************
@@ -462,8 +491,10 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      * @dev Returns the token collection name.
      */
     function name() public view override returns (string memory) {
-        address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
-        string memory externalName = IERC721MetadataUpgradeable(NFTcontract).name();
+        address NFTcontract = INFTSalesFactory(factoryAddress)
+            .instanceToNFTContract(address(this));
+        string memory externalName = IERC721MetadataUpgradeable(NFTcontract)
+            .name();
         return string(abi.encodePacked("VAULT FOR ", externalName));
     }
 
@@ -471,23 +502,31 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      * @dev Returns the token collection symbol.
      */
     function symbol() public view override returns (string memory) {
-        address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
-        string memory externalSymbol = IERC721MetadataUpgradeable(NFTcontract).symbol();
+        address NFTcontract = INFTSalesFactory(factoryAddress)
+            .instanceToNFTContract(address(this));
+        string memory externalSymbol = IERC721MetadataUpgradeable(NFTcontract)
+            .symbol();
         return string(abi.encodePacked(externalSymbol, "_VAULT"));
     }
 
     /**
      * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
      */
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public view override returns (string memory) {
         _requireMinted(tokenId);
 
         //return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
 
         if (bytes(baseURI).length == 0) {
-            return string(abi.encodePacked(baseURI, tokenId.toHexString(), suffix));
+            return
+                string(
+                    abi.encodePacked(baseURI, tokenId.toHexString(), suffix)
+                );
         }
-        address NFTcontract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
+        address NFTcontract = INFTSalesFactory(factoryAddress)
+            .instanceToNFTContract(address(this));
         return IERC721MetadataUpgradeable(NFTcontract).tokenURI(tokenId);
     }
 
@@ -532,23 +571,20 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         address to,
         uint256 tokenId
     ) internal override {
-
         super._transfer(from, to, tokenId);
         pending[tokenId].recipient = to;
-
     }
 
     /********************************************************************
      ****** internal section *********************************************
      *********************************************************************/
-    
+
     function _purchase(
         uint256 amount,
         address account,
         address buyer,
         bool isSpecialPurchase
     ) internal {
-
         require(amount != 0);
 
         if (isSpecialPurchase) {
@@ -561,21 +597,33 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
 
             purchaseBucketLastIntervalAmount += amount;
             if (purchaseBucketLastIntervalAmount > rateAmount) {
-                revert TooMuchBoughtInCurrentInterval(currentInterval, purchaseBucketLastIntervalAmount, rateAmount);
+                revert TooMuchBoughtInCurrentInterval(
+                    currentInterval,
+                    purchaseBucketLastIntervalAmount,
+                    rateAmount
+                );
             }
         }
 
         // generate token ids
-        (uint256[] memory tokenIds, address currencyAddr, uint256 currencyTotalPrice, uint192 lastIndex) = _getTokenIds(amount, isSpecialPurchase);
+        (
+            uint256[] memory tokenIds,
+            address currencyAddr,
+            uint256 currencyTotalPrice,
+            uint192 lastIndex
+        ) = _getTokenIds(amount, isSpecialPurchase);
         currentAutoIndex = lastIndex + 1;
-        
+
         // confirm pay
         _confirmPay(currencyTotalPrice, currencyAddr, buyer);
 
         _distributeTokens(tokenIds, account);
     }
 
-    function _distributeTokens(uint256[] memory tokenIds, address account) internal {
+    function _distributeTokens(
+        uint256[] memory tokenIds,
+        address account
+    ) internal {
         address[] memory addresses = new address[](tokenIds.length);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             addresses[i] = account;
@@ -583,19 +631,32 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
 
         // distribute tokens
         if (duration == 0) {
-            INFTSalesFactory(factoryAddress)._doMintAndDistribute(tokenIds, addresses);
+            INFTSalesFactory(factoryAddress)._doMintAndDistribute(
+                tokenIds,
+                addresses
+            );
         } else {
             address[] memory selfAddresses = new address[](tokenIds.length);
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 selfAddresses[i] = address(this);
-                pending[tokenIds[i]] = TokenData(addresses[i], duration + uint64(block.timestamp));
                 _mint(addresses[i], tokenIds[i]);
+                pending[tokenIds[i]] = TokenData(
+                    addresses[i],
+                    duration + uint64(block.timestamp)
+                );
             }
-            INFTSalesFactory(factoryAddress)._doMintAndDistribute(tokenIds, selfAddresses);
+            INFTSalesFactory(factoryAddress)._doMintAndDistribute(
+                tokenIds,
+                selfAddresses
+            );
         }
     }
 
-    function _confirmPay(uint256 totalPrice, address currencyToPay, address buyer) internal {
+    function _confirmPay(
+        uint256 totalPrice,
+        address currencyToPay,
+        address buyer
+    ) internal {
         bool transferSuccess;
 
         if (currencyToPay == address(0)) {
@@ -603,7 +664,10 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
                 revert InsufficientFunds(currencyToPay, totalPrice, msg.value);
             }
 
-            (transferSuccess, ) = (beneficiary).call{gas: 3000, value: (totalPrice)}(new bytes(0));
+            (transferSuccess, ) = (beneficiary).call{
+                gas: 3000,
+                value: (totalPrice)
+            }(new bytes(0));
             if (!transferSuccess) {
                 revert TransferCommissionFailed();
             }
@@ -611,13 +675,20 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
             uint256 refundAmount = msg.value - totalPrice;
             if (refundAmount > 0) {
                 // or maybe need a minimal value when refund triggered?
-                (transferSuccess, ) = (buyer).call{gas: 3000, value: (refundAmount)}(new bytes(0));
+                (transferSuccess, ) = (buyer).call{
+                    gas: 3000,
+                    value: (refundAmount)
+                }(new bytes(0));
                 if (!transferSuccess) {
                     revert RefundFailed();
                 }
             }
         } else {
-            IERC20Upgradeable(currencyToPay).transferFrom(buyer, beneficiary, totalPrice);
+            IERC20Upgradeable(currencyToPay).transferFrom(
+                buyer,
+                beneficiary,
+                totalPrice
+            );
         }
     }
 
@@ -660,13 +731,21 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         seriesPart = (uint256(seriesId) << SERIES_SHIFT_BITS);
     }
 
-    function _claim(uint256[] memory tokenIds, bool shouldCheckOwner) internal nonReentrant {
-        address NFTcontract = INFTSalesFactory(getFactory()).instanceToNFTContract(address(this));
+    function _claim(
+        uint256[] memory tokenIds,
+        bool shouldCheckOwner
+    ) internal nonReentrant {
+        address NFTcontract = INFTSalesFactory(getFactory())
+            .instanceToNFTContract(address(this));
         for (uint256 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = tokenIds[i];
             _checkTokenForClaim(tokenId, shouldCheckOwner);
 
-            IERC721Upgradeable(NFTcontract).safeTransferFrom(address(this), pending[tokenId].recipient, tokenId);
+            IERC721Upgradeable(NFTcontract).safeTransferFrom(
+                address(this),
+                pending[tokenId].recipient,
+                tokenId
+            );
 
             delete pending[tokenIds[i]];
             _burn(tokenId);
@@ -677,7 +756,9 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         return factoryAddress; // deployer of contract. this can't make sense if deployed manually
     }
 
-    function remainingLockedTime(uint256 tokenId) internal view returns (uint64) {
+    function remainingLockedTime(
+        uint256 tokenId
+    ) internal view returns (uint64) {
         return
             pending[tokenId].untilTimestamp > uint64(block.timestamp)
                 ? pending[tokenId].untilTimestamp - uint64(block.timestamp)
@@ -699,11 +780,17 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         }
     }
 
-    function _checkTokenForClaim(uint256 tokenId, bool shouldCheckOwner) internal view {
+    function _checkTokenForClaim(
+        uint256 tokenId,
+        bool shouldCheckOwner
+    ) internal view {
         _validateTokenId(tokenId);
 
         if (pending[tokenId].untilTimestamp >= uint64(block.timestamp)) {
-            revert StillPending(_remainingDays(tokenId), remainingLockedTime(tokenId));
+            revert StillPending(
+                _remainingDays(tokenId),
+                remainingLockedTime(tokenId)
+            );
         }
 
         // if !(
@@ -716,7 +803,10 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         //      revert ShouldBeOwner(_msgSender());
         // }
 
-        if ((shouldCheckOwner) && (!shouldCheckOwner || pending[tokenId].recipient != _msgSender())) {
+        if (
+            (shouldCheckOwner) &&
+            (!shouldCheckOwner || pending[tokenId].recipient != _msgSender())
+        ) {
             revert ShouldBeTokenOwner(_msgSender());
         }
     }
@@ -725,17 +815,17 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
      * for special purchase get getTokenSaleInfo externally to get currency and token separately for each token
      */
     function _getTokenIds(
-        uint256 amount, 
+        uint256 amount,
         bool isSpecialPurchase
-    ) 
-        internal 
-        view 
+    )
+        internal
+        view
         returns (
-            uint256[] memory tokenIds, 
-            address currencyAddr, 
-            uint256 currencyTotalPrice, 
+            uint256[] memory tokenIds,
+            address currencyAddr,
+            uint256 currencyTotalPrice,
             uint192 lastIndex
-        ) 
+        )
     {
         tokenIds = new uint256[](amount);
 
@@ -745,18 +835,19 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
 
         lastIndex = currentAutoIndex;
 
-
-        address NFTContract = INFTSalesFactory(factoryAddress).instanceToNFTContract(address(this));
+        address NFTContract = INFTSalesFactory(factoryAddress)
+            .instanceToNFTContract(address(this));
 
         // Is this whole series for sale?
         //INFT.SeriesInfo memory seriesData = INFT(NFTContract).seriesInfo(seriesId);
         // bool isSeriesOnSale = (seriesData.saleInfo.onSaleUntil > block.timestamp);
         uint64 saleInfo_onSaleUntil;
         address saleInfo_currency;
-        (, , saleInfo_onSaleUntil, saleInfo_currency, , , , , ) = INFTView(NFTContract).getSeriesInfo(seriesId);
+        (, , saleInfo_onSaleUntil, saleInfo_currency, , , , , ) = INFTView(
+            NFTContract
+        ).getSeriesInfo(seriesId);
         bool isSeriesOnSale = (saleInfo_onSaleUntil > block.timestamp);
         //console.log(seriesData.saleInfo.onSaleUntil);
-        
 
         if (
             (!isSpecialPurchase && !isSeriesOnSale) ||
@@ -766,11 +857,15 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         }
 
         while (lastIndex != MAX_TOKEN_INDEX) {
-
             tokenId = seriesPart + lastIndex;
 
             //exists means that  _owners[tokenId] != address(0) && _owners[tokenId] != DEAD_ADDRESS;
-            (/*bool isOnSale*/, bool exists, INFT.SaleInfo memory data, /*address beneficiary*/) = INFTView(NFTContract).getTokenSaleInfo(tokenId);
+            (
+                ,
+                /*bool isOnSale*/ bool exists,
+                INFT.SaleInfo memory data /*address beneficiary*/,
+
+            ) = INFTView(NFTContract).getTokenSaleInfo(tokenId);
 
             if (!exists) {
                 // !exists - means only virtuals
@@ -781,11 +876,11 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
                 if (!isSpecialPurchase) {
                     currencyTotalPrice += data.price;
                 }
-                
+
                 amountLeft--;
                 tokenIds[amountLeft] = tokenId; // did it slightly cheaper and do fill from "N-1" to "0" and avoid "stack too deep" error
-
             }
+
             if (amountLeft == 0) {
                 break;
             }
@@ -804,14 +899,13 @@ contract NFTSales is ERC721EnumerableUpgradeable, OwnableUpgradeable, INFTSales,
         if (lastIndex == MAX_TOKEN_INDEX || amountLeft != 0) {
             revert SeriesMaxTokenLimitExceeded(seriesId);
         }
-
     }
 
     function getSeriesId(uint256 tokenId) internal pure returns (uint64) {
         return uint64(tokenId >> SERIES_SHIFT_BITS);
     }
 
-    function currentBucketInterval() internal view returns(uint256) {
-        return block.timestamp / rateInterval * rateInterval;
+    function currentBucketInterval() internal view returns (uint256) {
+        return (block.timestamp / rateInterval) * rateInterval;
     }
 }
