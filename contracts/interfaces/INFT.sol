@@ -2,14 +2,15 @@
 pragma solidity 0.8.11;
 
 interface INFT {
-    struct SaleInfo { 
-        uint64 onSaleUntil; 
+    struct SaleInfo {
+        uint64 onSaleUntil;
         address currency;
         uint256 price;
         uint256 autoincrement;
     }
 
-    struct CommissionInfo { // using to setup global commission
+    struct CommissionInfo {
+        // using to setup global commission
         uint64 maxValue;
         uint64 minValue;
         CommissionData ownerCommission;
@@ -20,7 +21,7 @@ interface INFT {
         address recipient;
     }
 
-    struct SeriesInfo { 
+    struct SeriesInfo {
         address payable author;
         uint32 limit;
         SaleInfo saleInfo;
@@ -28,6 +29,4 @@ interface INFT {
         string baseURI;
         string suffix;
     }
-
-
 }

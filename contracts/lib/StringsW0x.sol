@@ -9,7 +9,6 @@ pragma solidity 0.8.11;
 library StringsW0x {
     bytes16 private constant _HEX_SYMBOLS = "0123456789abcdef";
 
-    
     /**
      * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation.
      */
@@ -29,7 +28,10 @@ library StringsW0x {
     /**
      * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
      */
-    function toHexString(uint256 value, int256 length) internal pure returns (string memory) {
+    function toHexString(
+        uint256 value,
+        int256 length
+    ) internal pure returns (string memory) {
         bytes memory buffer = new bytes(2 * uint256(length));
         for (int256 i = 2 * length - 1; i > -1; --i) {
             buffer[uint256(i)] = _HEX_SYMBOLS[value & 0xf];

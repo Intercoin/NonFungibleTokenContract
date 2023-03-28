@@ -4,16 +4,12 @@ pragma solidity ^0.8.11;
 import "releasemanager/contracts/interfaces/ICostManager.sol";
 
 contract MockCostManagerGood is ICostManager {
-     function accountForOperation(
-        address sender, 
-        uint256 info, 
-        uint256 param1, 
+    function accountForOperation(
+        address sender,
+        uint256 info,
+        uint256 param1,
         uint256 param2
-    ) 
-        external 
-        returns(uint256, uint256) 
-    {
-        return (1,2);
+    ) external returns (uint256, uint256) {
+        return (1, 2);
     }
-    
 }

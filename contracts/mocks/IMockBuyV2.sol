@@ -11,5 +11,4 @@ interface IMockBuyV2 {
         uint256 hookCount,
         address buyFor
     ) external payable;
-        
 }
