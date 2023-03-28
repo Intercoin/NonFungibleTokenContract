@@ -4,7 +4,6 @@ pragma abicoder v2;
 
 import "./NFTStorage.sol";
 import "./INFTState.sol";
-import "hardhat/console.sol";
 
 contract NFTState is NFTStorage, INFTState {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -153,9 +152,9 @@ contract NFTState is NFTStorage, INFTState {
         ) {
             revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
         }
-console.log("[C] seriesId.commission.value      =", seriesInfo[seriesId].commission.value);
+
         seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
-console.log("[C] forkedSeriesId.commission.value=", seriesInfo[forkedSeriesId].commission.value);
+
         seriesInfo[forkedSeriesId].author = payable(_msgSender());
         seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
         seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
@@ -1377,15 +1376,10 @@ console.log("[C] forkedSeriesId.commission.value=", seriesInfo[forkedSeriesId].c
         uint256 left = data.price;
         (address[9] memory addresses, uint256[9] memory values, uint256 length) = calculateCommission(tokenId, data.price, exists);
         
-console.log("commission results");
-console.log("tokenId = ",tokenId);
-console.log("length = ",length);
-
         // commissions payment
         bool transferSuccess;
         for(uint256 i = 0; i < length; i++) {
             if (addresses[i] == address(0)) { 
-                console.log("commission payments was skipped at ",i," iteration");
                 // if no commission in some iteration we will skip. can be if commission recipient equal address(0)
                 continue;
             }
@@ -1395,8 +1389,6 @@ console.log("length = ",length);
             } else {
                 // TODO 0: need to avoid epection and return own like "TransferCommissionFailed()" 
                 IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
-console.log("commission payments ", values[i]," was sent to", addresses[i]);
-console.log("commission token is '", data.currency,"'");
             }
             left -= values[i];
         }
@@ -1468,20 +1460,19 @@ console.log("commission token is '", data.currency,"'");
                 //0
                 commissionInfo.ownerCommission.value
                 ;
-// console.log("commissionInfo.ownerCommission.value = ", commissionInfo.ownerCommission.value);
-// console.log("oc                                   = ", oc);
+
             if (commissionInfo.ownerCommission.value < oc) {
                 oc = commissionInfo.ownerCommission.value;
             }
             if (oc != 0) {
                 addresses[length] = commissionInfo.ownerCommission.recipient;
+
                 sum += oc;
                 prices[length] = oc * price / FRACTION;
                 length++;
             }
         }
 
-console.log("[C] seriesInfo[seriesId].commission.recipient = ", seriesInfo[seriesId].commission.recipient);
         // author commission
         if (seriesInfo[seriesId].commission.recipient != address(0)) {
             //uint256 ac = tokensInfo[tokenId].salesInfoToken.authorCommissionValue;
@@ -1493,20 +1484,18 @@ console.log("[C] seriesInfo[seriesId].commission.recipient = ", seriesInfo[serie
                 seriesInfo[seriesId].commission.value
                 ;
 
-console.log("tokensInfo[tokenId].salesInfoToken.authorCommissionValue   = ", tokensInfo[tokenId].salesInfoToken.authorCommissionValue);
-console.log("ac                                                         = ", ac);
             if (seriesInfo[seriesId].commission.value < ac) {
                 ac = seriesInfo[seriesId].commission.value;
             }
             sum += ac;
             addresses[length] = seriesInfo[seriesId].commission.recipient;
+
             prices[length] = ac * price / FRACTION;
 	        length++;
 
             uint64 forkedSeriesId = getSeriesId(forkedFrom[seriesId]);
             while (forkedSeriesId != 0) { // pay authors from whom the series forked, too
-console.log("[C].while forkedSeriesId = ", forkedSeriesId);
-                    //addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
+
 		        uint256 forkedFromTokenId = forkedFrom[forkedSeriesId];
                 addresses[length] = 
                     (forkedFromTokenId != 0)
@@ -1519,9 +1508,7 @@ console.log("[C].while forkedSeriesId = ", forkedSeriesId);
 
                 sum += acForked;
                 prices[length] = acForked * price / FRACTION;
-console.log("[C].while key = ", length);
-console.log("[C].while addr = ", addresses[length]);
-console.log("[C].while price = ", prices[length]);
+
                 forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
 
                 length++;
@@ -1530,8 +1517,7 @@ console.log("[C].while price = ", prices[length]);
                 
 
         }
-console.log("sum        = ", sum);
-console.log("FRACTION   = ", FRACTION);
+
         if (sum >= FRACTION) { revert CommissionInvalid(); }
 
     }
