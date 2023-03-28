@@ -23,20 +23,29 @@ interface IERC20Upgradeable {
         address to,
         uint256 amount
     ) external returns (bool);
-
 }
 
 contract INFT {
-    
+    function getTokenSaleInfo(
+        uint256 tokenId
+    )
+        external
+        view
+        returns (
+            bool isOnSale,
+            bool exists,
+            SaleInfo memory data,
+            address owner
+        )
+    {}
 
-    function getTokenSaleInfo(uint256 tokenId) external view returns(bool isOnSale, bool exists, SaleInfo memory data, address owner) {
+    function mintAndDistribute(
+        uint256[] memory tokenIds,
+        address[] memory addresses
+    ) external {}
 
-    }
-    function mintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external {
-    
-    }
-    struct SaleInfo { 
-        uint64 onSaleUntil; 
+    struct SaleInfo {
+        uint64 onSaleUntil;
         address currency;
         uint256 price;
         uint256 autoincrement;
@@ -46,7 +55,7 @@ contract INFT {
         address recipient;
     }
 
-    struct SeriesInfo { 
+    struct SeriesInfo {
         address payable author;
         uint32 limit;
         SaleInfo saleInfo;
@@ -56,7 +65,7 @@ contract INFT {
     }
 
     // version2
-    mapping (uint64 => INFT.SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
+    mapping(uint64 => INFT.SeriesInfo) public seriesInfo; // seriesId => SeriesInfo
     // version 1
     //mapping (uint256 => INFT.SeriesInfo) public seriesInfo;  // seriesId => SeriesInfo
 
@@ -64,15 +73,14 @@ contract INFT {
 }
 
 interface Ownable {
-/**
+    /**
      * @dev Returns the address of the current owner.
      */
     function owner() external view returns (address);
 }
 
 contract NFTBulkSaleV2 {
-    
-/*
+    /*
     struct SaleInfo { 
         uint64 onSaleUntil; 
         address currency;
@@ -81,25 +89,22 @@ contract NFTBulkSaleV2 {
 
 */
     /**
-    * expects:
-    * - all tokenIds belong to the same series and owner for each token able to primary sale (token owner == address(0))
-    */
+     * expects:
+     * - all tokenIds belong to the same series and owner for each token able to primary sale (token owner == address(0))
+     */
     function distribute(
         address nftAddress,
-        uint256[] memory tokenIds, 
+        uint256[] memory tokenIds,
         address[] memory addresses
-    ) 
-        public 
-        payable
-    {
-// console.log("distribute");        
-// console.log("msg.sender = ", msg.sender);
-// console.log("address(this) = ", address(this));
+    ) public payable {
+        // console.log("distribute");
+        // console.log("msg.sender = ", msg.sender);
+        // console.log("address(this) = ", address(this));
 
         require(tokenIds.length != 0 && tokenIds.length == addresses.length);
-        
+
         uint256 tokenId = tokenIds[0];
-        uint64 seriesId = uint64(tokenId >> 192);//getSeriesId(tokenId);
+        uint64 seriesId = uint64(tokenId >> 192); //getSeriesId(tokenId);
 
         address payable author;
         uint32 limit;
@@ -108,39 +113,46 @@ contract NFTBulkSaleV2 {
         string memory baseURI;
         string memory suffix;
 
-        //seriesInfo 
-        (author, limit, saleInfo, commission, baseURI, suffix)
-        = INFT(nftAddress).seriesInfo(seriesId);
-        
-        require (author != address(0));
-        
+        //seriesInfo
+        (author, limit, saleInfo, commission, baseURI, suffix) = INFT(
+            nftAddress
+        ).seriesInfo(seriesId);
+
+        require(author != address(0));
+
         bool transferSuccess;
 
-        uint256 totalPrice = (saleInfo.price)*(tokenIds.length);
-        for(uint256 i = 0; i<tokenIds.length; i++) {
-            totalPrice = saleInfo.autoincrement+i;
+        uint256 totalPrice = (saleInfo.price) * (tokenIds.length);
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            totalPrice = saleInfo.autoincrement + i;
         }
 
         if (saleInfo.currency == address(0)) {
-            
-            (transferSuccess, ) = (author).call{gas: 3000, value: (totalPrice)}(new bytes(0));
+            (transferSuccess, ) = (author).call{gas: 3000, value: (totalPrice)}(
+                new bytes(0)
+            );
             require(transferSuccess, "TRANSFER_COMMISSION_FAILED");
         } else {
-            IERC20Upgradeable(saleInfo.currency).transferFrom(msg.sender, author, totalPrice);
+            IERC20Upgradeable(saleInfo.currency).transferFrom(
+                msg.sender,
+                author,
+                totalPrice
+            );
         }
 
         address owner = Ownable(nftAddress).owner();
 
         bytes memory returndata;
         (transferSuccess, returndata) = nftAddress.call(
-                abi.encodePacked(
-                    abi.encodeWithSelector(
-                        INFT.mintAndDistribute.selector,
-                        tokenIds, addresses
-                    ),
-                    owner
-                )
-            );
+            abi.encodePacked(
+                abi.encodeWithSelector(
+                    INFT.mintAndDistribute.selector,
+                    tokenIds,
+                    addresses
+                ),
+                owner
+            )
+        );
         _verifyCallResult(transferSuccess, returndata, "low level error");
     }
 
@@ -165,5 +177,4 @@ contract NFTBulkSaleV2 {
             }
         }
     }
-
 }

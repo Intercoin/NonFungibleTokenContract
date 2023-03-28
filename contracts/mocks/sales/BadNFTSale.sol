@@ -7,16 +7,14 @@ pragma solidity 0.8.11;
 import "../../sales/INFTSalesFactory.sol";
 
 contract BadNFTSale {
-
     function specialPurchase(
         address factoryAddress,
-        uint256[] memory tokenIds, 
+        uint256[] memory tokenIds,
         address[] memory addresses
-    ) 
-        public
-        payable
-    {
-        INFTSalesFactory(factoryAddress)._doMintAndDistribute(tokenIds, addresses);
+    ) public payable {
+        INFTSalesFactory(factoryAddress)._doMintAndDistribute(
+            tokenIds,
+            addresses
+        );
     }
-
 }

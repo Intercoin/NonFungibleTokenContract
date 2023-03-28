@@ -4,7 +4,7 @@ pragma solidity ^0.8.11;
 import "releasemanager/contracts/ReleaseManagerFactory.sol";
 
 contract MockReleaseManagerFactory is ReleaseManagerFactory {
-    constructor(address _implementation) ReleaseManagerFactory(_implementation) {
-        
-    }
+    constructor(
+        address _implementation
+    ) ReleaseManagerFactory(_implementation) {}
 }

@@ -10,7 +10,6 @@ import "./INFTSales.sol";
 import "./INFTSalesFactory.sol";
 import "../INFTState.sol";
 
-
 /**
 ****************
 FACTORY CONTRACT
@@ -57,6 +56,8 @@ contract NFTSalesFactory is INFTSalesFactory {
      */
     address public immutable implementationNFTSale;
 
+    address[] public instances;
+
     struct InstanceInfo {
         address NFTContract;
         uint64 seriesId;
@@ -85,7 +86,7 @@ contract NFTSalesFactory is INFTSalesFactory {
 
     modifier onlyInstance() {
         address NFTContract = instancesInfo[msg.sender].NFTContract;
-        if (NFTContract == 0) {
+        if (!whitelist[NFTContract].contains(msg.sender)) {
             revert InstancesOnly();
         }
         _;
@@ -107,7 +108,10 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @custom:calledby instance
      * @custom:shortd mint distribute NFTs
      */
-    function _doMintAndDistribute(uint256[] memory tokenIds, address[] memory addresses) external onlyInstance {
+    function _doMintAndDistribute(
+        uint256[] memory tokenIds,
+        address[] memory addresses
+    ) external onlyInstance {
         address NFTcontract = instancesInfo[msg.sender].NFTContract;
 
         // get current owner directly from NFT instance contract
@@ -118,7 +122,14 @@ contract NFTSalesFactory is INFTSalesFactory {
 
         // factory is a trusted forwarder for NFT contract and calls makes as an owner
         (transferSuccess, returndata) = NFTcontract.call(
-            abi.encodePacked(abi.encodeWithSelector(INFTState.mintAndDistribute.selector, tokenIds, addresses), owner)
+            abi.encodePacked(
+                abi.encodeWithSelector(
+                    INFTState.mintAndDistribute.selector,
+                    tokenIds,
+                    addresses
+                ),
+                owner
+            )
         );
         _verifyCallResult(transferSuccess, returndata, "low level error");
     }
@@ -127,13 +138,18 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @notice view NFT contrac address. used by instances in external calls
      * @custom:shortd view NFT contract address
      */
-    function instanceToNFTContract(address instanceAddress) external view returns (address) {
+    function instanceToNFTContract(
+        address instanceAddress
+    ) external view returns (address) {
         return instancesInfo[instanceAddress].NFTContract;
     }
 
-    function whitelistByNFTContract(address NFTContract) external view returns (address[] memory instances) {
+    function whitelistByNFTContract(
+        address NFTContract
+    ) external view returns (address[] memory instances) {
+        instances = new address[](whitelist[NFTContract].length());
         for (uint256 i = 0; i < whitelist[NFTContract].length(); i++) {
-            instances[i] = whitelist.at(i);
+            instances[i] = whitelist[NFTContract].at(i);
         }
     }
 
@@ -144,7 +160,7 @@ contract NFTSalesFactory is INFTSalesFactory {
      * @param currency currency for every sale NFT token
      * @param price price amount for every sale NFT token
      * @param beneficiary address where which receive funds after sale
-     * @param autoIndex from what index contract will start autoincrement from each series(if owner doesnot set before) 
+     * @param autoIndex from what index contract will start autoincrement from each series(if owner doesnot set before)
      * @param duration locked time when NFT will be locked after sale
      * @param rateInterval interval in which contract should sell not more than `rateAmount` tokens
      * @param rateAmount amount of tokens that can be minted in each `rateInterval`
@@ -172,13 +188,39 @@ contract NFTSalesFactory is INFTSalesFactory {
 
         instance = address(implementationNFTSale).clone();
 
-        require(instance != address(0), "NFTSalesFactory: INSTANCE_CREATION_FAILED");
-        whitelist[NFTcontract].add(instance);
-        instancesInfo[instance] = InstanceInfo(NFTContract, seriesId, owner, duration, currency, price, beneficiary, autoIndex, rateInterval, rateAmount);
+        require(
+            instance != address(0),
+            "NFTSalesFactory: INSTANCE_CREATION_FAILED"
+        );
+
+        instances.push(instance);
+
+        whitelist[NFTContract].add(instance);
+        instancesInfo[instance] = InstanceInfo(
+            NFTContract,
+            seriesId,
+            owner,
+            duration,
+            currency,
+            price,
+            beneficiary,
+            autoIndex,
+            rateInterval,
+            rateAmount
+        );
 
         emit InstanceCreated(instance);
 
-        INFTSales(instance).initialize(seriesId, currency, price, beneficiary, autoIndex, duration, rateInterval, rateAmount);
+        INFTSales(instance).initialize(
+            seriesId,
+            currency,
+            price,
+            beneficiary,
+            autoIndex,
+            duration,
+            rateInterval,
+            rateAmount
+        );
 
         Ownable(instance).transferOwnership(owner);
     }
@@ -199,6 +241,13 @@ contract NFTSalesFactory is INFTSalesFactory {
             revert OwnerOfNFTContractOnly(NFTContract, NFTOwner);
         }
         whitelist[NFTContract].remove(instance);
+    }
+
+    /**
+     * @dev returns the count of instances
+     */
+    function instancesCount() external view returns (uint256) {
+        return instances.length;
     }
 
     ////////////////////////////////////////////////////////////////////////

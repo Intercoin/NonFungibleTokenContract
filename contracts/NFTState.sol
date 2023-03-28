@@ -4,53 +4,42 @@ pragma abicoder v2;
 
 import "./NFTStorage.sol";
 import "./INFTState.sol";
-//import "hardhat/console.sol";
 
 contract NFTState is NFTStorage, INFTState {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     using AddressUpgradeable for address;
     using StringsW0x for uint256;
-    
-    mapping (uint256 => uint64) public forked;
-    mapping (uint64 => uint256) public forkedFrom;
 
     function initialize(
-        string memory name_, 
-        string memory symbol_, 
-        string memory contractURI_, 
-        string memory baseURI_, 
-        string memory suffixURI_, 
+        string memory name_,
+        string memory symbol_,
+        string memory contractURI_,
+        string memory baseURI_,
+        string memory suffixURI_,
         address costManager_,
         address producedBy_
-    ) 
-        public 
+    )
+        public
         //override
         onlyInitializing
     {
-
         __Ownable_init();
         __ReentrancyGuard_init();
         __ERC721_init(name_, symbol_, costManager_, producedBy_);
         _contractURI = contractURI_;
         baseURI = baseURI_;
         suffix = suffixURI_;
- 
     }
-    
 
     /********************************************************************
-    ****** external section *********************************************
-    *********************************************************************/
-    
+     ****** external section *********************************************
+     *********************************************************************/
+
     /**
-    * @dev sets the default baseURI for the whole contract
-    * @param baseURI_ the prefix to prepend to URIs
-    */
-    function setBaseURI(
-        string calldata baseURI_
-    ) 
-        external
-    {
+     * @dev sets the default baseURI for the whole contract
+     * @param baseURI_ the prefix to prepend to URIs
+     */
+    function setBaseURI(string calldata baseURI_) external {
         requireOnlyOwner();
         baseURI = baseURI_;
         _accountForOperation(
@@ -59,16 +48,12 @@ contract NFTState is NFTStorage, INFTState {
             0
         );
     }
-    
+
     /**
-    * @dev sets the default URI suffix for the whole contract
-    * @param suffix_ the suffix to append to URIs
-    */
-    function setSuffix(
-        string calldata suffix_
-    ) 
-        external
-    {
+     * @dev sets the default URI suffix for the whole contract
+     * @param suffix_ the suffix to append to URIs
+     */
+    function setSuffix(string calldata suffix_) external {
         requireOnlyOwner();
         suffix = suffix_;
         _accountForOperation(
@@ -79,9 +64,9 @@ contract NFTState is NFTStorage, INFTState {
     }
 
     /**
-    * @dev sets contract URI. 
-    * @param newContractURI new contract URI
-    */
+     * @dev sets contract URI.
+     * @param newContractURI new contract URI
+     */
     function setContractURI(string memory newContractURI) external {
         requireOnlyOwner();
         _contractURI = newContractURI;
@@ -93,84 +78,109 @@ contract NFTState is NFTStorage, INFTState {
     }
 
     /**
-    * @dev sets information for series with 'seriesId'. 
-    * @param seriesId series ID
-    * @param info new info to set
-    */
-    function setSeriesInfo(
-        uint64 seriesId, 
-        SeriesInfo memory info 
-    ) 
-        external
-    {
-        CommunitySettings memory emptySettings = CommunitySettings(address(0), 0);
+     * @dev sets information for series with 'seriesId'.
+     * @param seriesId series ID
+     * @param info new info to set
+     */
+    function setSeriesInfo(uint64 seriesId, SeriesInfo memory info) external {
+        CommunitySettings memory emptySettings = CommunitySettings(
+            address(0),
+            0
+        );
         _setSeriesInfo(seriesId, info, emptySettings, emptySettings);
     }
 
     /**
-    * @dev sets information for series with 'seriesId'. 
-    * @param seriesId series ID
-    * @param info new info to set
-    */
+     * @dev sets information for series with 'seriesId'.
+     * @param seriesId series ID
+     * @param info new info to set
+     */
     function setSeriesInfo(
-        uint64 seriesId, 
+        uint64 seriesId,
         SeriesInfo memory info,
         CommunitySettings memory transferWhitelistSettings,
         CommunitySettings memory buyWhitelistSettings
-    ) 
-        external
-    {
-        _setSeriesInfo(seriesId, info, transferWhitelistSettings, buyWhitelistSettings);
+    ) external {
+        _setSeriesInfo(
+            seriesId,
+            info,
+            transferWhitelistSettings,
+            buyWhitelistSettings
+        );
     }
-    
+
     /**
      * @dev fork a forkable series, if you own a token from it, and become its author
      * @param tokenId an existing token that you own
      * @param forkedSeriesId the new series ID, but not already have an author
      */
-    function forkSeries(uint256 tokenId, uint16 forkedSeriesId)
-    {
-	require(forked[tokenId] == 0, "ALREADY_FORKED");
-	require(_ownerOf(tokenId) == _msgCaller(), "NOT_TOKEN_OWNER");
-	uint64 seriesId = getSeriesId(tokenId);
-	require (seriesId & 0x0000000F == 0, "SERIES_NOT_FORKABLE");
-	require (seriesInfo[forkedSeriesId].author == address(0), "FORK_ALREADY_EXISTS");
-	seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
-	seriesInfo[forkedSeriesId].author = _msgSender();
-	seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId].transfer;
-	seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
-	forked[tokenId] = forkedSeriesId;
-	forkedFrom[forkedSeriesId] = tokenId;
+    function forkSeries(uint256 tokenId, uint64 forkedSeriesId) public {
+        if (forked[tokenId] != 0) {
+            revert AlreadyForked();
+        }
+        if (_ownerOf(tokenId) != _msgSender()) {
+            revert NotTokenOwner();
+        }
+
+        uint64 seriesId = getSeriesId(tokenId);
+        if (seriesId & 0x00000000000000FF != 0) {
+            revert SeriesNotForkable();
+        }
+        if (seriesInfo[forkedSeriesId].author != address(0)) {
+            revert ForkAlreadyExists();
+        }
+        uint8 p = 8;
+        for (uint8 i = 7 * 8; i > 8; i -= 8) {
+            if (((seriesId >> i) << i) == seriesId) {
+                p = i;
+                break;
+            }
+        }
+        if (
+            forkedSeriesId < seriesId + (1 << (p - 8)) ||
+            forkedSeriesId >= seriesId + (1 << p)
+        ) {
+            revert ForkSeriesId(); // fork must be between 0xAABB010000000000 and 0xAABBFF0000000000
+        }
+
+        seriesInfo[forkedSeriesId] = seriesInfo[seriesId];
+
+        seriesInfo[forkedSeriesId].author = payable(_msgSender());
+        seriesWhitelists[forkedSeriesId].transfer = seriesWhitelists[seriesId]
+            .transfer;
+        seriesWhitelists[forkedSeriesId].buy = seriesWhitelists[seriesId].buy;
+        forked[tokenId] = forkedSeriesId;
+        forkedFrom[forkedSeriesId] = tokenId;
     }
 
     /**
-    * @dev sets information for series with 'seriesId'. 
-    * @param seriesId series ID
-    * @param info new info to set
-    */
+     * @dev sets information for series with 'seriesId'.
+     * @param seriesId series ID
+     * @param info new info to set
+     */
     function _setSeriesInfo(
-        uint64 seriesId, 
+        uint64 seriesId,
         SeriesInfo memory info,
         CommunitySettings memory transferWhitelistSettings,
         CommunitySettings memory buyWhitelistSettings
-    ) 
-        internal
-    {
+    ) internal {
         _requireCanManageSeries(seriesId);
-        if (info.saleInfo.onSaleUntil > seriesInfo[seriesId].saleInfo.onSaleUntil && 
+        if (
+            info.saleInfo.onSaleUntil >
+            seriesInfo[seriesId].saleInfo.onSaleUntil &&
             info.saleInfo.onSaleUntil > block.timestamp
         ) {
             emit SeriesPutOnSale(
-                seriesId, 
+                seriesId,
                 info.saleInfo.price,
-                info.saleInfo.autoincrement, 
-                info.saleInfo.currency, 
+                info.saleInfo.autoincrement,
+                info.saleInfo.currency,
                 info.saleInfo.onSaleUntil
             );
-        } else if (info.saleInfo.onSaleUntil <= block.timestamp ) {
+        } else if (info.saleInfo.onSaleUntil <= block.timestamp) {
             emit SeriesRemovedFromSale(seriesId);
         }
-        
+
         seriesInfo[seriesId] = info;
         mintedCountBySetSeriesInfo[seriesId] = 0;
 
@@ -182,18 +192,13 @@ contract NFTState is NFTStorage, INFTState {
             uint256(uint160(info.saleInfo.currency)),
             info.saleInfo.price
         );
-        
     }
 
     /**
-    * set commission paid to contract owner
-    * @param commission new commission info
-    */
-    function setOwnerCommission(
-        CommissionInfo memory commission
-    ) 
-        external 
-    {   
+     * set commission paid to contract owner
+     * @param commission new commission info
+     */
+    function setOwnerCommission(CommissionInfo memory commission) external {
         requireOnlyOwner();
         commissionInfo = commission;
 
@@ -202,87 +207,96 @@ contract NFTState is NFTStorage, INFTState {
             uint256(uint160(commission.ownerCommission.recipient)),
             commission.ownerCommission.value
         );
-
     }
 
     /**
-    * set commission for series
-    * @param commissionData new commission data
-    */
+     * set commission for series
+     * @param commissionData new commission data
+     */
     function setCommission(
-        uint64 seriesId, 
+        uint64 seriesId,
         CommissionData memory commissionData
-    ) 
-        external 
-    {
+    ) external {
         _requireCanManageSeries(seriesId);
-        require(
+
+        if (
+            commissionData.value <= commissionInfo.maxValue &&
+            commissionData.value >= commissionInfo.minValue &&
             (
-                commissionData.value <= commissionInfo.maxValue &&
-                commissionData.value >= commissionInfo.minValue &&
-                (seriesId & 0x0000000F == 0 ? commissionData * 8 : commissionData.value)
-		+ commissionInfo.ownerCommission.value < FRACTION &&
-            ),
-            "COMMISSION_INVALID"
-        );
-        require(commissionData.recipient != address(0), "RECIPIENT_INVALID");
+                seriesId & 0x00000000000000FF == 0
+                    ? commissionData.value * 8
+                    : commissionData.value
+            ) +
+                commissionInfo.ownerCommission.value <
+            FRACTION
+        ) {
+            //ok
+        } else {
+            revert CommissionInvalid();
+        }
+
+        if (commissionData.recipient == address(0)) {
+            revert RecipientInvalid();
+        }
         seriesInfo[seriesId].commission = commissionData;
-        
+
         _accountForOperation(
             (OPERATION_SETCOMMISSION << OPERATION_SHIFT_BITS) | seriesId,
             commissionData.value,
             uint256(uint160(commissionData.recipient))
         );
-        
     }
 
     /**
-    * clear commission for series
-    * @param seriesId seriesId
-    */
-    function removeCommission(
-        uint64 seriesId
-    ) 
-        external 
-    {
+     * clear commission for series
+     * @param seriesId seriesId
+     */
+    function removeCommission(uint64 seriesId) external {
         _requireCanManageSeries(seriesId);
         delete seriesInfo[seriesId].commission;
-        
+
         _accountForOperation(
             (OPERATION_REMOVECOMMISSION << OPERATION_SHIFT_BITS) | seriesId,
             0,
             0
         );
-        
     }
 
     /**
-    * @dev lists on sale NFT with defined token ID with specified terms of sale
-    * @param tokenId token ID
-    * @param price price for sale 
-    * @param currency currency of sale 
-    * @param duration duration of sale 
-    */
+     * @dev lists on sale NFT with defined token ID with specified terms of sale
+     * @param tokenId token ID
+     * @param price price for sale
+     * @param currency currency of sale
+     * @param duration duration of sale
+     */
     function listForSale(
         uint256 tokenId,
         uint256 price,
         address currency,
         uint64 duration
-    )
-        external 
-    {
-        (bool success, /*bool isExists*/, /*SaleInfo memory data*/, /*address owner*/) = _getTokenSaleInfo(tokenId);
-        
+    ) external {
+        (
+            bool isOnSale /*bool isExists*/ /*SaleInfo memory data*/ /*address owner*/,
+            ,
+            ,
+
+        ) = _getTokenSaleInfo(tokenId);
+
         _requireCanManageToken(tokenId);
-        require(!success, "already on sale");
-        require(duration > 0, "invalid duration");
+
+        if (isOnSale) {
+            revert AlreadyInSale();
+        }
+        if (duration == 0) {
+            revert DurationInvalid();
+        }
 
         uint64 seriesId = getSeriesId(tokenId);
         SaleInfo memory newSaleInfo = SaleInfo({
             onSaleUntil: uint64(block.timestamp) + duration,
             currency: currency,
             price: price,
-            autoincrement:0
+            autoincrement: 0
         });
         SaleInfoToken memory saleInfoToken = SaleInfoToken({
             saleInfo: newSaleInfo,
@@ -292,36 +306,41 @@ contract NFTState is NFTStorage, INFTState {
         _setSaleInfo(tokenId, saleInfoToken);
 
         emit TokenPutOnSale(
-            tokenId, 
-            _msgSender(), 
-            newSaleInfo.price, 
-            newSaleInfo.currency, 
+            tokenId,
+            _msgSender(),
+            newSaleInfo.price,
+            newSaleInfo.currency,
             newSaleInfo.onSaleUntil
         );
-        
+
         _accountForOperation(
             (OPERATION_LISTFORSALE << OPERATION_SHIFT_BITS) | seriesId,
             uint256(uint160(currency)),
             price
         );
     }
-    
+
     /**
-    * @dev removes from sale NFT with defined token ID
-    * @param tokenId token ID
-    */
-    function removeFromSale(
-        uint256 tokenId
-    )
-        external 
-    {
-        (bool success, /*bool isExists*/, SaleInfo memory data, /*address owner*/) = _getTokenSaleInfo(tokenId);
-        require(success, "token not on sale");
+     * @dev removes from sale NFT with defined token ID
+     * @param tokenId token ID
+     */
+    function removeFromSale(uint256 tokenId) external {
+        (
+            bool isOnSale /*bool isExists*/,
+            ,
+            SaleInfo memory data /*address owner*/,
+
+        ) = _getTokenSaleInfo(tokenId);
+
+        if (!isOnSale) {
+            revert TokenIsNotOnSale();
+        }
+
         _requireCanManageToken(tokenId);
         clearOnSaleUntil(tokenId);
 
         emit TokenRemovedFromSale(tokenId, _msgSender());
-        
+
         uint64 seriesId = getSeriesId(tokenId);
         _accountForOperation(
             (OPERATION_REMOVEFROMSALE << OPERATION_SHIFT_BITS) | seriesId,
@@ -331,25 +350,25 @@ contract NFTState is NFTStorage, INFTState {
     }
 
     /**
-    * @dev mints and distributes NFTs with specified IDs
-    * to specified addresses
-    * @param tokenIds list of NFT IDs t obe minted
-    * @param addresses list of receiver addresses
-    */
+     * @dev mints and distributes NFTs with specified IDs
+     * to specified addresses
+     * @param tokenIds list of NFT IDs t obe minted
+     * @param addresses list of receiver addresses
+     */
     function mintAndDistribute(
-        uint256[] memory tokenIds, 
+        uint256[] memory tokenIds,
         address[] memory addresses
-    )
-        external 
-    {
+    ) external {
         uint256 len = addresses.length;
-        require(tokenIds.length == len, "lengths should be the same");
+        if (tokenIds.length != len) {
+            revert LengthsShouldBeTheSame();
+        }
 
-        for(uint256 i = 0; i < len; i++) {
+        for (uint256 i = 0; i < len; i++) {
             _requireCanManageSeries(getSeriesId(tokenIds[i]));
             _mint(addresses[i], tokenIds[i]);
         }
-        
+
         _accountForOperation(
             OPERATION_MINTANDDISTRIBUTE << OPERATION_SHIFT_BITS,
             len,
@@ -358,40 +377,40 @@ contract NFTState is NFTStorage, INFTState {
     }
 
     /**
-    * @dev mints and distributes `amount` NFTs by `seriesId` to `account`
-    * @param seriesId seriesId
-    * @param account receiver addresses
-    * @param amount amount of tokens
-    * @custom:calledby owner or series author
-    * @custom:shortd mint and distribute new tokens
-    */
+     * @dev mints and distributes `amount` NFTs by `seriesId` to `account`
+     * @param seriesId seriesId
+     * @param account receiver addresses
+     * @param amount amount of tokens
+     * @custom:calledby owner or series author
+     * @custom:shortd mint and distribute new tokens
+     */
     function mintAndDistributeAuto(
-        uint64 seriesId, 
+        uint64 seriesId,
         address account,
         uint256 amount
-    )
-        external
-    {
+    ) external {
         _requireCanManageSeries(seriesId);
 
         uint256 tokenId;
         uint256 tokenIndex = (uint256(seriesId) << SERIES_SHIFT_BITS);
         uint192 j;
 
-        for(uint256 i = 0; i < amount; i++) {
-            for(j = seriesTokenIndex[seriesId]; j < MAX_TOKEN_INDEX; j++) {
+        for (uint256 i = 0; i < amount; i++) {
+            for (j = seriesTokenIndex[seriesId]; j < MAX_TOKEN_INDEX; j++) {
                 tokenId = tokenIndex + j;
 
-                if (tokensInfo[tokenId].owner == address(0)) { 
+                if (tokensInfo[tokenId].owner == address(0)) {
                     // save last index
                     seriesTokenIndex[seriesId] = j;
 
                     break;
                 }
-                
             }
             // unreachable but must be
-            if (j == MAX_TOKEN_INDEX) { revert("series max token limit exceeded");}
+            if (j == MAX_TOKEN_INDEX) {
+                revert SeriesMaxTokenLimitExceeded();
+            }
+
             _mint(account, tokenId);
         }
 
@@ -400,13 +419,11 @@ contract NFTState is NFTStorage, INFTState {
             amount,
             0
         );
-        
-        
     }
-   
+
     /********************************************************************
-    ****** public section ***********************************************
-    *********************************************************************/
+     ****** public section ***********************************************
+     *********************************************************************/
     function buy(
         uint256[] memory tokenIds,
         address currency,
@@ -414,192 +431,195 @@ contract NFTState is NFTStorage, INFTState {
         bool safe,
         uint256 hookCount,
         address buyFor
-    ) 
-        public 
-        virtual
-        payable 
-        //nonReentrant 
+    ) public payable virtual //nonReentrant
     {
-        require(tokenIds.length > 0, "invalid tokenIds");
+        if (tokenIds.length == 0) {
+            revert TokenIdsInvalid();
+        }
         uint64 seriesId = getSeriesId(tokenIds[0]);
 
         validateBuyer(seriesId);
         validateHookCount(seriesId, hookCount);
-        
+
         uint256 left = totalPrice;
 
-        for(uint256 i = 0; i < tokenIds.length; i ++) {
-            (bool success, bool exists, SaleInfo memory data, address beneficiary) = _getTokenSaleInfo(tokenIds[i]);
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            (
+                bool isOnSale,
+                bool exists,
+                SaleInfo memory data,
+                address beneficiary
+            ) = _getTokenSaleInfo(tokenIds[i]);
 
             //require(currency == data.currency, "wrong currency for sale");
-            require(left >= data.price, "insufficient amount sent");
+            if (left < data.price) {
+                revert InsufficientAmountSent();
+            }
             left -= data.price;
 
             _commissions_payment(
-                tokenIds[i], 
-                currency, 
-                (currency == address(0) ? true : false), 
-                data.price, 
-                success, 
-                data, 
+                tokenIds[i],
+                currency,
+                (currency == address(0) ? true : false),
+                data.price,
+                isOnSale,
+                exists,
+                data,
                 beneficiary
             );
 
-            _buy(tokenIds[i], exists, data, beneficiary, buyFor, safe);
-            
-            
+            _sendDuringBuy(
+                tokenIds[i],
+                exists,
+                data,
+                beneficiary,
+                buyFor,
+                safe
+            );
+
             _accountForOperation(
-                (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
+                (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
                 0,
                 data.price
             );
         }
-
     }
 
     /**
-    * @dev buys NFT for native coin with undefined id. 
-    * Id will be generate as usually by auto inrement but belong to seriesId
-    * and transfer token if it is on sale
-    * @param seriesId series ID whene we can find free token to buy
-    * @param price amount of specified native coin to pay
-    * @param safe use safeMint and safeTransfer or not, 
-    * @param hookCount number of hooks 
-    */
+     * @dev buys NFT for native coin with undefined id.
+     * Id will be generate as usually by auto inrement but belong to seriesId
+     * and transfer token if it is on sale
+     * @param seriesId series ID whene we can find free token to buy
+     * @param price amount of specified native coin to pay
+     * @param safe use safeMint and safeTransfer or not,
+     * @param hookCount number of hooks
+     */
     function buyAuto(
-        uint64 seriesId, 
-        uint256 price, 
-        bool safe, 
+        uint64 seriesId,
+        uint256 price,
+        bool safe,
         uint256 hookCount
-    ) 
-        public 
-        payable 
-        //nonReentrant 
+    ) public payable //nonReentrant
     {
-
         _buyAuto(seriesId, address(0), price, safe, hookCount, _msgSender());
     }
+
     /**
-    * @dev buys NFT for native coin with undefined id. 
-    * Id will be generate as usually by auto inrement but belong to seriesId
-    * and transfer token if it is on sale
-    * @param seriesId series ID whene we can find free token to buy
-    * @param price amount of specified native coin to pay
-    * @param safe use safeMint and safeTransfer or not, 
-    * @param hookCount number of hooks 
-    * @param buyFor address of new nft owner
-    */
+     * @dev buys NFT for native coin with undefined id.
+     * Id will be generate as usually by auto inrement but belong to seriesId
+     * and transfer token if it is on sale
+     * @param seriesId series ID whene we can find free token to buy
+     * @param price amount of specified native coin to pay
+     * @param safe use safeMint and safeTransfer or not,
+     * @param hookCount number of hooks
+     * @param buyFor address of new nft owner
+     */
     function buyAuto(
-        uint64 seriesId, 
-        uint256 price, 
-        bool safe, 
+        uint64 seriesId,
+        uint256 price,
+        bool safe,
         uint256 hookCount,
         address buyFor
-    ) 
-        public 
-        payable 
-        //nonReentrant 
+    ) public payable //nonReentrant
     {
-
         _buyAuto(seriesId, address(0), price, safe, hookCount, buyFor);
     }
 
     function _buyAuto(
-        uint64 seriesId, 
-        address currency, 
-        uint256 price, 
-        bool safe, 
+        uint64 seriesId,
+        address currency,
+        uint256 price,
+        bool safe,
         uint256 hookCount,
         address buyFor
-    ) 
-        internal
-    {
-        
+    ) internal {
         validateBuyer(seriesId);
         validateHookCount(seriesId, hookCount);
 
-        (bool success, bool exists, SaleInfo memory data, address beneficiary, uint256 tokenId) = _getTokenSaleInfoAuto(seriesId);
+        (
+            bool isOnSale,
+            bool exists,
+            SaleInfo memory data,
+            address beneficiary,
+            uint256 tokenId
+        ) = _getTokenSaleInfoAuto(seriesId);
 
-        _commissions_payment(tokenId, currency, (currency == address(0) ? true : false), price, success, data, beneficiary);
-        
-        _buy(tokenId, exists, data, beneficiary, buyFor, safe);
-        
-        
+        _commissions_payment(
+            tokenId,
+            currency,
+            (currency == address(0) ? true : false),
+            price,
+            isOnSale,
+            exists,
+            data,
+            beneficiary
+        );
+
+        _sendDuringBuy(tokenId, exists, data, beneficiary, buyFor, safe);
+
         _accountForOperation(
-            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId, 
+            (OPERATION_BUY << OPERATION_SHIFT_BITS) | seriesId,
             0,
             price
         );
-
     }
-    
-    /**
-    * @dev buys NFT for native coin with undefined id. 
-    * Id will be generate as usually by auto inrement but belong to seriesId
-    * and transfer token if it is on sale
-    * @param seriesId series ID whene we can find free token to buy
-    * @param currency address of token to pay with
-    * @param price amount of specified token to pay
-    * @param safe use safeMint and safeTransfer or not
-    * @param hookCount number of hooks 
-    */
-    function buyAuto(
-        uint64 seriesId, 
-        address currency, 
-        uint256 price, 
-        bool safe, 
-        uint256 hookCount
-    ) 
-        public 
-        //nonReentrant 
-    {
 
+    /**
+     * @dev buys NFT for native coin with undefined id.
+     * Id will be generate as usually by auto inrement but belong to seriesId
+     * and transfer token if it is on sale
+     * @param seriesId series ID whene we can find free token to buy
+     * @param currency address of token to pay with
+     * @param price amount of specified token to pay
+     * @param safe use safeMint and safeTransfer or not
+     * @param hookCount number of hooks
+     */
+    function buyAuto(
+        uint64 seriesId,
+        address currency,
+        uint256 price,
+        bool safe,
+        uint256 hookCount
+    ) public //nonReentrant
+    {
         _buyAuto(seriesId, currency, price, safe, hookCount, _msgSender());
     }
 
     /**
-    * @dev buys NFT for native coin with undefined id. 
-    * Id will be generate as usually by auto inrement but belong to seriesId
-    * and transfer token if it is on sale
-    * @param seriesId series ID whene we can find free token to buy
-    * @param currency address of token to pay with
-    * @param price amount of specified token to pay
-    * @param safe use safeMint and safeTransfer or not
-    * @param hookCount number of hooks 
-    * @param buyFor address of new nft owner
-    */
+     * @dev buys NFT for native coin with undefined id.
+     * Id will be generate as usually by auto inrement but belong to seriesId
+     * and transfer token if it is on sale
+     * @param seriesId series ID whene we can find free token to buy
+     * @param currency address of token to pay with
+     * @param price amount of specified token to pay
+     * @param safe use safeMint and safeTransfer or not
+     * @param hookCount number of hooks
+     * @param buyFor address of new nft owner
+     */
     function buyAuto(
-        uint64 seriesId, 
-        address currency, 
-        uint256 price, 
-        bool safe, 
+        uint64 seriesId,
+        address currency,
+        uint256 price,
+        bool safe,
         uint256 hookCount,
         address buyFor
-    ) 
-        public 
-        //nonReentrant 
+    ) public //nonReentrant
     {
         _buyAuto(seriesId, currency, price, safe, hookCount, buyFor);
     }
 
-
-    /** 
-    * @dev sets name and symbol for contract
-    * @param newName new name 
-    * @param newSymbol new symbol 
-    */
+    /**
+     * @dev sets name and symbol for contract
+     * @param newName new name
+     * @param newSymbol new symbol
+     */
     function setNameAndSymbol(
-        string memory newName, 
+        string memory newName,
         string memory newSymbol
-    ) 
-        public 
-    {
+    ) public {
         requireOnlyOwner();
         _setNameAndSymbol(newName, newSymbol);
     }
-    
-  
-    
 
     /**
      * @dev Gives permission to `to` to transfer `tokenId` token to another account.
@@ -637,7 +657,10 @@ contract NFTState is NFTStorage, INFTState {
      *
      * Emits an {ApprovalForAll} event.
      */
-    function setApprovalForAll(address operator, bool approved) public virtual override {
+    function setApprovalForAll(
+        address operator,
+        bool approved
+    ) public virtual override {
         require(operator != _msgSender(), "ERC721: approve to caller");
 
         _operatorApprovals[_msgSender()][operator] = approved;
@@ -726,10 +749,7 @@ contract NFTState is NFTStorage, INFTState {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(
-        address to,
-        uint256 tokenId
-    ) public virtual {
+    function transfer(address to, uint256 tokenId) public virtual {
         _requireCanManageToken(tokenId);
         _transfer(_msgSender(), to, tokenId);
     }
@@ -745,10 +765,7 @@ contract NFTState is NFTStorage, INFTState {
      *
      * Emits a {Transfer} event.
      */
-    function safeTransfer(
-        address to,
-        uint256 tokenId
-    ) public virtual override {
+    function safeTransfer(address to, uint256 tokenId) public virtual override {
         _requireCanManageToken(tokenId);
         _safeTransfer(_msgSender(), to, tokenId, "");
     }
@@ -764,7 +781,7 @@ contract NFTState is NFTStorage, INFTState {
         //solhint-disable-next-line max-line-length
         _requireCanManageToken(tokenId);
         _burn(tokenId);
-        
+
         _accountForOperation(
             OPERATION_BURN << OPERATION_SHIFT_BITS,
             tokenId,
@@ -772,52 +789,43 @@ contract NFTState is NFTStorage, INFTState {
         );
     }
 
-    
-   /**
-    * @dev the owner should be absolutely sure they trust the trustedForwarder
-    * @param trustedForwarder_ must be a smart contract that was audited
-    */
-    function setTrustedForwarder(
-        address trustedForwarder_
-    )
-        public 
-        override
-    {
+    /**
+     * @dev the owner should be absolutely sure they trust the trustedForwarder
+     * @param trustedForwarder_ must be a smart contract that was audited
+     */
+    function setTrustedForwarder(address trustedForwarder_) public override {
         requireOnlyOwner();
         _setTrustedForwarder(trustedForwarder_);
     }
 
     /**
-    * @dev link safeHook contract to certain series
-    * @param seriesId series ID
-    * @param contractAddress address of SafeHook contract
-    */
+     * @dev link safeHook contract to certain series
+     * @param seriesId series ID
+     * @param contractAddress address of SafeHook contract
+     */
     function pushTokenTransferHook(
-        uint64 seriesId, 
+        uint64 seriesId,
         address contractAddress
-    )
-        public 
-    {
+    ) public {
         requireOnlyOwner();
-        try ISafeHook(contractAddress).supportsInterface(type(ISafeHook).interfaceId) returns (bool success) {
+        try
+            ISafeHook(contractAddress).supportsInterface(
+                type(ISafeHook).interfaceId
+            )
+        returns (bool success) {
             if (success) {
                 hooks[seriesId].add(contractAddress);
             } else {
-                revert("wrong interface");
+                revert WrongInterface();
             }
         } catch {
-            revert("wrong interface");
+            revert WrongInterface();
         }
 
         emit NewHook(seriesId, contractAddress);
-
     }
 
-    function freeze(
-        uint256 tokenId
-    ) 
-        public 
-    {
+    function freeze(uint256 tokenId) public {
         string memory baseURI;
         string memory suffix;
         (baseURI, suffix) = _baseURIAndSuffix(tokenId);
@@ -825,69 +833,58 @@ contract NFTState is NFTStorage, INFTState {
     }
 
     function freeze(
-        uint256 tokenId, 
-        string memory baseURI, 
+        uint256 tokenId,
+        string memory baseURI,
         string memory suffix
-    ) 
-        public 
-    {
+    ) public {
         _freeze(tokenId, baseURI, suffix);
     }
 
-    
-    function unfreeze(
-        uint256 tokenId
-    ) 
-        public 
-    {
+    function unfreeze(uint256 tokenId) public {
         tokensInfo[tokenId].freezeInfo.exists = false;
     }
-    
 
     /********************************************************************
-    ****** internal section *********************************************
-    *********************************************************************/
+     ****** internal section *********************************************
+     *********************************************************************/
 
-    function validateBuyer(uint64 seriesId) internal {
-
+    function validateBuyer(uint64 seriesId) internal view {
         if (seriesWhitelists[seriesId].buy.community != address(0)) {
-            bool success = ICommunity(seriesWhitelists[seriesId].buy.community).hasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);
+            bool success = ICommunity(seriesWhitelists[seriesId].buy.community)
+                .hasRole(_msgSender(), seriesWhitelists[seriesId].buy.role);
             //require(success, "buyer not in whitelist");
-            require(success, "BUYER_INVALID");
+            if (!success) {
+                revert BuyerInvalid();
+            }
         }
     }
 
-    function _freeze(uint256 tokenId, string memory baseURI_, string memory suffix_) internal 
-    {
-        require(_ownerOf(tokenId) == _msgSender(), "token isn't owned by sender");
+    function _freeze(
+        uint256 tokenId,
+        string memory baseURI_,
+        string memory suffix_
+    ) internal {
+        if (_ownerOf(tokenId) != _msgSender()) {
+            revert TokenIsNotOwnedBySender();
+        }
         tokensInfo[tokenId].freezeInfo.exists = true;
         tokensInfo[tokenId].freezeInfo.baseURI = baseURI_;
         tokensInfo[tokenId].freezeInfo.suffix = suffix_;
-        
     }
-   
-    function _transferOwnership(
-        address newOwner
-    ) 
-        internal 
-        virtual 
-        override
-    {
+
+    function _transferOwnership(address newOwner) internal virtual override {
         super._transferOwnership(newOwner);
         _setTrustedForwarder(address(0));
     }
 
-    function _buy(
-        uint256 tokenId, 
-        bool exists, 
-        SaleInfo memory data, 
-        address owner, 
-        address recipient, 
+    function _sendDuringBuy(
+        uint256 tokenId,
+        bool exists,
+        SaleInfo memory data,
+        address owner,
+        address recipient,
         bool safe
-    ) 
-        internal 
-        virtual 
-    {
+    ) internal virtual {
         _storeHookCount(tokenId);
 
         if (exists) {
@@ -897,14 +894,13 @@ contract NFTState is NFTStorage, INFTState {
                 _transfer(owner, recipient, tokenId);
             }
             emit TokenBought(
-                tokenId, 
-                owner, 
-                recipient, 
-                data.currency, 
+                tokenId,
+                owner,
+                recipient,
+                data.currency,
                 data.price
             );
         } else {
-
             if (safe) {
                 _safeMint(recipient, tokenId);
             } else {
@@ -912,32 +908,26 @@ contract NFTState is NFTStorage, INFTState {
             }
             emit Transfer(owner, recipient, tokenId);
             emit TokenBought(
-                tokenId, 
-                owner, 
-                recipient, 
-                data.currency, 
+                tokenId,
+                owner,
+                recipient,
+                data.currency,
                 data.price
             );
         }
-         
     }
 
-    
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
     function __ERC721_init(
-        string memory name_, 
-        string memory symbol_, 
-        address costManager_, 
+        string memory name_,
+        string memory symbol_,
+        address costManager_,
         address producedBy_
-    ) 
-        internal 
-        onlyInitializing
-    {
-        
+    ) internal onlyInitializing {
         _setNameAndSymbol(name_, symbol_);
-        
+
         __CostManagerHelper_init(_msgSender());
         _setCostManager(costManager_);
 
@@ -947,7 +937,7 @@ contract NFTState is NFTStorage, INFTState {
             0
         );
     }
-    
+
     /**
      * @dev Safely transfers `tokenId` token from `from` to `to`, checking first that contract recipients
      * are aware of the ERC721 protocol to prevent tokens from being forever locked.
@@ -973,7 +963,10 @@ contract NFTState is NFTStorage, INFTState {
         bytes memory _data
     ) internal virtual {
         _transfer(from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, _data), "recipient must implement ERC721Receiver interface");
+        require(
+            _checkOnERC721Received(from, to, tokenId, _data),
+            "recipient must implement ERC721Receiver interface"
+        );
     }
 
     /**
@@ -1018,17 +1011,15 @@ contract NFTState is NFTStorage, INFTState {
      *
      * Emits a {Transfer} event. if flag `skipEvent` is false
      */
-    function _mint(
-        address to, 
-        uint256 tokenId
-    ) 
-        internal 
-        virtual 
-    {
+    function _mint(address to, uint256 tokenId) internal virtual {
         _storeHookCount(tokenId);
 
-        require(to != address(0), "can't mint to the zero address");
-        require(tokensInfo[tokenId].owner == address(0), "token already minted");
+        if (to == address(0)) {
+            revert AddressInvalid();
+        }
+        if (tokensInfo[tokenId].owner != address(0)) {
+            revert TokenAlreadyMinted();
+        }
 
         _beforeTokenTransfer(address(0), to, tokenId);
 
@@ -1040,15 +1031,12 @@ contract NFTState is NFTStorage, INFTState {
         mintedCountBySetSeriesInfo[seriesId] += 1;
 
         if (seriesInfo[seriesId].limit != 0) {
-            require(
-                mintedCountBySeries[seriesId] <= seriesInfo[seriesId].limit, 
-                "series token limit exceeded"
-            );
+            if (mintedCountBySeries[seriesId] > seriesInfo[seriesId].limit) {
+                revert SeriesTokenLimitExceeded();
+            }
         }
-        
 
         emit Transfer(address(0), to, tokenId);
-        
     }
 
     /**
@@ -1070,12 +1058,11 @@ contract NFTState is NFTStorage, INFTState {
         _approve(address(0), tokenId);
 
         _balances[owner] -= 1;
-        
+
         _balances[DEAD_ADDRESS] += 1;
         tokensInfo[tokenId].owner = DEAD_ADDRESS;
         clearOnSaleUntil(tokenId);
         emit Transfer(owner, DEAD_ADDRESS, tokenId);
-
     }
 
     /**
@@ -1094,9 +1081,12 @@ contract NFTState is NFTStorage, INFTState {
         address to,
         uint256 tokenId
     ) internal virtual {
-
-        require(_ownerOf(tokenId) == from, "token isn't owned by from address");
-        require(to != address(0), "can't transfer to the zero address");
+        if (_ownerOf(tokenId) != from) {
+            revert TokenIsntOwnedByFromAddress();
+        }
+        if (to == address(0)) {
+            revert CantTransferToTheZeroAddress();
+        }
 
         _beforeTokenTransfer(from, to, tokenId);
 
@@ -1110,26 +1100,20 @@ contract NFTState is NFTStorage, INFTState {
         clearOnSaleUntil(tokenId);
 
         emit Transfer(from, to, tokenId);
-        
+
         _accountForOperation(
             (OPERATION_TRANSFER << OPERATION_SHIFT_BITS) | getSeriesId(tokenId),
             uint256(uint160(from)),
             uint256(uint160(to))
         );
-        
     }
-    
+
     /**
-    * @dev sets sale info for the NFT with 'tokenId'
-    * @param tokenId token ID
-    * @param info information about sale 
-    */
-    function _setSaleInfo(
-        uint256 tokenId, 
-        SaleInfoToken memory info 
-    ) 
-        internal 
-    {
+     * @dev sets sale info for the NFT with 'tokenId'
+     * @param tokenId token ID
+     * @param info information about sale
+     */
+    function _setSaleInfo(uint256 tokenId, SaleInfoToken memory info) internal {
         //salesInfoToken[tokenId] = info;
         tokensInfo[tokenId].salesInfoToken = info;
     }
@@ -1143,18 +1127,16 @@ contract NFTState is NFTStorage, INFTState {
         tokensInfo[tokenId].tokenApproval = to;
         emit Approval(_ownerOf(tokenId), to, tokenId);
     }
-    
-    /** 
-    * @dev sets name and symbol for contract
-    * @param newName new name 
-    * @param newSymbol new symbol 
-    */
+
+    /**
+     * @dev sets name and symbol for contract
+     * @param newName new name
+     * @param newSymbol new symbol
+     */
     function _setNameAndSymbol(
-        string memory newName, 
+        string memory newName,
         string memory newSymbol
-    ) 
-        internal 
-    {
+    ) internal {
         _name = newName;
         _symbol = newSymbol;
     }
@@ -1179,30 +1161,36 @@ contract NFTState is NFTStorage, INFTState {
         address to,
         uint256 tokenId
     ) internal virtual {
-
         //safe hook
         uint64 seriesId = uint64(tokenId >> SERIES_SHIFT_BITS);
         for (uint256 i = 0; i < tokensInfo[tokenId].hooksCountByToken; i++) {
-            try ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
-			returns (bool success) {
+            try
+                ISafeHook(hooks[seriesId].at(i)).executeHook(from, to, tokenId)
+            returns (bool success) {
                 if (!success) {
-                    revert("Transfer Not Authorized");
+                    revert TransferNotAuthorized();
                 }
             } catch Error(string memory reason) {
                 // This is executed in case revert() was called with a reason
-	            revert(reason);
-	        } catch {
-                revert("Transfer Not Authorized");
+                revert(reason);
+            } catch {
+                revert TransferNotAuthorized();
             }
         }
         ////
-        if (to != address(0) && seriesWhitelists[seriesId].transfer.community != address(0)) {
-            bool success = ICommunity(seriesWhitelists[seriesId].transfer.community).hasRole(to, seriesWhitelists[seriesId].transfer.role);
+        if (
+            to != address(0) &&
+            seriesWhitelists[seriesId].transfer.community != address(0)
+        ) {
+            bool success = ICommunity(
+                seriesWhitelists[seriesId].transfer.community
+            ).hasRole(to, seriesWhitelists[seriesId].transfer.role);
             //require(success, "recipient not in whitelist");
-            require(success, "RECIPIENT_INVALID");
-            
+            if (!success) {
+                revert RecipientInvalid();
+            }
         }
-    ////
+        ////
 
         if (from == address(0)) {
             _addTokenToAllTokensEnumeration(tokenId);
@@ -1215,128 +1203,177 @@ contract NFTState is NFTStorage, INFTState {
         } else if (to != from) {
             _addTokenToOwnerEnumeration(to, tokenId);
         }
-
     }
 
     function clearOnSaleUntil(uint256 tokenId) internal {
-        if (tokensInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil > 0 ) tokensInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil = 0;
+        if (tokensInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil > 0)
+            tokensInfo[tokenId].salesInfoToken.saleInfo.onSaleUntil = 0;
     }
 
     function _requireCanManageSeries(uint64 seriesId) internal view virtual {
-        require(_canManageSeries(seriesId), "you can't manage this series");
+        if (!_canManageSeries(seriesId)) {
+            revert CantManageThisSeries();
+        }
     }
-             
+
     function _requireCanManageToken(uint256 tokenId) internal view virtual {
-        require(_exists(tokenId), "token doesn't exist");
-        require(_canManageToken(tokenId), "you can't manage this token");
+        if (!_exists(tokenId)) {
+            revert TokenDoesNotExists();
+        }
+        if (!_canManageToken(tokenId)) {
+            revert CantManageThisToken();
+        }
     }
 
     function _canManageToken(uint256 tokenId) internal view returns (bool) {
-        return __ownerOf(tokenId) == _msgSender()
-            || _getApproved(tokenId) == _msgSender()
-            || _isApprovedForAll(__ownerOf(tokenId), _msgSender());
+        return
+            __ownerOf(tokenId) == _msgSender() ||
+            _getApproved(tokenId) == _msgSender() ||
+            _isApprovedForAll(__ownerOf(tokenId), _msgSender());
     }
 
-    function _canManageSeries(uint64 seriesId) internal view returns(bool) {
-        return owner() == _msgSender() || seriesInfo[seriesId].author == _msgSender();
+    function _canManageSeries(uint64 seriesId) internal view returns (bool) {
+        //return owner() == _msgSender() || seriesInfo[seriesId].author == _msgSender();
+        return
+            (owner() == _msgSender()) ||
+            (
+                (forkedFrom[seriesId] == 0)
+                    ? __ownerOf(forkedFrom[seriesId])
+                    : seriesInfo[seriesId].author
+            ) ==
+            _msgSender();
     }
-    
+
     /**
-    * @dev returns count of hooks for series with `seriesId`
-    * @param seriesId series ID
-    */
-    function hooksCount(
-        uint64 seriesId
-    ) 
-        internal 
-        view 
-        returns(uint256) 
-    {
+     * @dev returns count of hooks for series with `seriesId`
+     * @param seriesId series ID
+     */
+    function hooksCount(uint64 seriesId) internal view returns (uint256) {
         return hooks[seriesId].length();
     }
 
     /**
-    * @dev validates hook count
-    * @param seriesId series ID
-    * @param hookCount hook count
-    */
+     * @dev validates hook count
+     * @param seriesId series ID
+     * @param hookCount hook count
+     */
     function validateHookCount(
         uint64 seriesId,
         uint256 hookCount
-    ) 
-        internal 
-        view 
-    {
+    ) internal view {
         require(hookCount == hooksCount(seriesId), "wrong hookCount");
     }
 
-    /** 
-    * @dev used to storage hooksCountByToken at this moment
-    */
-    function _storeHookCount(
-        uint256 tokenId
-    )
-        internal
-    {
-        tokensInfo[tokenId].hooksCountByToken = hooks[uint64(tokenId >> SERIES_SHIFT_BITS)].length();
+    /**
+     * @dev used to storage hooksCountByToken at this moment
+     */
+    function _storeHookCount(uint256 tokenId) internal {
+        tokensInfo[tokenId].hooksCountByToken = hooks[
+            uint64(tokenId >> SERIES_SHIFT_BITS)
+        ].length();
     }
 
     /**
-    * payment while buying. combined version for payable and for tokens
-    */
+     * payment while buying. combined version for payable and for tokens
+     */
     function _commissions_payment(
         uint256 tokenId,
         address currency,
         bool isPayable,
-        uint256 price, 
-        bool success,
-        SaleInfo memory data, 
+        uint256 price,
+        bool isOnSale,
+        bool exists,
+        SaleInfo memory data,
         address beneficiary
-    )
-        internal
-    {
-        require(success, "token is not on sale");
+    ) internal {
+        if (!isOnSale) {
+            revert TokenIsNotOnSale();
+        }
 
-        require(
+        if (
             (isPayable && address(0) == data.currency) ||
-            (!isPayable && currency == data.currency),
-            "wrong currency for sale"
+            (!isPayable && currency == data.currency)
+        ) {
+            //ok
+        } else {
+            revert CurrencyInvalid();
+        }
+
+        uint256 amount = (
+            isPayable
+                ? msg.value
+                : IERC20Upgradeable(data.currency).allowance(
+                    _msgSender(),
+                    address(this)
+                )
         );
 
-        uint256 amount = (isPayable ? msg.value : IERC20Upgradeable(data.currency).allowance(_msgSender(), address(this)));
-        require(amount >= data.price && price >= data.price, "insufficient amount sent");
+        if (amount >= data.price && price >= data.price) {
+            // ok
+        } else {
+            revert InsufficientAmountSent();
+        }
 
         uint256 left = data.price;
-        (address[2] memory addresses, uint256[2] memory values, uint256 length) = calculateCommission(tokenId, data.price);
+        (
+            address[9] memory addresses,
+            uint256[9] memory values,
+            uint256 length
+        ) = calculateCommission(tokenId, data.price, exists);
 
         // commissions payment
         bool transferSuccess;
-        for(uint256 i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; i++) {
+            if (addresses[i] == address(0)) {
+                // if no commission in some iteration we will skip. can be if commission recipient equal address(0)
+                continue;
+            }
             if (isPayable) {
-                (transferSuccess, ) = addresses[i].call{gas: 3000, value: values[i]}(new bytes(0));
-                require(transferSuccess, "TRANSFER_COMMISSION_FAILED");
+                (transferSuccess, ) = addresses[i].call{
+                    gas: 3000,
+                    value: values[i]
+                }(new bytes(0));
+                if (!transferSuccess) {
+                    revert TransferCommissionFailed();
+                }
             } else {
-                IERC20Upgradeable(data.currency).transferFrom(_msgSender(), addresses[i], values[i]);
+                // TODO 0: need to avoid epection and return own like "TransferCommissionFailed()"
+                IERC20Upgradeable(data.currency).transferFrom(
+                    _msgSender(),
+                    addresses[i],
+                    values[i]
+                );
             }
             left -= values[i];
         }
 
         // payment to beneficiary and refund
         if (isPayable) {
-            (transferSuccess, ) = beneficiary.call{gas: 3000, value: left}(new bytes(0));
-            require(transferSuccess, "TRANSFER_TO_OWNER_FAILED");
+            (transferSuccess, ) = beneficiary.call{gas: 3000, value: left}(
+                new bytes(0)
+            );
+            if (!transferSuccess) {
+                revert TransferToOwnerFailed();
+            }
 
             // try to refund
             if (amount > data.price) {
                 // todo 0: if  EIP-2771 using. to whom refund will be send? msg.sender or trusted forwarder
-                (transferSuccess, ) = msg.sender.call{gas: 3000, value: (amount - data.price)}(new bytes(0));
-                require(transferSuccess, "REFUND_FAILED");
+                (transferSuccess, ) = msg.sender.call{
+                    gas: 3000,
+                    value: (amount - data.price)
+                }(new bytes(0));
+                if (!transferSuccess) {
+                    revert RefundFailed();
+                }
             }
-
         } else {
-            IERC20Upgradeable(data.currency).transferFrom(_msgSender(), beneficiary, left);
+            IERC20Upgradeable(data.currency).transferFrom(
+                _msgSender(),
+                beneficiary,
+                left
+            );
         }
-
     }
 
     /**
@@ -1345,60 +1382,101 @@ contract NFTState is NFTStorage, INFTState {
     *  otherwise we should use snapshot parameters: ownerCommission/authorCommission, that hold during listForSale.
     *  used to prevent increasing commissions after token was listed for sale.
     *  If this series was forked, also calculates commissions for all parent series.
+    * Keep in mind that maximum commission amount are 9. one for owner commission and eight for author commissions(forked series)
     * @param tokenId token ID to calculate commission
     * @param price amount of specified token to pay 
+    * @param exists token exists or no. Such token is already on sale, but 
+        if not exists - it's primary sale (just setSeriesInfo by owner)
+        if exists - it's secondary sale (token's owner call listForSale before and fix owner commission)
     */
     function calculateCommission(
         uint256 tokenId,
-        uint256 price
-    ) 
-        internal 
-        view 
-        returns(
-            address[2] memory addresses, 
-            uint256[2] memory prices,
+        uint256 price,
+        bool exists
+    )
+        internal
+        view
+        returns (
+            address[9] memory addresses,
+            uint256[9] memory prices,
             uint256 length
-        ) 
+        )
     {
         uint64 seriesId = getSeriesId(tokenId);
         length = 0;
         uint256 sum;
-	
+
         // contract owner commission
         if (commissionInfo.ownerCommission.recipient != address(0)) {
-            uint256 oc = tokensInfo[tokenId].salesInfoToken.ownerCommissionValue;
-            if (commissionInfo.ownerCommission.value < oc)
+            // if secondary sale
+            //      token exists and owner call listForSale to sell token. so we can view at fixed state in tokensInfo mapping
+            // else (primary sale)
+            //      token not exists and we need to view commission in series
+
+            // if primary sale - take global owner commission
+            // if secondary sale - take owner commission that was fixed when owner had called `listForSale`.
+            //                  and if global commission less that was fixed - we will take global commission
+            uint256 oc = exists
+                ? tokensInfo[tokenId].salesInfoToken.ownerCommissionValue
+                : //0
+                commissionInfo.ownerCommission.value;
+
+            if (commissionInfo.ownerCommission.value < oc) {
                 oc = commissionInfo.ownerCommission.value;
+            }
             if (oc != 0) {
                 addresses[length] = commissionInfo.ownerCommission.recipient;
+
                 sum += oc;
-                prices[length] = oc * price / FRACTION;
+                prices[length] = (oc * price) / FRACTION;
                 length++;
             }
         }
 
         // author commission
         if (seriesInfo[seriesId].commission.recipient != address(0)) {
-            uint256 ac = tokensInfo[tokenId].salesInfoToken.authorCommissionValue;
-            if (seriesInfo[seriesId].commission.value < ac) 
+            //uint256 ac = tokensInfo[tokenId].salesInfoToken.authorCommissionValue;
+            uint256 ac = exists
+                ? tokensInfo[tokenId].salesInfoToken.authorCommissionValue
+                : seriesInfo[seriesId].commission.value;
+
+            if (seriesInfo[seriesId].commission.value < ac) {
                 ac = seriesInfo[seriesId].commission.value;
-            if (ac != 0) {
-		do { // pay authors from whom the series forked, too
-                        addresses[length] = seriesInfo[forkedSeriesId].commission.recipient;
-	                sum += ac;
-	                prices[length] = ac * price / FRACTION;
-	                length++;
-		} while (seriesId = forkedFrom[forkedSeriesId];
+            }
+            sum += ac;
+            addresses[length] = seriesInfo[seriesId].commission.recipient;
+
+            prices[length] = (ac * price) / FRACTION;
+            length++;
+
+            uint64 forkedSeriesId = getSeriesId(forkedFrom[seriesId]);
+            while (forkedSeriesId != 0) {
+                // pay authors from whom the series forked, too
+
+                uint256 forkedFromTokenId = forkedFrom[forkedSeriesId];
+                addresses[length] = (forkedFromTokenId != 0)
+                    ? _ownerOf(forkedFromTokenId)
+                    : seriesInfo[forkedSeriesId].commission.recipient;
+
+                uint256 acForked = seriesInfo[forkedSeriesId].commission.value;
+
+                sum += acForked;
+                prices[length] = (acForked * price) / FRACTION;
+
+                forkedSeriesId = getSeriesId(forkedFrom[forkedSeriesId]);
+
+                length++;
             }
         }
 
-        require(sum < FRACTION, "invalid commission");
-
+        if (sum >= FRACTION) {
+            revert CommissionInvalid();
+        }
     }
 
     /********************************************************************
-    ****** private section **********************************************
-    *********************************************************************/
+     ****** private section **********************************************
+     *********************************************************************/
 
     /**
      * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
@@ -1417,11 +1495,22 @@ contract NFTState is NFTStorage, INFTState {
         bytes memory _data
     ) private returns (bool) {
         if (to.isContract()) {
-            try IERC721ReceiverUpgradeable(to).onERC721Received(_msgSender(), from, tokenId, _data) returns (bytes4 retval) {
-                return retval == IERC721ReceiverUpgradeable.onERC721Received.selector;
+            try
+                IERC721ReceiverUpgradeable(to).onERC721Received(
+                    _msgSender(),
+                    from,
+                    tokenId,
+                    _data
+                )
+            returns (bytes4 retval) {
+                return
+                    retval ==
+                    IERC721ReceiverUpgradeable.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                    revert(
+                        "ERC721: transfer to non ERC721Receiver implementer"
+                    );
                 } else {
                     assembly {
                         revert(add(32, reason), mload(reason))
@@ -1433,8 +1522,6 @@ contract NFTState is NFTStorage, INFTState {
         }
     }
 
-
-   
     /**
      * @dev Private function to add a token to this extension's ownership-tracking data structures.
      * @param to address representing the new owner of the given token ID
@@ -1459,7 +1546,10 @@ contract NFTState is NFTStorage, INFTState {
      * @param from address representing the previous owner of the given token ID
      * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
      */
-    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
+    function _removeTokenFromOwnerEnumeration(
+        address from,
+        uint256 tokenId
+    ) private {
         // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
         // then delete the last slot (swap and pop).
 
@@ -1503,5 +1593,4 @@ contract NFTState is NFTStorage, INFTState {
         tokensInfo[tokenId].allTokensIndex = 0;
         _allTokens.pop();
     }
-
 }

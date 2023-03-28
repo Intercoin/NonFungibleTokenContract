@@ -11,11 +11,17 @@ contract ERC721ReceiverMock is IERC721Receiver {
         RevertWithoutMessage,
         Panic
     }
-   
+
     bytes4 private immutable _retval;
     Error private immutable _error;
 
-    event Received(address operator, address from, uint256 tokenId, bytes data, uint256 gas);
+    event Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes data,
+        uint256 gas
+    );
 
     constructor(bytes4 retval, Error error) {
         _retval = retval;
