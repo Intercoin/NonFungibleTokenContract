@@ -146,10 +146,10 @@ contract NFTSalesFactory is INFTSalesFactory {
 
     function whitelistByNFTContract(
         address NFTContract
-    ) external view returns (address[] memory instances) {
-        instances = new address[](whitelist[NFTContract].length());
+    ) external view returns (address[] memory instancesList) {
+        instancesList = new address[](whitelist[NFTContract].length());
         for (uint256 i = 0; i < whitelist[NFTContract].length(); i++) {
-            instances[i] = whitelist[NFTContract].at(i);
+            instancesList[i] = whitelist[NFTContract].at(i);
         }
     }
 
