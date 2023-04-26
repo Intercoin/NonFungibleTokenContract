@@ -25,10 +25,23 @@ contract NFTState is NFTStorage, INFTState {
     {
         __Ownable_init();
         __ReentrancyGuard_init();
-        __ERC721_init(name_, symbol_, costManager_, producedBy_);
+
+        //__ERC721_init(name_, symbol_, costManager_, producedBy_);
+        _setNameAndSymbol(name_, symbol_);
+        __CostManagerHelper_init(_sender());
+        _setCostManager(costManager_);
+        
+
         _contractURI = contractURI_;
         baseURI = baseURI_;
         suffix = suffixURI_;
+
+        _accountForOperation(
+            OPERATION_INITIALIZE << OPERATION_SHIFT_BITS,
+            uint256(uint160(producedBy_)),
+            0
+        );
+
     }
 
     /********************************************************************
@@ -915,27 +928,6 @@ contract NFTState is NFTStorage, INFTState {
                 data.price
             );
         }
-    }
-
-    /**
-     * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
-     */
-    function __ERC721_init(
-        string memory name_,
-        string memory symbol_,
-        address costManager_,
-        address producedBy_
-    ) internal onlyInitializing {
-        _setNameAndSymbol(name_, symbol_);
-
-        __CostManagerHelper_init(_msgSender());
-        _setCostManager(costManager_);
-
-        _accountForOperation(
-            OPERATION_INITIALIZE << OPERATION_SHIFT_BITS,
-            uint256(uint160(producedBy_)),
-            0
-        );
     }
 
     /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts v4.4.0 (utils/Strings.sol)
 
-pragma solidity 0.8.11;
+pragma solidity ^0.8.11;
 
 /**
  * @dev String operations.
