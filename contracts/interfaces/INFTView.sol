@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import "./interfaces/INFT.sol";
+import "./INFT.sol";
 
 interface INFTView is INFT {
     function getTokenSaleInfo(

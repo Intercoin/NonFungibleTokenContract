@@ -9,9 +9,9 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
-import "./INFTSalesFactory.sol";
-import "./INFTSales.sol";
-import "../INFTView.sol";
+import "../interfaces/sales/INFTSalesFactory.sol";
+import "../interfaces/sales/INFTSales.sol";
+import "../interfaces/INFTView.sol";
 
 import "../lib/StringsW0x.sol";
 

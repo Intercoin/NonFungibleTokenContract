@@ -9,7 +9,7 @@ import "@artman325/releasemanager/contracts/CostManagerFactoryHelper.sol";
 import "@artman325/releasemanager/contracts/ReleaseManagerHelper.sol";
 import "@artman325/releasemanager/contracts/ReleaseManager.sol";
 
-import "./INFTInstanceContract.sol";
+import "./interfaces/INFTInstanceContract.sol";
 import "./NFTState.sol";
 import "./NFTView.sol";
 

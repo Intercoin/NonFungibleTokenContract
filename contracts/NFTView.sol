@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 pragma abicoder v2;
 
 import "./NFTStorage.sol";
-import "./INFTView.sol";
+import "./interfaces/INFTView.sol";
 
 contract NFTView is NFTStorage, INFTView {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
@@ -165,11 +165,38 @@ contract NFTView is NFTStorage, INFTView {
     function tokenByIndex(
         uint256 index
     ) public view virtual override returns (uint256) {
-        require(
-            index < totalSupply(),
-            "ERC721Enumerable: global index out of bounds"
-        );
+        _checkIndexOfBoundInTokens(index);
+        
         return _allTokens[index];
+    }
+    /**
+     * @dev Returns a tokens list from offsetIndex to offsetIndex+limit
+     * @param offsetIndex offset index
+     * @param limit limit 
+     * @return return an array of tokens list
+     */
+    function allTokens(
+        uint256 offsetIndex,
+        uint256 limit
+    ) public view returns (uint256[] memory) {
+        _checkIndexOfBoundInTokens(offsetIndex);
+        uint256 untilIndex = offsetIndex+limit;
+        uint256 size = limit;
+
+        if (untilIndex > totalSupply()) {
+            
+            untilIndex = totalSupply();
+            size = totalSupply() - offsetIndex;
+            
+        }
+        
+        uint256[] memory list = new uint256[](size);
+        uint256 j = 0;
+        for (uint256 i = offsetIndex; i < untilIndex; i++) {
+            list[j] = _allTokens[i];
+            j++;
+        }
+        return list;
     }
 
     /**
@@ -310,6 +337,14 @@ contract NFTView is NFTStorage, INFTView {
     /********************************************************************
      ****** internal section *********************************************
      *********************************************************************/
+    function _checkIndexOfBoundInTokens(
+        uint256 index
+    ) internal view {
+        require(
+            index < totalSupply(),
+            "ERC721Enumerable: global index out of bounds"
+        );
+    }
 
     /**
      * @param account account
