@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "./INFTSales.sol";
-import "./INFTSalesFactory.sol";
+import "../interfaces/sales/INFTSales.sol";
+import "../interfaces/sales/INFTSalesFactory.sol";
 import "../interfaces/INFTState.sol";
 
 /**
