@@ -1058,6 +1058,30 @@ contract NFT is NFTStorage {
                 (uint256)
             );
     }
+    /**
+     * @dev Returns a tokens list from offsetIndex to offsetIndex+limit
+     * @param offsetIndex offset index
+     * @param limit limit 
+     * @return return an array of tokens list
+     */
+    function allTokens(
+        uint256 offsetIndex,
+        uint256 limit
+    ) public view returns (uint256[] memory) {
+        return
+            abi.decode(
+                _functionDelegateCallView(
+                    address(implNFTView),
+                    abi.encodeWithSelector(
+                        NFTView.allTokens.selector,
+                        offsetIndex, 
+                        limit
+                    ),
+                    ""
+                ),
+                (uint256[])
+            );
+    }
 
     /**
      * @dev See {IERC165-supportsInterface}.

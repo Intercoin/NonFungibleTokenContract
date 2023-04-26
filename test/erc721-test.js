@@ -281,6 +281,7 @@ describe("v2 tests", function () {
                 expect(token2).to.be.equal(id.add(ONE));
                 expect(token3).to.be.equal(id.add(TWO));
             })
+          
 
             it('shouldnt show tokenOfOwnerByIndex if owner index is out of bounds', async() => {
                 await this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price}); 
@@ -368,10 +369,81 @@ describe("v2 tests", function () {
                 await expect(this.nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, this.erc20.address, id)).to.be.revertedWith("ERC721: transfer to non ERC721Receiver implementer");
             })
 
-            
+              
         })
-    
-    
+
+        describe('allTokens() method tests', async() => {
+            
+            it('should correct get token\'s list via allTokens()', async() => {
+                var list;
+
+                // there are no tokens yet
+                await expect(
+                    this.nft.allTokens(0,0)
+                ).to.be.revertedWith('ERC721Enumerable: global index out of bounds');
+
+                await this.nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price}); 
+
+                //##### single token in a list #######
+                // try to get 0 of 1 tokens from 0 pos
+                list = await this.nft.allTokens(0,0);
+                expect(list.length).to.be.eq(0);
+                
+                // try to get 1 of 1 tokens from 0 pos
+                list = await this.nft.allTokens(0,1);
+                expect(list.length).to.be.eq(1);
+                expect(list[0]).to.be.eq(id);
+
+                // try to get 2 of 1 tokens from 0 pos
+                list = await this.nft.allTokens(0,2);
+                expect(list.length).to.be.eq(1);
+                expect(list[0]).to.be.eq(id);
+
+                // try to get 100 of 1 tokens from 0 pos
+                list = await this.nft.allTokens(0,100);
+                expect(list.length).to.be.eq(1);
+                expect(list[0]).to.be.eq(id);
+
+                // try to get 1 of 1 tokens from 1 pos
+                await expect(this.nft.allTokens(1,0)).to.be.revertedWith('ERC721Enumerable: global index out of bounds');
+                // try to get 1 of 1 tokens from 22 pos
+                await expect(this.nft.allTokens(22,0)).to.be.revertedWith('ERC721Enumerable: global index out of bounds');
+
+                // add another two
+                await this.nft.connect(bob).buy([id.add(TEN)], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price}); 
+                await this.nft.connect(bob).buy([id.add(HUN)], ZERO_ADDRESS, price, false, ZERO, bob.address, {value: price}); 
+
+                // try to get 0 of 3 tokens from 0 pos
+                list = await this.nft.allTokens(0,0);
+                expect(list.length).to.be.eq(0);
+
+                // try to get 1 of 3 tokens from 0 pos
+                list = await this.nft.allTokens(0,1);
+                expect(list.length).to.be.eq(1);
+                expect(list[0]).to.be.eq(id);
+
+                // try to get 3 of 3 tokens from 0 pos
+                list = await this.nft.allTokens(0,3);
+
+                expect(list.length).to.be.eq(3);
+                expect(list[0]).to.be.eq(id);
+                expect(list[1]).to.be.eq(id.add(TEN));
+                expect(list[2]).to.be.eq(id.add(HUN));
+
+                // try to get 1 of 3 tokens from 2 pos
+                list = await this.nft.allTokens(2,1);
+                expect(list.length).to.be.eq(1);
+                expect(list[0]).to.be.eq(id.add(HUN));
+
+                // try to get 100 of 1 tokens from 2 pos
+                list = await this.nft.allTokens(2,100);
+                expect(list.length).to.be.eq(1);
+                expect(list[0]).to.be.eq(id.add(HUN));
+
+                // try to get 1 of 1 tokens from 22 pos
+                await expect(this.nft.allTokens(22,0)).to.be.revertedWith('ERC721Enumerable: global index out of bounds');
+            })
+        })
 
 
     });
