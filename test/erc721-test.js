@@ -20,16 +20,56 @@ const HUN = BigNumber.from('100');
 
 const SERIES_BITS = 192;
 
+const accounts = waffle.provider.getWallets();
+const owner = accounts[0];                     
+const alice = accounts[1];
+const bob = accounts[2];
+const charlie = accounts[3];
+
 chai.use(require('chai-bignumber')());
 
 
 describe("v2 tests", function () {
+    var nftFactory;
+    beforeEach("deploying", async() => {
+        const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
+        const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
+        const NFTFactoryF = await ethers.getContractFactory("NFTFactory");
+        const NFTF = await ethers.getContractFactory("NFT");
+        const NFTStateF = await ethers.getContractFactory("NFTState");
+        const NFTViewF = await ethers.getContractFactory("NFTView");
+    
+        let nftState = await NFTStateF.deploy();
+        let nftView = await NFTViewF.deploy();
+        let nftImpl = await NFTF.deploy();
+        let implementationReleaseManager = await ReleaseManagerF.deploy();
+
+        let releaseManagerFactory = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.address);
+        let tx,rc,event,instance,instancesCount;
+        //
+        tx = await releaseManagerFactory.connect(owner).produce();
+        rc = await tx.wait(); // 0ms, as tx is already confirmed
+        event = rc.events.find(event => event.event === 'InstanceProduced');
+        [instance, instancesCount] = event.args;
+        let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+
+        nftFactory = await NFTFactoryF.deploy(nftImpl.address, nftState.address, nftView.address, ZERO_ADDRESS, releaseManager.address);
+
+        // 
+        const factoriesList = [nftFactory.address];
+        const factoryInfo = [
+            [
+                1,//uint8 factoryIndex; 
+                1,//uint16 releaseTag; 
+                "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
+            ]
+        ]
+        
+        await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
+    })
+
     describe("Standart ERC721 functional tests", function () {
-        const accounts = waffle.provider.getWallets();
-        const owner = accounts[0];                     
-        const alice = accounts[1];
-        const bob = accounts[2];
-        const charlie = accounts[3];
+       
 
         const seriesId = BigNumber.from('1000');
         const tokenId = ONE;
@@ -60,20 +100,25 @@ describe("v2 tests", function () {
         ];
 
         beforeEach("deploying", async() => {
+            
             const ERC20Factory = await ethers.getContractFactory("MockERC20");
 
-            const NFTFactory = await ethers.getContractFactory("NFT");
-            const NFTStateFactory = await ethers.getContractFactory("NFTState");
-            const NFTViewFactory = await ethers.getContractFactory("NFTView");
 
             const BuyerFactory = await ethers.getContractFactory("Buyer");
-            
-            this.nftState = await NFTStateFactory.deploy();
-            this.nftView = await NFTViewFactory.deploy();
 
             this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
-            this.nft = await NFTFactory.deploy();
-            await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address, "NFT Edition", "NFT", "", "", "", ZERO_ADDRESS, ZERO_ADDRESS);
+            
+            //--b
+            
+            let tx,rc,event,instance;
+            tx = await nftFactory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
+            rc = await tx.wait();
+            let instanceAddr = rc['events'][0].args.instance;
+
+            const NFTFactory = await ethers.getContractFactory("NFT");
+            this.nft = await NFTFactory.attach(instanceAddr);
+            //--e
+
             await this.nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
             const retval = '0x150b7a02';
             const error = ZERO;

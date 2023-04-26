@@ -20,6 +20,13 @@ const HUN = BigNumber.from('100');
 const SERIES_BITS = 192;
 const FRACTION = BigNumber.from('100000');
 
+const accounts = waffle.provider.getWallets();
+const owner = accounts[0];                     
+const alice = accounts[1];
+const bob = accounts[2];
+const charlie = accounts[3];
+const commissionReceiver = accounts[4];
+
 chai.use(require('chai-bignumber')());
 
 
@@ -37,14 +44,48 @@ const OPERATION_BUY = 10;
 const OPERATION_TRANSFER = 11;
 
 describe("v2 tests", function () {
-  describe("Bulk tests", function () {
-      const accounts = waffle.provider.getWallets();
-      const owner = accounts[0];                     
-      const alice = accounts[1];
-      const bob = accounts[2];
-      const charlie = accounts[3];
-      const commissionReceiver = accounts[4];
+  var nftFactory;
+  beforeEach("deploying", async() => {
+      const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
+      const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
+      const NFTFactoryF = await ethers.getContractFactory("NFTFactory");
+      const NFTF = await ethers.getContractFactory("NFT");
+      const NFTStateF = await ethers.getContractFactory("NFTState");
+      const NFTViewF = await ethers.getContractFactory("NFTView");
+      const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
+  
+      let nftState = await NFTStateF.deploy();
+      let nftView = await NFTViewF.deploy();
+      let nftImpl = await NFTF.deploy();
+      let implementationReleaseManager = await ReleaseManagerF.deploy();
 
+      let releaseManagerFactory = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.address);
+      let tx,rc,event,instance,instancesCount;
+      //
+      tx = await releaseManagerFactory.connect(owner).produce();
+      rc = await tx.wait(); // 0ms, as tx is already confirmed
+      event = rc.events.find(event => event.event === 'InstanceProduced');
+      [instance, instancesCount] = event.args;
+      let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+
+      this.costManager = await CostManagerFactory.deploy();
+
+      nftFactory = await NFTFactoryF.deploy(nftImpl.address, nftState.address, nftView.address, this.costManager.address, releaseManager.address);
+
+      // 
+      const factoriesList = [nftFactory.address];
+      const factoryInfo = [
+          [
+              1,//uint8 factoryIndex; 
+              1,//uint16 releaseTag; 
+              "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
+          ]
+      ]
+      
+      await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
+  })
+
+  describe("Bulk tests", function () {
       const seriesId = BigNumber.from('1000');
       const tokenId = ONE;
       const id = seriesId.mul(TWO.pow(BigNumber.from('192'))).add(tokenId);
@@ -78,9 +119,7 @@ describe("v2 tests", function () {
 
           const ERC20Factory = await ethers.getContractFactory("MockERC20");
           const NFTFactory = await ethers.getContractFactory("NFT");
-          const NFTStateFactory = await ethers.getContractFactory("NFTState");
-          const NFTViewFactory = await ethers.getContractFactory("NFTView");
-
+          
           const HookFactory = await ethers.getContractFactory("MockHook");
           const BadHookFactory = await ethers.getContractFactory("MockBadHook");
           const FalseHookFactory = await ethers.getContractFactory("MockFalseHook");
@@ -88,29 +127,26 @@ describe("v2 tests", function () {
           const WithoutFunctionHookFactory = await ethers.getContractFactory("MockWithoutFunctionHook");
           const BuyerFactory = await ethers.getContractFactory("Buyer");
           //const BadBuyerFactory = await ethers.getContractFactory("BadBuyer");
-          const CostManagerFactory = await ethers.getContractFactory("MockCostManager");
 
-            this.nftBulkSale = await NFTBulkSaleFactory.deploy();
-            this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
-            // this.hook1 = await HookFactory.deploy();
-            // this.hook2 = await HookFactory.deploy();
-            // this.hook3 = await HookFactory.deploy();
-            // this.badHook = await BadHookFactory.deploy();
-            // this.falseHook = await FalseHookFactory.deploy();
-            // this.notSupportingHook = await NotSupportingHookFactory.deploy();
-            // this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
-            this.nftState = await NFTStateFactory.deploy();
-            this.nftView = await NFTViewFactory.deploy();
-
-            this.costManager = await CostManagerFactory.deploy();
+          this.nftBulkSale = await NFTBulkSaleFactory.deploy();
+          this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
+          // this.hook1 = await HookFactory.deploy();
+          // this.hook2 = await HookFactory.deploy();
+          // this.hook3 = await HookFactory.deploy();
+          // this.badHook = await BadHookFactory.deploy();
+          // this.falseHook = await FalseHookFactory.deploy();
+          // this.notSupportingHook = await NotSupportingHookFactory.deploy();
+          // this.withoutFunctionHook = await WithoutFunctionHookFactory.deploy();
 
           const retval = '0x150b7a02';
           const error = ZERO;
-        //   this.buyer = await BuyerFactory.deploy(retval, error);
-        //   this.badBuyer = await BadBuyerFactory.deploy();
-          this.nft = await NFTFactory.deploy();
-
-          await this.nft.connect(owner).initialize(this.nftState.address, this.nftView.address,"NFT Edition", "NFT", "", "", "", this.costManager.address, ZERO_ADDRESS);
+          //   this.buyer = await BuyerFactory.deploy(retval, error);
+          //   this.badBuyer = await BadBuyerFactory.deploy();
+          let tx,rc,event,instance;
+          tx = await nftFactory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
+          rc = await tx.wait();
+          let instanceAddr = rc['events'][0].args.instance;
+          this.nft = await NFTFactory.attach(instanceAddr);
 
           await this.erc20.mint(owner.address, TOTALSUPPLY);
 
