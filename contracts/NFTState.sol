@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 pragma abicoder v2;
 
 import "./NFTStorage.sol";
-import "./INFTState.sol";
+import "./interfaces/INFTState.sol";
 
 contract NFTState is NFTStorage, INFTState {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;

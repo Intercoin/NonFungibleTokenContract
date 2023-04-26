@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import "./INFTSales.sol";
 import "./INFTSalesFactory.sol";
-import "../INFTState.sol";
+import "../interfaces/INFTState.sol";
 
 /**
 ****************

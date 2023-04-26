@@ -11,7 +11,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721Enumer
 
 import "./INFTSalesFactory.sol";
 import "./INFTSales.sol";
-import "../INFTView.sol";
+import "../interfaces/INFTView.sol";
 
 import "../lib/StringsW0x.sol";
 

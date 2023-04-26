@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 pragma abicoder v2;
 
 import "./NFTStorage.sol";
-import "./INFTView.sol";
+import "./interfaces/INFTView.sol";
 
 contract NFTView is NFTStorage, INFTView {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
