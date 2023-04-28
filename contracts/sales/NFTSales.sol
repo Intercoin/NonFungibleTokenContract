@@ -555,6 +555,18 @@ contract NFTSales is
         return pending[tokenId].recipient != address(0);
     }
 
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256, /* firstTokenId */
+        uint256 /*batchSize*/
+    ) internal virtual override {
+        // allowTransfers==true and (not mint and not burn)
+        if (!allowTransfers && (from != address(0) && to != address(0))) {
+            revert NoTransfersAllowed();
+        }
+    }
+
     /**
      * @dev Transfers `tokenId` from `from` to `to`.
      *  As opposed to {transferFrom}, this imposes no restrictions on msg.sender.
