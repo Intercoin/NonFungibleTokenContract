@@ -165,6 +165,7 @@ describe("v2 tests", function () {
 
             rc = await tx.wait();
             this.nftsale = await NFTSalesF.attach(rc['events'][0].args.instance);
+            await this.nftsale.connect(bob).setAllowTransfers(true);
 
         })
 
@@ -378,6 +379,30 @@ describe("v2 tests", function () {
                     
                 }); 
 
+                it("should't transfer if `allowTransfers` disabled", async() => {
+
+                    
+
+                    await this.nftsale.connect(bob).specialPurchasesListAdd([charlie.address])
+
+                    let tx = await this.nftsale.connect(charlie).specialPurchase(ONE, [charlie.address], {value: price.mul(TWO)});
+                    let rc = await tx.wait();
+                    let transferredToken = rc.logs[0].topics[3];
+
+                    // jump forvard to an hour
+                    await network.provider.send("evm_mine", [await now() + 3600]);
+
+
+                    await this.nftsale.connect(charlie).transferFrom(charlie.address, bob.address, transferredToken);
+                    expect(await this.nftsale.connect(alice).ownerOf(transferredToken)).to.be.eq(bob.address);
+                    expect(await this.nft.ownerOf(transferredToken)).to.be.eq(this.nftsale.address);
+
+                    await this.nftsale.connect(bob).setAllowTransfers(false);
+
+                    await expect(this.nftsale.connect(bob).transferFrom(bob.address, alice.address, transferredToken)).to.be.revertedWith('NoTransfersAllowed()');
+                    expect(await this.nft.ownerOf(transferredToken)).to.be.eq(this.nftsale.address);
+
+                }); 
             });  
 
         });  
