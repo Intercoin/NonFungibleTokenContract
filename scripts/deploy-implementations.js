@@ -44,10 +44,18 @@ async function main() {
     }
 	//----------------
 
-	const [deployer] = await ethers.getSigners();
+	//const [deployer] = await ethers.getSigners();
+    var signers = await ethers.getSigners();
+    var deployer;
+    if (signers.length == 1) {
+        deployer = signers[0];
+    } else {
+        [,deployer,,] = signers;
+    }
+
 	
 	const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-    const RELEASE_MANAGER = process.env.RELEASE_MANAGER;
+    const RELEASE_MANAGER = hre.network.name == 'mumbai'? process.env.RELEASE_MANAGER_MUMBAI : process.env.RELEASE_MANAGER;
 	console.log(
 		"Deploying contracts with the account:",
 		deployer.address

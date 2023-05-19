@@ -45,12 +45,19 @@ async function main() {
 	}
 	///----------
 	const { BigNumber } = require('ethers');
-	const [deployer] = await ethers.getSigners();
-	
+	//const [deployer] = await ethers.getSigners();
+	var signers = await ethers.getSigners();
+    var deployer_nft;
+    if (signers.length == 1) {
+        deployer = signers[0];
+    } else {
+        [,,deployer_nft,] = signers;
+    }
+
 	const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 	console.log(
 		"Deploying contracts with the account:",
-		deployer.address
+		deployer_nft.address
 	);
 
 	var options = {
@@ -69,18 +76,17 @@ async function main() {
 		options
 	]
 
-	const deployerBalanceBefore = await deployer.getBalance();
+	const deployerBalanceBefore = await deployer_nft.getBalance();
     console.log("Account balance:", (deployerBalanceBefore).toString());
 
 	const FactoryFactory = await ethers.getContractFactory("NFTFactory");
-	this.factory = await FactoryFactory.connect(deployer).deploy(...params);
-	await this.factory.connect(deployer).registerReleaseManager(data_object.releaseManager);
+	this.factory = await FactoryFactory.connect(deployer_nft).deploy(...params);
 
 	console.log("Factory deployed at:", this.factory.address);
 	console.log("with params:", [..._params]);
 	console.log("registered with release manager:", data_object.releaseManager);
 
-    const deployerBalanceAfter = await deployer.getBalance();
+    const deployerBalanceAfter = await deployer_nft.getBalance();
     console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
     console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
     

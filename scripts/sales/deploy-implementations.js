@@ -44,8 +44,15 @@ async function main() {
     }
 	//----------------
 
-	const [deployer] = await ethers.getSigners();
-	
+	//const [deployer] = await ethers.getSigners();
+	var signers = await ethers.getSigners();
+    var deployer;
+    if (signers.length == 1) {
+        deployer = signers[0];
+    } else {
+        [,deployer,,] = signers;
+    }
+
 	console.log(
 		"Deploying contracts with the account:",
 		deployer.address

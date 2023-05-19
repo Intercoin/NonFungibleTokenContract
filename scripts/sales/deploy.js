@@ -39,11 +39,19 @@ async function main() {
 	}
 	///----------
 	const { BigNumber } = require('ethers');
-	const [deployer] = await ethers.getSigners();
-	
+	//const [deployer] = await ethers.getSigners();
+
+	var signers = await ethers.getSigners();
+    var deployer_sales;
+    if (signers.length == 1) {
+        deployer = signers[0];
+    } else {
+        [,,,deployer_sales] = signers;
+    }
+
 	console.log(
 		"Deploying contracts with the account:",
-		deployer.address
+		deployer_sales.address
 	);
 
 	var options = {
@@ -59,17 +67,17 @@ async function main() {
 		options
 	]
 
-	const deployerBalanceBefore = await deployer.getBalance();
+	const deployerBalanceBefore = await deployer_sales.getBalance();
     console.log("Account balance:", (deployerBalanceBefore).toString());
 
 	const NFTSalesFactoryFactory = await ethers.getContractFactory("NFTSalesFactory");
-	this.factory = await NFTSalesFactoryFactory.connect(deployer).deploy(...params);
+	this.factory = await NFTSalesFactoryFactory.connect(deployer_sales).deploy(...params);
 
 	console.log("Factory deployed at:", this.factory.address);
 	console.log("with params:", [..._params]);
 
 
-	const deployerBalanceAfter = await deployer.getBalance();
+	const deployerBalanceAfter = await deployer_sales.getBalance();
     console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
     console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
 }

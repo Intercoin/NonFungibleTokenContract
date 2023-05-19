@@ -10,12 +10,13 @@ contract MockCommunity is CommunityAccessMap, ICommunity {
     uint256 count = 5;
 
     function initialize(
-        address implState,
-        address implView,
         address hook,
+        address invitedHook,
         address costManager,
+        address authorizedInviteManager,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        string memory contractUri
     ) external {}
 
     function setInvitedBy(address who, address whom) public {
@@ -77,4 +78,31 @@ contract MockCommunity is CommunityAccessMap, ICommunity {
         }
         return false;
     }
+
+    function getRolesWhichAccountCanGrant(
+        address accountWhichWillGrant,
+        string[] memory roleNames
+    ) external view returns (uint8[] memory ret) {}
+
+    function grantRoles(
+        address[] memory accounts,
+        uint8[] memory roleIndexes
+    ) external {}
+
+    function revokeRoles(
+        address[] memory accounts,
+        uint8[] memory roleIndexes
+    ) external {}
+
+    // function grantRolesExternal(
+    //     address accountWhichWillGrant,
+    //     address[] memory accounts,
+    //     uint8[] memory roleIndexes
+    // ) external {}
+
+    // function revokeRolesExternal(
+    //     address accountWhichWillRevoke,
+    //     address[] memory accounts,
+    //     uint8[] memory roleIndexes
+    // ) external {}
 }
