@@ -24,7 +24,7 @@ const HUN = BigNumber.from('100');
 const ONE_ETH = ethers.utils.parseEther('1');    
 
 const SERIES_BITS = 192;
-const FRACTION = BigNumber.from('100000');
+const FRACTION = BigNumber.from('10000');
 
 const accounts = waffle.provider.getWallets();
 const owner = accounts[0];                     
@@ -1471,9 +1471,9 @@ describe("v2 tests", function () {
       })
 
       describe("tests with commission", async() => {
-        const TEN_PERCENTS = BigNumber.from('10000');
-        const FIVE_PERCENTS = BigNumber.from('5000');
-        const ONE_PERCENT = BigNumber.from('1000');
+        const TEN_PERCENTS = TEN.mul(FRACTION).div(HUN);//BigNumber.from('10000');
+        const FIVE_PERCENTS = FIVE.mul(FRACTION).div(HUN);//BigNumber.from('5000');
+        const ONE_PERCENT = ONE.mul(FRACTION).div(HUN);//BigNumber.from('1000');
         const seriesCommissions = [
           TEN_PERCENTS,
           alice.address

@@ -105,7 +105,7 @@ abstract contract NFTStorage is
     address internal constant DEAD_ADDRESS =
         0x000000000000000000000000000000000000dEaD;
 
-    uint256 internal constant FRACTION = 100000;
+    uint256 internal constant FRACTION = 10000;
     uint192 internal constant MAX_TOKEN_INDEX = type(uint192).max;
 
     string public baseURI;

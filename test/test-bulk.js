@@ -18,7 +18,7 @@ const TEN = BigNumber.from('10');
 const HUN = BigNumber.from('100');
 
 const SERIES_BITS = 192;
-const FRACTION = BigNumber.from('100000');
+const FRACTION = BigNumber.from('10000');
 
 const accounts = waffle.provider.getWallets();
 const owner = accounts[0];                     
