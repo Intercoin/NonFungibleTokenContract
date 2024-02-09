@@ -24,7 +24,7 @@ const HUN = BigNumber.from('100');
 const ONE_ETH = ethers.utils.parseEther('1');    
 
 const SERIES_BITS = 192;
-const FRACTION = BigNumber.from('100000');
+const FRACTION = BigNumber.from('10000');
 
 const accounts = waffle.provider.getWallets();
 const owner = accounts[0];                     
