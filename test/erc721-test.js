@@ -1,105 +1,18 @@
 const { ethers} = require('hardhat');
 const { expect } = require('chai');
-//const chai = require('chai');
 const { time, loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-//const { expect } = require('chai'); 
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 const { 
-    deployFactoryWithoutCostManager
+    deployERC721Test
 } = require("./fixtures/deploy.js");
 
 const { 
     toHexString
 } = require("./helpers/toHexString.js");
 
-async function deployERC721Test() {
-    const res = await loadFixture(deployFactoryWithoutCostManager);
-    const {
-        owner,
-        alice,
 
-        ZERO_ADDRESS,
-        TOTALSUPPLY,
-        
-        NFTF,
-        BuyerF,
-        nftFactory,
-        erc20
-    } = res;
-
-    const seriesId = 1000n;
-    const tokenId = 1n;
-    const id = seriesId * (2n ** 192n) + (tokenId);
-    const price = ethers.parseEther('1');
-    const autoincrementPrice = 0n;
-    const now = BigInt(Math.round(Date.now() / 1000));   
-    const baseURI = "http://baseUri/";
-    const suffix = ".json";
-    const limit = 10000n;
-    const saleParams = [
-        now + 100000n, 
-        ZERO_ADDRESS, 
-        price,
-        autoincrementPrice
-    ];
-    const commissions = [
-        0n,
-        ZERO_ADDRESS
-    ];
-    const seriesParams = [
-        alice.address,  
-        10000n,
-        saleParams,
-        commissions,
-        baseURI,
-        suffix
-    ];
-
-    /////////////////////////////////
-    //--b
-        
-    let tx,rc,event,instance;
-    tx = await nftFactory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
-    rc = await tx.wait();
-    event = rc.logs.find(event => event.fragment && event.fragment.name === 'InstanceCreated');
-    const [/*name*/, /*symbol*/, instanceAddr, /*instancesCount*/] = event.args;
-    //let instanceAddr = rc['events'][0].args.instance;
-
-    const nft = await NFTF.attach(instanceAddr);
-    //--e
-
-    await nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
-    const retval = '0x150b7a02';
-    const error = 0n;
-    const buyer = await BuyerF.deploy(retval, error);
-
-    await erc20.mint(owner.address, TOTALSUPPLY);
-
-    return {
-        ...res,
-        ...{
-            seriesId,
-            tokenId,
-            id,
-            price,
-            autoincrementPrice,
-            now,
-            baseURI,
-            suffix,
-            limit,
-            saleParams,
-            commissions,
-            seriesParams,
-
-            nft,
-            buyer,
-
-        }
-    };
-
-}
 describe("Standart ERC721 functional tests", function () {
 
     describe('transfer tests', async() => {
