@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.15;
 
-import "../interfaces/ICostManager.sol";
+import "@intercoin/releasemanager/contracts/interfaces/ICostManager.sol";
 import "../lib/StringsW0x.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 

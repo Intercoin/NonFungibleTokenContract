@@ -15,10 +15,10 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeab
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 // import "../interfaces/ICostManager.sol";
 // import "../interfaces/IFactory.sol";
-import "@artman325/releasemanager/contracts/CostManagerHelperERC2771Support.sol";
+import "@intercoin/releasemanager/contracts/CostManagerHelperERC2771Support.sol";
 
 import "./interfaces/ISafeHook.sol";
-import "@artman325/community/contracts/interfaces/ICommunity.sol";
+import "@intercoin/community/contracts/interfaces/ICommunity.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "./interfaces/INFT.sol";
 

@@ -28,9 +28,7 @@ contract NFTState is NFTStorage, INFTState {
 
         //__ERC721_init(name_, symbol_, costManager_, producedBy_);
         _setNameAndSymbol(name_, symbol_);
-        __CostManagerHelper_init(_sender());
-        _setCostManager(costManager_);
-        
+        __CostManagerHelper_init(_sender(), costManager_);
 
         _contractURI = contractURI_;
         baseURI = baseURI_;
