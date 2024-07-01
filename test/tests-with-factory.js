@@ -59,11 +59,11 @@ describe("v2 tests", function () {
 
         var NFTFactory;
         beforeEach("deploying", async() => {
-            const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
+            const ReleaseManagerFactoryF = await ethers.getContractFactory("ReleaseManagerFactory");
             const CostManagerGoodF = await ethers.getContractFactory("MockCostManagerGood");
             const CostManagerBadF = await ethers.getContractFactory("MockCostManagerBad");
 
-            const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
+            const ReleaseManagerF = await ethers.getContractFactory("ReleaseManager");
 
 
             const ERC20Factory = await ethers.getContractFactory("MockERC20");
@@ -95,7 +95,7 @@ describe("v2 tests", function () {
             rc = await tx.wait(); // 0ms, as tx is already confirmed
             event = rc.events.find(event => event.event === 'InstanceProduced');
             [instance, instancesCount] = event.args;
-            let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+            let releaseManager = await ethers.getContractAt("ReleaseManager",instance);
 
             this.factory = await NFTFactoryFactory.deploy(this.nftimpl.address, this.nftState.address, this.nftView.address, ZERO_ADDRESS, releaseManager.address);
 

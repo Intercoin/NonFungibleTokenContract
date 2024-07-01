@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "releasemanager/contracts/interfaces/ICostManager.sol";
+import "@intercoin/releasemanager/contracts/interfaces/ICostManager.sol";
 
 contract MockCostManagerGood is ICostManager {
     function accountForOperation(

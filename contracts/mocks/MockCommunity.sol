@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
-import "@artman325/community/contracts/interfaces/ICommunity.sol";
+import "@intercoin/community/contracts/interfaces/ICommunity.sol";
 import "../maps/CommunityAccessMap.sol";
 
 contract MockCommunity is CommunityAccessMap, ICommunity {

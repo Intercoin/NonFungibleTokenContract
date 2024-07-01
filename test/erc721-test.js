@@ -32,8 +32,8 @@ chai.use(require('chai-bignumber')());
 describe("v2 tests", function () {
     var nftFactory;
     beforeEach("deploying", async() => {
-        const ReleaseManagerFactoryF = await ethers.getContractFactory("MockReleaseManagerFactory");
-        const ReleaseManagerF = await ethers.getContractFactory("MockReleaseManager");
+        const ReleaseManagerFactoryF = await ethers.getContractFactory("ReleaseManagerFactory");
+        const ReleaseManagerF = await ethers.getContractFactory("ReleaseManager");
         const NFTFactoryF = await ethers.getContractFactory("NFTFactory");
         const NFTF = await ethers.getContractFactory("NFT");
         const NFTStateF = await ethers.getContractFactory("NFTState");
@@ -51,7 +51,7 @@ describe("v2 tests", function () {
         rc = await tx.wait(); // 0ms, as tx is already confirmed
         event = rc.events.find(event => event.event === 'InstanceProduced');
         [instance, instancesCount] = event.args;
-        let releaseManager = await ethers.getContractAt("MockReleaseManager",instance);
+        let releaseManager = await ethers.getContractAt("ReleaseManager",instance);
 
         nftFactory = await NFTFactoryF.deploy(nftImpl.address, nftState.address, nftView.address, ZERO_ADDRESS, releaseManager.address);
 
