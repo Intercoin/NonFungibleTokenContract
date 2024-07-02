@@ -21,11 +21,16 @@ async function deployBase() {
     const BuyerF = await ethers.getContractFactory("Buyer");
     const CostManagerGoodF = await ethers.getContractFactory("MockCostManagerGood");
     const CostManagerBadF = await ethers.getContractFactory("MockCostManagerBad");
+    const NFTSalesF = await ethers.getContractFactory("NFTSales");
+    const NFTSalesFactoryF = await ethers.getContractFactory("NFTSalesFactory");
+    const BadNFTSaleF = await ethers.getContractFactory("BadNFTSale");
 
     const nftState = await NFTStateF.deploy();
     const nftView = await NFTViewF.deploy();
     const nftImpl = await NFTF.deploy();
     const implementationReleaseManager = await ReleaseManagerF.deploy();
+    const nftsale_implementation = await NFTSalesF.connect(owner).deploy();
+    
 
     let releaseManagerFactory = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.target);
     let tx,rc,event,instance,instancesCount;
@@ -50,6 +55,15 @@ async function deployBase() {
     const costManagerGood = await CostManagerGoodF.deploy();
     const costManagerBad = await CostManagerBadF.deploy();
 
+    const nftSaleFactory = await NFTSalesFactoryF.connect(owner).deploy(nftsale_implementation.target);
+    const badNFTSale = await BadNFTSaleF.deploy();
+
+
+    await erc20.mint(owner.address, TOTALSUPPLY);
+    await erc20.transfer(alice.address, ethers.parseEther('100'));
+    await erc20.transfer(bob.address, ethers.parseEther('100'));
+    await erc20.transfer(charlie.address, ethers.parseEther('100'));
+
     return {
         owner, 
         alice, 
@@ -67,6 +81,8 @@ async function deployBase() {
         CostManagerFactory,
         ERC20F,
         BuyerF,
+        NFTSalesF,
+        NFTSalesFactoryF,
 
         TOTALSUPPLY,
         ZERO_ADDRESS,
@@ -82,7 +98,10 @@ async function deployBase() {
         costManager,
         erc20,
         costManagerGood,
-        costManagerBad
+        costManagerBad,
+        nftsale_implementation,
+        nftSaleFactory,
+        badNFTSale
     }
 }
 
@@ -156,19 +175,18 @@ async function deployFactoryWithoutCostManager () {
     }
 }
 
-async function deployERC721Test() {
+async function deployNFT() {
     const res = await loadFixture(deployFactoryWithoutCostManager);
     const {
         owner,
         alice,
+        bob,
 
         ZERO_ADDRESS,
-        TOTALSUPPLY,
         
         NFTF,
         BuyerF,
         nftFactory,
-        erc20
     } = res;
 
     const seriesId = 1000n;
@@ -206,7 +224,7 @@ async function deployERC721Test() {
     tx = await nftFactory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
     rc = await tx.wait();
     event = rc.logs.find(event => event.fragment && event.fragment.name === 'InstanceCreated');
-    const [/*name*/, /*symbol*/, instanceAddr, /*instancesCount*/] = event.args;
+    var [/*name*/, /*symbol*/, instanceAddr, /*instancesCount*/] = event.args;
     //let instanceAddr = rc['events'][0].args.instance;
 
     const nft = await NFTF.attach(instanceAddr);
@@ -216,8 +234,6 @@ async function deployERC721Test() {
     const retval = '0x150b7a02';
     const error = 0n;
     const buyer = await BuyerF.deploy(retval, error);
-
-    await erc20.mint(owner.address, TOTALSUPPLY);
 
     return {
         ...res,
@@ -237,7 +253,85 @@ async function deployERC721Test() {
 
             nft,
             buyer,
+        }
+    };
 
+}
+
+async function deployNFTSale() {
+    const res = await loadFixture(deployNFT);
+    var {
+        owner,
+        alice,
+        bob,
+        charlie,
+
+        ZERO_ADDRESS,
+        //---
+        seriesId,
+        tokenId,
+        baseURI,
+        saleParams,
+        commissions,
+        suffix,
+        //---
+        nft,
+        NFTSalesF,
+        nftSaleFactory
+        
+    } = res;
+
+    
+    //override params
+    tokenId = 10n;
+    baseURI = "http://baseUri/";
+    id = seriesId * (2n ** 192n) + (tokenId);
+
+    seriesParams = [
+        alice.address,  
+        10000,
+        saleParams,
+        commissions,
+        baseURI,
+        suffix
+    ];
+
+    
+    
+    await nft.connect(owner).setTrustedForwarder(nftSaleFactory.target);
+
+    const nft_day_duration = 6n;
+    let tx = await nftSaleFactory.connect(owner).produce(
+        nft.target,   // address nftAddress,
+        seriesId,           // uint64 seriesId,
+        bob.address,        // address owner, 
+        ZERO_ADDRESS,       // address currency, 
+        ethers.parseEther('1'),            // uint256 price, 
+        bob.address,        // address beneficiary, 
+        1n,                // uint192 autoIndex,
+        nft_day_duration * (24n*60n*60n),  // uint64 duration
+        10n,                // uint32 rateInterval,
+        10n                 // uint16 rateAmount
+        
+    ) 
+
+    let rc = await tx.wait();
+    let event = rc.logs.find(event => event.fragment && event.fragment.name === 'InstanceCreated');
+    var [instanceAddr] = event.args;
+    const nftsale = await NFTSalesF.attach(instanceAddr);
+
+    await nftsale.connect(bob).setAllowTransfers(true);
+
+    await nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
+
+    return {
+        ...res,
+        ...{
+            tokenId,
+            baseURI,
+            id,
+            nft_day_duration,
+            nftsale
         }
     };
 
@@ -247,7 +341,8 @@ module.exports = {
     deployBase,
     deployFactoryWithCostManager,
     deployFactoryWithoutCostManager,
-    deployERC721Test
+    deployNFT,
+    deployNFTSale,
 //   deployWithoutDelay,
 //   deployWithDelay,
 //   deploy,

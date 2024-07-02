@@ -5,7 +5,7 @@ const { time, loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-
 require("@nomicfoundation/hardhat-chai-matchers");
 
 const { 
-    deployERC721Test
+    deployNFT
 } = require("./fixtures/deploy.js");
 
 const { 
@@ -19,7 +19,7 @@ describe("Standart ERC721 functional tests", function () {
     
         it('check name, symbol and tokenURI', async() => {
 
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 id,
@@ -38,7 +38,7 @@ describe("Standart ERC721 functional tests", function () {
             expect(await nft.symbol()).to.be.equal("NFT");
         })
         it('check name and symbol after owner set', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 owner,
                 alice,
@@ -51,7 +51,7 @@ describe("Standart ERC721 functional tests", function () {
             expect(await nft.symbol()).to.be.equal("NEW NFT");
         })
         it('shoudnt freeze if not owner', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -73,7 +73,7 @@ describe("Standart ERC721 functional tests", function () {
         })
         
         it('check new tokenURI after freeze and revert back after unfreeze', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 id,
@@ -101,7 +101,7 @@ describe("Standart ERC721 functional tests", function () {
 
         })
         it('check holding current tokenURI after freeze', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 id,
@@ -130,7 +130,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should transfer token to user', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -158,7 +158,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should transfer token to user via approve', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -187,7 +187,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should transfer token to user via operator', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -217,7 +217,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should correct burn token', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 id,
@@ -238,7 +238,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt transfer token if not owner', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -255,7 +255,7 @@ describe("Standart ERC721 functional tests", function () {
             await expect(nft.connect(bob).transferFrom(alice.address, bob.address, id)).to.be.revertedWithCustomError(nft, "CantManageThisToken()");
         })
         it('shouldnt transfer token on zero address', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 id,
@@ -272,7 +272,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should correct get token of owner by index', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -296,7 +296,7 @@ describe("Standart ERC721 functional tests", function () {
             expect(token3).to.be.equal(id + 100n);
         })
         it('should correct get totalSupply', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -321,7 +321,7 @@ describe("Standart ERC721 functional tests", function () {
         
 
         it('should correct get token by index', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -348,7 +348,7 @@ describe("Standart ERC721 functional tests", function () {
 
 
         it('shouldnt show tokenOfOwnerByIndex if owner index is out of bounds', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 bob,
                 id,
@@ -362,7 +362,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt show tokenByIndex if index is out of bounds', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 bob,
                 id,
@@ -376,7 +376,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt show balance of zero address', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 ZERO_ADDRESS,
                 nft
@@ -386,7 +386,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt show owner of nonexisting token', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 nft
             } = res;
@@ -395,7 +395,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt show tokenURI of nonexisting token', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 nft
             } = res;
@@ -403,7 +403,7 @@ describe("Standart ERC721 functional tests", function () {
             await expect(nft.tokenURI(100n)).to.be.revertedWith("ERC721URIStorage: URI query for nonexistent token");
         })
         it('should return tokenID if baseURI is empty', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -432,7 +432,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt approve to current owner', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 bob,
                 id,
@@ -446,7 +446,7 @@ describe("Standart ERC721 functional tests", function () {
             await expect(nft.connect(bob).approve(bob.address, id)).to.be.revertedWith("ERC721: approval to current owner");
         })
         it('shouldnt approve if not owner', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -462,7 +462,7 @@ describe("Standart ERC721 functional tests", function () {
             await expect(nft.connect(alice).approve(charlie.address, id)).to.be.revertedWith("ERC721: approve caller is not owner nor approved for all");
         })
         it('shouldnt approve for all if operator is the owner', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 bob,
                 id,
@@ -477,7 +477,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should correct safeTransfer to contract without data', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 bob,
                 id,
@@ -494,7 +494,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt safeTransfer if not owner', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -514,7 +514,7 @@ describe("Standart ERC721 functional tests", function () {
         })
     
         it('shouldnt burn if not owner', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -530,7 +530,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should burn if approved before', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -551,7 +551,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should correct safeTransfer to contract with data', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 bob,
                 id,
@@ -569,7 +569,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('shouldnt safeTransfer to non-ERC721receiver', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,
@@ -589,7 +589,7 @@ describe("Standart ERC721 functional tests", function () {
         })
 
         it('should correct get token\'s list via allTokens()', async() => {
-            const res = await loadFixture(deployERC721Test);
+            const res = await loadFixture(deployNFT);
             const {
                 alice,
                 bob,

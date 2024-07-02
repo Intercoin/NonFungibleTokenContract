@@ -6,7 +6,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 
 const { 
     deployFactoryWithoutCostManager,
-    deployERC721Test
+    deployNFT
 } = require("./fixtures/deploy.js");
 
 describe("Factory tests", async() => {
@@ -41,7 +41,7 @@ describe("Factory tests", async() => {
     });
     
     it("usual buy test", async() => {
-        const res = await loadFixture(deployERC721Test);
+        const res = await loadFixture(deployNFT);
         const {
             alice,
             bob,
