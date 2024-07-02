@@ -219,9 +219,10 @@ async function deployNFT() {
 
     /////////////////////////////////
     //--b
-        
+    const name = "NFT Edition";
+    const symbol = "NFT";
     let tx,rc,event,instance;
-    tx = await nftFactory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
+    tx = await nftFactory.connect(owner)["produce(string,string,string)"](name, symbol, "");
     rc = await tx.wait();
     event = rc.logs.find(event => event.fragment && event.fragment.name === 'InstanceCreated');
     var [/*name*/, /*symbol*/, instanceAddr, /*instancesCount*/] = event.args;
@@ -250,6 +251,8 @@ async function deployNFT() {
             saleParams,
             commissions,
             seriesParams,
+            name,
+            symbol,
 
             nft,
             buyer,
