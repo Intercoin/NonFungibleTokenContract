@@ -849,6 +849,21 @@ contract NFT is NFTStorage {
         );
     }
 
+    /**
+     * @dev set cost manager after factory approve
+     * @param costManager address
+     */
+    function setCostManager(address costManager) public {
+         _functionDelegateCall(
+            address(implNFTState),
+            // abi.encodeWithSelector(
+            //     NFTState.setCostManager.selector,
+            //     costManager
+            // )
+            msg.data
+        );
+    }
+
     ///////////////////////////////////////
     //// public view section //////////////
     ///////////////////////////////////////
