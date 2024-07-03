@@ -1,41 +1,32 @@
-require('dotenv').config()
 
-require("@nomiclabs/hardhat-ethers")
-require("hardhat-docgen")
-require("@hardhat-docgen/core")
-//require("@hardhat-docgen/markdown")
-require("./docgen-custom-markdown")
-require('hardhat-deploy')
-require("@nomiclabs/hardhat-waffle")
-require("@nomiclabs/hardhat-web3")
-require("@nomiclabs/hardhat-etherscan")
-require("solidity-coverage")
-require("hardhat-gas-reporter")
-require('hardhat-contract-sizer');
+require('dotenv').config();
+require("@nomicfoundation/hardhat-toolbox");
 
 const kovanURL = `https://eth-kovan.alchemyapi.io/v2/${process.env.ALCHEMY_KOVAN}`
 const goerliURL = `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_GOERLI}`
 const rinkebyURL = /*`https://rinkeby.infura.io/v3/${process.env.INFURA_ID_PROJECT}` */`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
-const bscURL = 'https://bsc-dataseed.binance.org' //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`
+const bscURL = 'https://bsc-dataseed.binance.org'; //`https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}` 
 const bsctestURL = 'https://data-seed-prebsc-1-s1.binance.org:8545';
 const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAINNET}`
 const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MATIC}`
 const mumbaiURL = 'https://matic-mumbai.chainstacklabs.com';
 
 module.exports = {
+  defaultNetwork: "hardhat",
   networks: {
     local: {
       url: "http://localhost:8545", //rinkebyURL,
       chainId: 1337,
-      gasPrice: "auto",
+      //gasPrice: "auto",
       //accounts: {mnemonic: process.env.MNEMONIC,initialIndex:1},
       accounts: [process.env.private_key],
       saveDeployments: true
     },
     hardhat: {
       allowUnlimitedContractSize: true,
+      chainId: 137,  // sync with url or getting uniswap settings will reject transactions
       forking: {
-        url: mainnetURL,
+        url: maticURL,
       }
     },
     kovan: {
@@ -110,13 +101,6 @@ module.exports = {
       accounts: [process.env.private_key],
       saveDeployments: true
     }
-  },
-  docgen: {
-    path: './docs',
-    clear: true,
-    only: ['contracts/v2','contracts/sales'],
-    theme: '../../docgen-custom-markdown',
-    runOnCompile: false,
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
