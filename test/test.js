@@ -2146,8 +2146,8 @@ describe("NonFungibleToken tests", function () {
         // here should be an factory's owner
         await nftFactory.connect(owner).renounceOverrideCostManager(nft.target);
 
-        await nft.overrideCostManager(charlie.address);
-        expect(await nft.costManager()).to.be.equal(charlie.address);
+        await nft.connect(owner).setCostManager(charlie.address);
+        expect(await nft.getCostManager()).to.be.equal(charlie.address);
       });
 
       it("shouldnt pay commissions for primary sale with ETH (mint)", async() => {
@@ -2553,9 +2553,6 @@ describe("NonFungibleToken tests", function () {
         expect(seriesInfo.commission.recipient).to.be.equal(ZERO_ADDRESS);
 
       });
-
-      
-
 
     })
 

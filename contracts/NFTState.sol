@@ -855,6 +855,11 @@ contract NFTState is NFTStorage, INFTState {
         tokensInfo[tokenId].freezeInfo.exists = false;
     }
 
+    function setCostManager(address _costManager) public {
+        requireOnlyOwner();
+        _setCostManager(_costManager);
+    }
+
     /********************************************************************
      ****** internal section *********************************************
      *********************************************************************/

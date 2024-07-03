@@ -41,8 +41,8 @@ describe("Tests with factory", function () {
         var instance = await nftFactory.getInstance(hash);
         let communityInstance2 = await NFTF.attach(instance);
 
-        expect(await communityInstance1.costManager()).to.be.eq(ZERO_ADDRESS);
-        expect(await communityInstance2.costManager()).to.be.eq(costManagerGood.target);
+        expect(await communityInstance1.getCostManager()).to.be.eq(ZERO_ADDRESS);
+        expect(await communityInstance2.getCostManager()).to.be.eq(costManagerGood.target);
 
     }); 
 
