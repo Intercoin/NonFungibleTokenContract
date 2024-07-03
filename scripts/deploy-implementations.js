@@ -66,7 +66,7 @@ async function main() {
 	// 	gasLimit: 10e6
 	// };
 
-	const deployerBalanceBefore = await deployer.getBalance();
+	const deployerBalanceBefore = await ethers.provider.getBalance(deployer.address);
     console.log("Account balance:", (deployerBalanceBefore).toString());
 
     const NFTStateFactory = await ethers.getContractFactory("NFTState");
@@ -78,20 +78,20 @@ async function main() {
 	const nft 	= await NftFactory.connect(deployer).deploy();
     
 	console.log("Implementations:");
-	console.log("  NFT deployed at:       ", nft.address);
-	console.log("  NFTState deployed at:  ", nftState.address);
-	console.log("  NFTView deployed at:   ", nftView.address);
+	console.log("  NFT deployed at:       ", nft.target);
+	console.log("  NFTState deployed at:  ", nftState.target);
+	console.log("  NFTView deployed at:   ", nftView.target);
     console.log("Linked with manager:");
     console.log("  Release manager:", RELEASE_MANAGER);
 
-	data_object.nft 		    = nft.address;
-	data_object.nftState	    = nftState.address;
-	data_object.nftView		    = nftView.address;
+	data_object.nft 		    = nft.target;
+	data_object.nftState	    = nftState.target;
+	data_object.nftView		    = nftView.target;
     data_object.releaseManager  = RELEASE_MANAGER;
     
-    const deployerBalanceAfter = await deployer.getBalance();
-    console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
-    console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
+    const deployerBalanceAfter = await ethers.provider.getBalance(deployer.address);
+    console.log("Spent:", ethers.formatEther(deployerBalanceBefore - deployerBalanceAfter));
+    console.log("gasPrice:", ethers.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
 
 	//---
 	const ts_updated = Date.now();
