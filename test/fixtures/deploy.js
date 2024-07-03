@@ -8,7 +8,12 @@ async function deployBase() {
         charlie, 
         david, 
         eve,
+        frank,
+        buyer,
+        commissionReceiver
     ] = await ethers.getSigners();
+
+    
 
     const ReleaseManagerFactoryF = await ethers.getContractFactory("ReleaseManagerFactory");
     const ReleaseManagerF = await ethers.getContractFactory("ReleaseManager");
@@ -24,6 +29,14 @@ async function deployBase() {
     const NFTSalesF = await ethers.getContractFactory("NFTSales");
     const NFTSalesFactoryF = await ethers.getContractFactory("NFTSalesFactory");
     const BadNFTSaleF = await ethers.getContractFactory("BadNFTSale");
+
+    const HookF = await ethers.getContractFactory("MockHook");
+    const BadHookF = await ethers.getContractFactory("MockBadHook");
+    const FalseHookF = await ethers.getContractFactory("MockFalseHook");
+    const NotSupportingHookF = await ethers.getContractFactory("MockNotSupportingHook");
+    const WithoutFunctionHookF = await ethers.getContractFactory("MockWithoutFunctionHook");
+    const MockCommunityF = await ethers.getContractFactory("MockCommunity");
+
 
     const nftState = await NFTStateF.deploy();
     const nftView = await NFTViewF.deploy();
@@ -57,12 +70,22 @@ async function deployBase() {
 
     const nftSaleFactory = await NFTSalesFactoryF.connect(owner).deploy(nftsale_implementation.target);
     const badNFTSale = await BadNFTSaleF.deploy();
-
+   
+    const hook1 = await HookF.deploy();
+    const hook2 = await HookF.deploy();
+    const hook3 = await HookF.deploy();
+    const badHook = await BadHookF.deploy();
+    const falseHook = await FalseHookF.deploy();
+    const notSupportingHook = await NotSupportingHookF.deploy();
+    const withoutFunctionHook = await WithoutFunctionHookF.deploy();
+    const mockCommunity = await MockCommunityF.deploy();
 
     await erc20.mint(owner.address, TOTALSUPPLY);
-    await erc20.transfer(alice.address, ethers.parseEther('100'));
-    await erc20.transfer(bob.address, ethers.parseEther('100'));
-    await erc20.transfer(charlie.address, ethers.parseEther('100'));
+    await erc20.connect(owner).transfer(alice.address, ethers.parseEther('100'));
+    await erc20.connect(owner).transfer(bob.address, ethers.parseEther('100'));
+    await erc20.connect(owner).transfer(charlie.address, ethers.parseEther('100'));
+    await erc20.connect(owner).transfer(frank.address, ethers.parseEther('100'));
+    await erc20.connect(owner).transfer(buyer.address, ethers.parseEther('100'));
 
     return {
         owner, 
@@ -71,6 +94,9 @@ async function deployBase() {
         charlie, 
         david, 
         eve,
+        frank,
+        buyer,
+        commissionReceiver,
 
         ReleaseManagerFactoryF,
         ReleaseManagerF,
@@ -83,6 +109,12 @@ async function deployBase() {
         BuyerF,
         NFTSalesF,
         NFTSalesFactoryF,
+        HookF,
+        BadHookF,
+        FalseHookF,
+        NotSupportingHookF,
+        WithoutFunctionHookF,
+        MockCommunityF,
 
         TOTALSUPPLY,
         ZERO_ADDRESS,
@@ -101,7 +133,15 @@ async function deployBase() {
         costManagerBad,
         nftsale_implementation,
         nftSaleFactory,
-        badNFTSale
+        badNFTSale,
+        hook1,
+        hook2,
+        hook3,
+        badHook,
+        falseHook,
+        notSupportingHook,
+        withoutFunctionHook,
+        mockCommunity
     }
 }
 
@@ -180,6 +220,7 @@ async function deployNFT() {
     const {
         owner,
         alice,
+        commissionReceiver,
         bob,
 
         ZERO_ADDRESS,
@@ -189,7 +230,8 @@ async function deployNFT() {
         nftFactory,
     } = res;
 
-    const seriesId = 1000n;
+    //const seriesId = 1000n;
+    const seriesId = BigInt(0x1000000000);
     const tokenId = 1n;
     const id = seriesId * (2n ** 192n) + (tokenId);
     const price = ethers.parseEther('1');
@@ -234,7 +276,26 @@ async function deployNFT() {
     await nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
     const retval = '0x150b7a02';
     const error = 0n;
-    const buyer = await BuyerF.deploy(retval, error);
+    const buyerContract = await BuyerF.deploy(retval, error);
+
+    const FRACTION = 10000n;
+    const TEN_PERCENTS = 10n * (FRACTION) / (100n);//BigNumber.from('10000');
+    const FIVE_PERCENTS = 5n * (FRACTION) / (100n);//BigNumber.from('5000');
+    const ONE_PERCENT = 1n * (FRACTION) / (100n);//BigNumber.from('1000');
+    const seriesCommissions = [
+        TEN_PERCENTS,
+        alice.address
+    ];
+    const maxValue = TEN_PERCENTS;
+    const minValue = ONE_PERCENT;
+    const defaultCommissionInfo = [
+        maxValue,
+        minValue,
+        [
+            FIVE_PERCENTS,
+            commissionReceiver.address
+        ]
+    ];
 
     return {
         ...res,
@@ -254,8 +315,18 @@ async function deployNFT() {
             name,
             symbol,
 
+            FRACTION,
+            TEN_PERCENTS,
+            FIVE_PERCENTS,
+            ONE_PERCENT,
+            seriesCommissions,
+            maxValue,
+            minValue,
+            defaultCommissionInfo,
+
+
             nft,
-            buyer,
+            buyerContract,
         }
     };
 

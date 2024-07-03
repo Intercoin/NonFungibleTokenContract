@@ -484,13 +484,13 @@ describe("Standart ERC721 functional tests", function () {
                 ZERO_ADDRESS,
                 price,
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address, {value: price}); 
-            await nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, buyer.target, id);
-            expect(await nft.ownerOf(id)).to.be.equal(buyer.target);
-            expect(await nft.balanceOf(buyer.target)).to.be.equal(1n);
+            await nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, buyerContract.target, id);
+            expect(await nft.ownerOf(id)).to.be.equal(buyerContract.target);
+            expect(await nft.balanceOf(buyerContract.target)).to.be.equal(1n);
         })
 
         it('shouldnt safeTransfer if not owner', async() => {
@@ -506,11 +506,11 @@ describe("Standart ERC721 functional tests", function () {
                 suffix,
 
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address, {value: price}); 
-            await expect(nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, buyer.target, id)).to.be.revertedWithCustomError(nft, "CantManageThisToken()");
+            await expect(nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, buyerContract.target, id)).to.be.revertedWithCustomError(nft, "CantManageThisToken()");
         })
     
         it('shouldnt burn if not owner', async() => {
@@ -522,7 +522,7 @@ describe("Standart ERC721 functional tests", function () {
                 ZERO_ADDRESS,
                 price,
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address, {value: price}); 
@@ -539,7 +539,7 @@ describe("Standart ERC721 functional tests", function () {
                 DEAD_ADDRESS,
                 price,
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address, {value: price}); 
@@ -558,14 +558,14 @@ describe("Standart ERC721 functional tests", function () {
                 ZERO_ADDRESS,
                 price,
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             const data = "0x123456";
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address, {value: price}); 
-            await nft.connect(bob)["safeTransferFrom(address,address,uint256,bytes)"](bob.address, buyer.target, id, data);
-            expect(await nft.ownerOf(id)).to.be.equal(buyer.target);
-            expect(await nft.balanceOf(buyer.target)).to.be.equal(1n);
+            await nft.connect(bob)["safeTransferFrom(address,address,uint256,bytes)"](bob.address, buyerContract.target, id, data);
+            expect(await nft.ownerOf(id)).to.be.equal(buyerContract.target);
+            expect(await nft.balanceOf(buyerContract.target)).to.be.equal(1n);
         })
 
         it('shouldnt safeTransfer to non-ERC721receiver', async() => {

@@ -15,109 +15,7 @@ const {
 
 
 describe("Tests with factory", function () {
-    // const accounts = waffle.provider.getWallets();
-    // const owner = accounts[0];                     
-    // const alice = accounts[1];
-    // const bob = accounts[2];
-    // const charlie = accounts[3];
-
-    // const seriesId = BigNumber.from('1000');
-    // const tokenId = 1n;
-    // const id = seriesId.mul(2n.pow(BigNumber.from('192'))).add(tokenId);
-    // const price = ethers.utils.parseEther('1');
-    // const now = Math.round(Date.now() / 1000);   
-    // const baseURI = "someURI";
-    // const suffix = ".json";
-    // const limit = BigNumber.from('10000');
-    // const saleParams = [
-    //     now + 100000, 
-    //     ZERO_ADDRESS, 
-    //     price,
-    //     ZERO //autoincrement price
-    // ];
-    // const commissions = [
-    //     0n,
-    //     ZERO_ADDRESS
-    // ];
-    // const seriesParams = [
-    //     alice.address,  
-    //     10000,
-    //     saleParams,
-    //     commissions,
-    //     baseURI,
-    //     suffix
-    // ];
-
-    // var NFTFactory;
-    // beforeEach("deploying", async() => {
-    //     const ReleaseManagerFactoryF = await ethers.getContractFactory("ReleaseManagerFactory");
-    //     const CostManagerGoodF = await ethers.getContractFactory("MockCostManagerGood");
-    //     const CostManagerBadF = await ethers.getContractFactory("MockCostManagerBad");
-
-    //     const ReleaseManagerF = await ethers.getContractFactory("ReleaseManager");
-
-
-    //     const ERC20Factory = await ethers.getContractFactory("MockERC20");
-
-    //     NFTFactory = await ethers.getContractFactory("NFT");
-        
-    //     const BuyerFactory = await ethers.getContractFactory("Buyer");
-    //     const NFTFactoryFactory = await ethers.getContractFactory("NFTFactory");
-
-    //     const NFTStateFactory = await ethers.getContractFactory("NFTState");
-    //     const NFTViewFactory = await ethers.getContractFactory("NFTView");
-
-    //     this.costManagerGood = await CostManagerGoodF.deploy();
-    //     this.costManagerBad = await CostManagerBadF.deploy();
-    //     let implementationReleaseManager    = await ReleaseManagerF.deploy();
-
-    //     nftState = await NFTStateFactory.deploy();
-    //     nftView = await NFTViewFactory.deploy();
-
-    //     this.erc20 = await ERC20Factory.deploy("ERC20 Token", "ERC20");
-    //     // nft = await NFTFactory.deploy();
-    //     // await nft.connect(owner).initialize("NFT Edition", "NFT");
-    //     nftimpl = await NFTFactory.deploy();
-
-    //     let releaseManagerFactory   = await ReleaseManagerFactoryF.connect(owner).deploy(implementationReleaseManager.address);
-    //     let tx,rc,event,instance,instancesCount;
-    //     //
-    //     tx = await releaseManagerFactory.connect(owner).produce();
-    //     rc = await tx.wait(); // 0ms, as tx is already confirmed
-    //     event = rc.events.find(event => event.event === 'InstanceProduced');
-    //     [instance, instancesCount] = event.args;
-    //     let releaseManager = await ethers.getContractAt("ReleaseManager",instance);
-
-    //     this.factory = await NFTFactoryFactory.deploy(nftimpl.address, nftState.address, nftView.address, ZERO_ADDRESS, releaseManager.address);
-
-    //     // 
-    //     const factoriesList = [this.factory.address];
-    //     const factoryInfo = [
-    //         [
-    //             1,//uint8 factoryIndex; 
-    //             1,//uint16 releaseTag; 
-    //             "0x53696c766572000000000000000000000000000000000000"//bytes24 factoryChangeNotes;
-    //         ]
-    //     ]
-        
-    //     await releaseManager.connect(owner).newRelease(factoriesList, factoryInfo);
-
-    //     tx = await this.factory.connect(owner)["produce(string,string,string)"]("NFT Edition", "NFT", "");
-    //     rc = await tx.wait();
-    //     let instanceAddr = rc['events'][0].args.instance;
-    //     nft = await NFTFactory.attach(instanceAddr);
-    //     //--
-
-    //     await nft.connect(owner)["setSeriesInfo(uint64,(address,uint32,(uint64,address,uint256,uint256),(uint64,address),string,string))"](seriesId, seriesParams);
-    //     const retval = '0x150b7a02';
-    //     const error = ZERO;
-    //     this.buyer = await BuyerFactory.deploy(retval, error);
-
-
-    //     await this.erc20.mint(owner.address, TOTALSUPPLY);
-
-    // })
-
+   
     it("should set costmanager while factory produce", async () => {
         const res = await loadFixture(deployFactoryWithoutCostManager);
         const {
@@ -517,13 +415,13 @@ describe("Tests with factory", function () {
                 price,
                 id,
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address,{value: price}); 
-            await nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, buyer.target, id);
-            expect(await nft.ownerOf(id)).to.be.equal(buyer.target);
-            expect(await nft.balanceOf(buyer.target)).to.be.equal(1n);
+            await nft.connect(bob)["safeTransferFrom(address,address,uint256)"](bob.address, buyerContract.target, id);
+            expect(await nft.ownerOf(id)).to.be.equal(buyerContract.target);
+            expect(await nft.balanceOf(buyerContract.target)).to.be.equal(1n);
         })
 
         it('shouldnt safeTransfer if not owner', async() => {
@@ -535,11 +433,11 @@ describe("Tests with factory", function () {
                 price,
                 id,
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address,{value: price}); 
-            await expect(nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, buyer.target, id)).to.be.revertedWithCustomError(nft, "CantManageThisToken()");
+            await expect(nft.connect(alice)["safeTransferFrom(address,address,uint256)"](bob.address, buyerContract.target, id)).to.be.revertedWithCustomError(nft, "CantManageThisToken()");
         })
 
         it('shouldnt burn if not owner', async() => {
@@ -585,14 +483,14 @@ describe("Tests with factory", function () {
                 price,
                 id,
                 nft,
-                buyer
+                buyerContract
             } = res;
             
             const data = "0x123456";
             await nft.connect(bob).buy([id], ZERO_ADDRESS, price, false, 0n, bob.address,{value: price}); 
-            await nft.connect(bob)["safeTransferFrom(address,address,uint256,bytes)"](bob.address, buyer.target, id, data);
-            expect(await nft.ownerOf(id)).to.be.equal(buyer.target);
-            expect(await nft.balanceOf(buyer.target)).to.be.equal(1n);
+            await nft.connect(bob)["safeTransferFrom(address,address,uint256,bytes)"](bob.address, buyerContract.target, id, data);
+            expect(await nft.ownerOf(id)).to.be.equal(buyerContract.target);
+            expect(await nft.balanceOf(buyerContract.target)).to.be.equal(1n);
         })
 
         it('shouldnt safeTransfer to non-ERC721receiver', async() => {
