@@ -11,6 +11,9 @@ const mainnetURL = `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_M
 const maticURL = `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MATIC}`
 const mumbaiURL = 'https://matic-mumbai.chainstacklabs.com';
 
+const baseURL = 'https://mainnet.base.org';
+const optimismURL = 'https://optimism.llamarpc.com';
+
 module.exports = {
   defaultNetwork: "hardhat",
   networks: {
@@ -28,27 +31,6 @@ module.exports = {
       forking: {
         url: maticURL,
       }
-    },
-    kovan: {
-      url: kovanURL,
-      chainId: 42,
-      gas: 12000000,
-      accounts: [process.env.private_key],
-      saveDeployments: true
-    },
-    goerli: {
-      url: goerliURL,
-      chainId: 5,
-      gasPrice: 1000,
-      accounts: [process.env.private_key],
-      saveDeployments: true
-    },
-    rinkeby: {
-      url: rinkebyURL,
-      chainId: 4,
-      gasPrice: "auto",
-      accounts: [process.env.private_key],
-      saveDeployments: true
     },
     bsc: {
       url: bscURL,
@@ -69,7 +51,7 @@ module.exports = {
       accounts: [process.env.private_key],
       saveDeployments: true
     },
-    mumbai: {
+    polygonMumbai: {
       url: mumbaiURL,
       chainId: 80001,
       //gasPrice: "auto", 
@@ -77,12 +59,11 @@ module.exports = {
         process.env.private_key_auxiliary,
         process.env.private_key_auxiliary,
         process.env.private_key_auxiliary,
-        process.env.private_key_auxiliary,
         process.env.private_key_auxiliary
       ],
       saveDeployments: true
     },
-    matic: {
+    polygon: {
       url: maticURL,
       chainId: 137,
       //gasPrice: "auto",
@@ -97,8 +78,35 @@ module.exports = {
     mainnet: {
       url: mainnetURL,
       chainId: 1,
-      //gasPrice: 20000000000,
-      accounts: [process.env.private_key],
+      gasPrice: 1_500_000_000,
+      accounts: [
+        process.env.private_key,
+        process.env.private_key_auxiliary,
+        process.env.private_key_nft,
+        process.env.private_key_sales
+      ],
+      saveDeployments: true
+    },
+    base: {
+      url: baseURL,
+      chainId: 8453,
+      accounts: [
+        process.env.private_key,
+        process.env.private_key_auxiliary,
+        process.env.private_key_nft,
+        process.env.private_key_sales
+      ],
+      saveDeployments: true
+    },
+    optimisticEthereum: {
+      url: optimismURL,
+      chainId: 10,
+      accounts: [
+        process.env.private_key,
+        process.env.private_key_auxiliary,
+        process.env.private_key_nft,
+        process.env.private_key_sales
+      ],
       saveDeployments: true
     }
   },
@@ -111,14 +119,13 @@ module.exports = {
     //apiKey: process.env.ETHERSCAN_API_KEY
     //apiKey: process.env.BSCSCAN_API_KEY
     apiKey: {
-      matic: process.env.MATIC_API_KEY,
-      mumbai: process.env.MATIC_API_KEY,
+      polygon: process.env.MATIC_API_KEY,
+      polygonMumbai: process.env.MATIC_API_KEY,
       mainnet: process.env.ETHERSCAN_API_KEY,
-      goerli: process.env.ETHERSCAN_API_KEY,
-      kovan: process.env.ETHERSCAN_API_KEY,
-      rinkeby: process.env.ETHERSCAN_API_KEY,
       bsctest: process.env.BSCSCAN_API_KEY,
-      bsc: process.env.BSCSCAN_API_KEY
+      bsc: process.env.BSCSCAN_API_KEY,
+      optimisticEthereum: process.env.OPTIMISM_API_KEY,
+      base: process.env.BASE_API_KEY
     }
   },
   solidity: {
