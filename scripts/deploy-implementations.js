@@ -52,11 +52,6 @@ async function main() {
     } else {
         [,deployer,,] = signers;
     }
-signers.forEach(function(i){
-    console.log(i.address);
-})
-
-return;
 	
 	const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
     const RELEASE_MANAGER = hre.network.name == 'mumbai'? process.env.RELEASE_MANAGER_MUMBAI : process.env.RELEASE_MANAGER;

@@ -62,7 +62,7 @@ async function main() {
 	// 	//gasPrice: ethers.utils.parseUnits('50', 'gwei'), 
 	// 	gasLimit: 10e6
 	// };
-    const deployerBalanceBefore = await deployer.getBalance();
+    const deployerBalanceBefore = await ethers.provider.getBalance(deployer.address);
     console.log("Account balance:", (deployerBalanceBefore).toString());
 
 	const NFTSalesFactory = await ethers.getContractFactory("NFTSales");
@@ -72,13 +72,13 @@ async function main() {
    // await nftSales.wait();
     
 	console.log("Implementations:");
-	console.log("  nftSales deployed at:       ", nftSales.address);
+	console.log("  nftSales deployed at:       ", nftSales.target);
 
-    const deployerBalanceAfter = await deployer.getBalance();
-    console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
-    console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
+    const deployerBalanceAfter = await ethers.provider.getBalance(deployer.address);
+    console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore - deployerBalanceAfter));
+    console.log("gasPrice:", ethers.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
 
-	data_object.nftSales = nftSales.address;
+	data_object.nftSales = nftSales.target;
 	
 	//---
 	const ts_updated = Date.now();

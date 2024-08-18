@@ -67,19 +67,19 @@ async function main() {
 		options
 	]
 
-	const deployerBalanceBefore = await deployer_sales.getBalance();
+	const deployerBalanceBefore = await ethers.provider.getBalance(deployer_sales.address);
     console.log("Account balance:", (deployerBalanceBefore).toString());
 
 	const NFTSalesFactoryFactory = await ethers.getContractFactory("NFTSalesFactory");
 	this.factory = await NFTSalesFactoryFactory.connect(deployer_sales).deploy(...params);
 
-	console.log("Factory deployed at:", this.factory.address);
+	console.log("Factory deployed at:", this.factory.target);
 	console.log("with params:", [..._params]);
 
 
-	const deployerBalanceAfter = await deployer_sales.getBalance();
-    console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore.sub(deployerBalanceAfter)));
-    console.log("gasPrice:", ethers.utils.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
+	const deployerBalanceAfter = await ethers.provider.getBalance(deployer_sales.address);
+    console.log("Spent:", ethers.utils.formatEther(deployerBalanceBefore - deployerBalanceAfter));
+    console.log("gasPrice:", ethers.formatUnits((await network.provider.send("eth_gasPrice")), "gwei")," gwei");
 }
 
 main()

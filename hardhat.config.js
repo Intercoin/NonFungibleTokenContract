@@ -78,7 +78,7 @@ module.exports = {
     mainnet: {
       url: mainnetURL,
       chainId: 1,
-      gasPrice: 1_500_000_000,
+      //gasPrice: 1_500_000_000,
       accounts: [
         process.env.private_key,
         process.env.private_key_auxiliary,
